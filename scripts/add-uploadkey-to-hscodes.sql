@@ -1,0 +1,8 @@
+-- Ajouter la colonne UploadKey à la table THSCodes
+ALTER TABLE THSCodes ADD UploadKey NVARCHAR(255) NULL;
+
+-- Vérifier que la colonne a été ajoutée
+SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE 
+FROM INFORMATION_SCHEMA.COLUMNS 
+WHERE TABLE_NAME = 'THSCodes' 
+ORDER BY ORDINAL_POSITION;

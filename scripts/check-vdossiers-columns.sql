@@ -1,0 +1,16 @@
+-- Vérifier la structure exacte de VDossiers
+SELECT 
+    COLUMN_NAME,
+    DATA_TYPE,
+    IS_NULLABLE
+FROM INFORMATION_SCHEMA.COLUMNS 
+WHERE TABLE_NAME = 'VDossiers'
+ORDER BY ORDINAL_POSITION;
+
+-- Vérifier les colonnes qui contiennent "Date" ou "Creation"
+SELECT 
+    COLUMN_NAME
+FROM INFORMATION_SCHEMA.COLUMNS 
+WHERE TABLE_NAME = 'VDossiers'
+    AND (COLUMN_NAME LIKE '%Date%' OR COLUMN_NAME LIKE '%Creation%')
+ORDER BY COLUMN_NAME;
