@@ -38,7 +38,7 @@ async function testTauxTableDisplay() {
         console.log('     TAUX DE CHANGE APPLIQUÉS         ');
         console.log('═══════════════════════════════════════');
         console.log('┌──────────────┬─────────────────────┐');
-        console.log('│    Devise    │   Taux Appliqué     │');
+        console.log('│    Devise    │   Taux Appliqués     │');
         console.log('├──────────────┼─────────────────────┤');
         
         tauxChange.forEach((taux) => {
@@ -61,7 +61,7 @@ async function testTauxTableDisplay() {
         console.log('\n📐 Dimensions du tableau:');
         console.log('   - Largeur: 35% de la page');
         console.log('   - Position: Aligné à gauche');
-        console.log('   - Colonnes: 2 (Devise 40%, Taux Appliqué 60%)');
+        console.log('   - Colonnes: 2 (Devise 40%, Taux Appliqués 60%)');
         
         console.log('\n✅ Test terminé avec succès!');
         
