@@ -496,7 +496,11 @@ export async function getTauxChangeDossier(dossierId: number) {
 
         console.log(`[getTauxChangeDossier] ${serializedTaux.length} taux récupérés:`, serializedTaux);
 
-        return { success: true, data: serializedTaux };
+        return { 
+            success: true, 
+            data: serializedTaux,
+            dateDeclaration: dateDeclaration // Ajouter la date de déclaration dans le retour
+        };
     } catch (error) {
         console.error("getTauxChangeDossier error:", error);
         return {
