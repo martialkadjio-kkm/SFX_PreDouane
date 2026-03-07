@@ -20,6 +20,10 @@ export async function getColisageReportData(dossierId: number) {
                 descriptionDossier: true,
                 nomBranche: true,
                 nomEntite: true,
+                Nbre_Paquetage_Pesee: true,
+                poidsBrutPesee: true,
+                poidsNetPesee: true,
+                volumePesee: true,
             }
         });
 
@@ -62,6 +66,7 @@ export async function getColisageReportData(dossierId: number) {
             Volume: c.volume,
             Pays_Origine: c.paysOrigine,
             Libelle_Regime_Douanier: c.libelleRegimeDouanier,
+            Libelle_Regime_Declaration: c.libelleRegimeDeclaration,
             Regroupement_Client: c.regroupementClient,
             UploadKey: uploadKeyMap.get(c.idColisageDossier) || null,
             Date_Creation: c.dateCreation,
@@ -79,6 +84,10 @@ export async function getColisageReportData(dossierId: number) {
             descriptionDossier: dossier.descriptionDossier,
             nomBranche: dossier.nomBranche,
             nomEntite: dossier.nomEntite,
+            nbrePaquetagesPesee: dossier.Nbre_Paquetage_Pesee,
+            poidsBrutPesee: dossier.poidsBrutPesee,
+            poidsNetPesee: dossier.poidsNetPesee,
+            volumePesee: dossier.volumePesee,
         };
 
         return { 

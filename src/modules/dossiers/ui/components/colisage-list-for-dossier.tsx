@@ -7,7 +7,7 @@ import { EmptyState } from "@/components/empty-state";
 import { DataTable } from "@/components/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, FileText, RefreshCw } from "lucide-react";
+import { Plus, Trash2, FileText, RefreshCw, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -16,6 +16,12 @@ import { CreateColisageDialog } from "./create-colisage-dialog";
 import { DeleteAllColisagesDialog } from "./delete-all-colisages-dialog";
 import { deleteColisage } from "../../server/colisage-actions";
 import { useColisagePDFReport } from "../../hooks/use-colisage-pdf-report";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface ColisageListForDossierProps {
     dossierId: number;
@@ -65,8 +71,8 @@ export const ColisageListForDossier = ({ dossierId }: ColisageListForDossierProp
         setSelectedRows([]);
     };
 
-    const handleGeneratePDF = async () => {
-        await generatePDFReport(dossierId);
+    const handleGeneratePDF = async (language: 'fr' | 'en') => {
+        await generatePDFReport(dossierId, language);
     };
 
     const handleRefresh = async () => {
@@ -243,15 +249,27 @@ export const ColisageListForDossier = ({ dossierId }: ColisageListForDossierProp
                         >
                             <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
                         </Button>
-                        <Button
-                            onClick={handleGeneratePDF}
-                            variant="outline"
-                            size="sm"
-                            disabled={isGenerating}
-                        >
-                            <FileText className="w-4 h-4 mr-2" />
-                            {isGenerating ? 'Génération...' : 'Rapport PDF'}
-                        </Button>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={isGenerating}
+                                >
+                                    <FileText className="w-4 h-4 mr-2" />
+                                    {isGenerating ? 'Génération...' : 'Rapport PDF'}
+                                    <ChevronDown className="w-4 h-4 ml-2" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleGeneratePDF('fr')}>
+                                    🇫🇷 Français
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleGeneratePDF('en')}>
+                                    🇺🇸 English
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                         <Button
                             onClick={() => setShowCreateDialog(true)}
                             size="sm"

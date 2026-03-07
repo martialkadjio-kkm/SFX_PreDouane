@@ -8,7 +8,7 @@ import { ColisagePDFReportV2 } from '../services/colisage-pdf-report-v2';
 export const useColisagePDFReport = () => {
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const generatePDFReport = async (dossierId: number) => {
+  const generatePDFReport = async (dossierId: number, language: 'fr' | 'en' = 'fr') => {
     setIsGenerating(true);
     
     try {
@@ -27,12 +27,12 @@ export const useColisagePDFReport = () => {
 
       // Générer le PDF
       const pdfReport = new ColisagePDFReportV2();
-      await pdfReport.generateReport(result.data.dossierInfo, result.data.colisages);
+      await pdfReport.generateReport(result.data.dossierInfo, result.data.colisages, language);
       
-      toast.success('Rapport PDF généré avec succès');
+      toast.success(language === 'fr' ? 'Rapport PDF généré avec succès' : 'PDF report generated successfully');
     } catch (error: any) {
       console.error('Erreur lors de la génération du PDF:', error);
-      toast.error('Erreur lors de la génération du rapport PDF');
+      toast.error(language === 'fr' ? 'Erreur lors de la génération du rapport PDF' : 'Error generating PDF report');
     } finally {
       setIsGenerating(false);
     }
