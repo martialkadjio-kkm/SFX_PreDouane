@@ -134,8 +134,12 @@ export class ColisagePDFReportV2 {
     const num = Number(value);
     if (isNaN(num)) return '0.00';
     
-    // Format simple sans locale pour éviter les problèmes d'encodage
-    return num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    // Utiliser toLocaleString pour un formatage natif avec séparateurs
+    // 'en-US' utilise des virgules comme séparateurs et un point pour les décimales
+    return num.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
   }
 
   private formatDate(date: any): string {

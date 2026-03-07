@@ -283,6 +283,19 @@ export const NoteDetailView = ({
 
       const t = translations[language];
 
+      // Fonction pour formater les nombres avec séparateurs de milliers
+      const formatNumber = (value: any): string => {
+        const num = Number(value);
+        if (isNaN(num)) return '0.00';
+        
+        // Utiliser toLocaleString pour un formatage natif avec séparateurs
+        // 'en-US' utilise des virgules comme séparateurs et un point pour les décimales
+        return num.toLocaleString('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+      };
+
       const doc = new jsPDF({
         orientation: "landscape",
         unit: "mm",
@@ -567,7 +580,7 @@ export const NoteDetailView = ({
         // Pour chaque devise, ajouter la valeur ou vide
         allDevises.forEach((devise) => {
           const valeur = regimeStats[regime][devise] || 0;
-          row.push(valeur > 0 ? valeur.toFixed(2) : "-");
+          row.push(valeur > 0 ? formatNumber(valeur) : "-");
           rowTotal += valeur;
           
           // Calculer le total converti avec le taux de change
@@ -578,7 +591,7 @@ export const NoteDetailView = ({
         });
         
         // Ajouter le total converti calculé
-        row.push(rowTotalConverti.toFixed(2));
+        row.push(formatNumber(rowTotalConverti));
         grandTotal += rowTotal;
         grandTotalConverti += rowTotalConverti;
         regimeDeviseDataCross.push(row);
@@ -673,10 +686,10 @@ export const NoteDetailView = ({
           { content: t.total, styles: { fontStyle: "bold" as const, halign: "right" as const, fontSize: 10, fillColor: [240, 253, 244], textColor: [22, 163, 74], cellPadding: 2 } },
           { content: grandTotalCount.toString(), styles: { fontStyle: "bold" as const, halign: "center" as const, fontSize: 10, fillColor: [240, 253, 244], textColor: [22, 163, 74], cellPadding: 2 } },
           ...allDevises.map((devise) => ({
-            content: deviseStats[devise].toFixed(2),
+            content: formatNumber(deviseStats[devise]),
             styles: { fontStyle: "bold" as const, halign: "right" as const, fontSize: 10, fillColor: [240, 253, 244], textColor: [22, 163, 74], cellPadding: 2 }
           })),
-          { content: grandTotalConverti.toFixed(2), styles: { fontStyle: "bold" as const, halign: "right" as const, fillColor: [240, 253, 244], textColor: [22, 163, 74], fontSize: 10, cellPadding: 2 } },
+          { content: formatNumber(grandTotalConverti), styles: { fontStyle: "bold" as const, halign: "right" as const, fillColor: [240, 253, 244], textColor: [22, 163, 74], fontSize: 10, cellPadding: 2 } },
         ]],
         footStyles: {
           fillColor: [240, 253, 244],

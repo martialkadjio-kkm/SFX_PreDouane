@@ -134,8 +134,12 @@ export class ColisagePDFReportSite {
     const num = Number(value);
     if (isNaN(num)) return '0.00';
     
-    // Format simple sans locale pour éviter les problèmes d'encodage
-    return num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    // Utiliser toLocaleString pour un formatage natif avec séparateurs
+    // 'en-US' utilise des virgules comme séparateurs et un point pour les décimales
+    return num.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
   }
 
   private formatDate(date: any): string {
@@ -620,7 +624,9 @@ export class ColisagePDFReportSite {
         deviseArray.forEach(devise => {
           const data = deviseMap.get(devise);
           if (data && data.valeur > 0) {
-            row.push(this.formatNumber(data.valeur));
+            const formatted = this.formatNumber(data.valeur);
+            console.log(`💰 Devise ${devise}: ${data.valeur} → ${formatted}`);
+            row.push(formatted);
           } else {
             row.push('-');
           }
@@ -687,6 +693,15 @@ export class ColisagePDFReportSite {
         },
         margin: { left: this.margin, right: this.margin },
         tableWidth: this.usableWidth,
+        didDrawCell: (data: any) => {
+          // Forcer le formatage des valeurs numériques dans les colonnes de devises
+          if (data.section === 'body' && data.column.index >= 2) {
+            const cellValue = tableData[data.row.index][data.column.index];
+            if (cellValue && cellValue !== '-') {
+              // Le texte est déjà formaté par formatNumber, pas besoin de reformater
+            }
+          }
+        },
         didParseCell: (data: any) => {
           // La première colonne du body contient les régimes
           if (data.section === 'body' && data.column.index === 0) {
