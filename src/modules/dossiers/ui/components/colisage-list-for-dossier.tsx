@@ -16,6 +16,7 @@ import { CreateColisageDialog } from "./create-colisage-dialog";
 import { DeleteAllColisagesDialog } from "./delete-all-colisages-dialog";
 import { deleteColisage } from "../../server/colisage-actions";
 import { useColisagePDFReport } from "../../hooks/use-colisage-pdf-report";
+import { useColisagePDFReportSite } from "../../hooks/use-colisage-pdf-report-site";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,6 +37,7 @@ export const ColisageListForDossier = ({ dossierId }: ColisageListForDossierProp
     const [selectedRows, setSelectedRows] = useState<any[]>([]);
     const router = useRouter();
     const { generatePDFReport, isGenerating } = useColisagePDFReport();
+    const { generatePDFReport: generatePDFReportSite, isGenerating: isGeneratingSite } = useColisagePDFReportSite();
     
 
 
@@ -73,6 +75,10 @@ export const ColisageListForDossier = ({ dossierId }: ColisageListForDossierProp
 
     const handleGeneratePDF = async (language: 'fr' | 'en') => {
         await generatePDFReport(dossierId, language);
+    };
+
+    const handleGeneratePDFSite = async (language: 'fr' | 'en') => {
+        await generatePDFReportSite(dossierId, language);
     };
 
     const handleRefresh = async () => {
@@ -257,7 +263,7 @@ export const ColisageListForDossier = ({ dossierId }: ColisageListForDossierProp
                                     disabled={isGenerating}
                                 >
                                     <FileText className="w-4 h-4 mr-2" />
-                                    {isGenerating ? 'Génération...' : 'Rapport PDF'}
+                                    {isGenerating ? 'Génération...' : 'Rapport Par Facture'}
                                     <ChevronDown className="w-4 h-4 ml-2" />
                                 </Button>
                             </DropdownMenuTrigger>
@@ -266,6 +272,27 @@ export const ColisageListForDossier = ({ dossierId }: ColisageListForDossierProp
                                     🇫🇷 Français
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleGeneratePDF('en')}>
+                                    🇺🇸 English
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={isGeneratingSite}
+                                >
+                                    <FileText className="w-4 h-4 mr-2" />
+                                    {isGeneratingSite ? 'Génération...' : 'Rapport Par Site'}
+                                    <ChevronDown className="w-4 h-4 ml-2" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleGeneratePDFSite('fr')}>
+                                    🇫🇷 Français
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleGeneratePDFSite('en')}>
                                     🇺🇸 English
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
