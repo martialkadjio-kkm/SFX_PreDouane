@@ -3,9 +3,9 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { getColisageReportData } from '../server/colisage-report-actions';
-import { ColisagePDFReportV2 } from '../services/colisage-pdf-report-v2';
+import { ColisagePDFReportSite } from '../services/colisage-pdf-report-site';
 
-export const useColisagePDFReport = () => {
+export const useColisagePDFReportSite = () => {
   const [isGenerating, setIsGenerating] = useState(false);
 
   const generatePDFReport = async (dossierId: number, language: 'fr' | 'en' = 'fr') => {
@@ -26,7 +26,7 @@ export const useColisagePDFReport = () => {
       }
 
       // Générer le PDF
-      const pdfReport = new ColisagePDFReportV2();
+      const pdfReport = new ColisagePDFReportSite();
       await pdfReport.generateReport(result.data.dossierInfo, result.data.colisages, language);
       
       toast.success(language === 'fr' ? 'Rapport PDF généré avec succès' : 'PDF report generated successfully');

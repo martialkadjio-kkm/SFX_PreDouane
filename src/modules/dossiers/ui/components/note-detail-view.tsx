@@ -32,6 +32,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
 
 interface NoteDetailViewProps {
@@ -50,6 +53,7 @@ export const NoteDetailView = ({
   const [notes, setNotes] = useState<any[]>([]);
   const [showGenererDialog, setShowGenererDialog] = useState(false);
   const [exchangeRates, setExchangeRates] = useState<{ [devise: string]: number }>({});
+  const [dateDeclaration, setDateDeclaration] = useState<Date | null>(null);
   const router = useRouter();
 
   const [DeleteConfirmation, confirmDelete] = useConfirm(
@@ -77,7 +81,14 @@ export const NoteDetailView = ({
           rates[taux.Code_Devise] = Number(taux.Taux_Change || 0);
         });
         setExchangeRates(rates);
+        
+        // Récupérer la date de déclaration
+        if (tauxResult.dateDeclaration) {
+          setDateDeclaration(new Date(tauxResult.dateDeclaration));
+        }
+        
         console.log("[NoteDetailView] Taux de change chargés:", rates);
+        console.log("[NoteDetailView] Date de déclaration:", tauxResult.dateDeclaration);
       } else {
         console.warn("[NoteDetailView] Impossible de charger les taux de change:", tauxResult.error);
       }
@@ -209,10 +220,81 @@ export const NoteDetailView = ({
     }
   };
 
-  const exportToPDF = async () => {
+  const exportToPDF = async (language: 'fr' | 'en' = 'fr') => {
     try {
       const jsPDF = (await import("jspdf")).default;
       const autoTable = (await import("jspdf-autotable")).default;
+
+      // Traductions
+      const translations = {
+        fr: {
+          weighingInfo: "INFORMATIONS SUR LA PESÉE",
+          qty: "QTE",
+          grossWeight: "POIDS BRUT (kg)",
+          netWeight: "POIDS NET (kg)",
+          volume: "VOLUME (m³)",
+          declarationSummary: "SYNTHÈSE DE DÉCLARATION",
+          declarationDate: "Date de déclaration :",
+          rowCount: "Row count",
+          totalXOF: "Total XOF",
+          xof: "XOF",
+          total: "TOTAL",
+          details: "DETAILS",
+          grouping: "Groupement",
+          regimeDecl: "Régime Décl.",
+          originCountry: "Pays D'origine",
+          hsCode: "HS Code",
+          nbPackages: "Nbre Paq.",
+          currency: "Dev.",
+          value: "Valeur",
+          volumeCol: "Volume",
+          grossWeightCol: "Poids Brut",
+          netWeightCol: "Poids Net",
+          copyright: "©Copyright Softronic Innoving",
+          page: "Page",
+        },
+        en: {
+          weighingInfo: "WEIGHING INFORMATION",
+          qty: "QTY",
+          grossWeight: "GROSS WEIGHT (kg)",
+          netWeight: "NET WEIGHT (kg)",
+          volume: "VOLUME (m³)",
+          declarationSummary: "DECLARATION SUMMARY",
+          declarationDate: "Declaration date:",
+          rowCount: "Row count",
+          totalXOF: "Total XOF",
+          xof: "XOF",
+          total: "TOTAL",
+          details: "DETAILS",
+          grouping: "Grouping",
+          regimeDecl: "Decl. Regime",
+          originCountry: "Origin Country",
+          hsCode: "HS Code",
+          nbPackages: "Nb Packages",
+          currency: "Curr.",
+          value: "Value",
+          volumeCol: "Volume",
+          grossWeightCol: "Gross Weight",
+          netWeightCol: "Net Weight",
+          copyright: "©Copyright Softronic Innoving",
+          page: "Page",
+        },
+      };
+
+      const t = translations[language];
+
+      // Fonction pour formater les nombres avec séparateurs de milliers
+      const formatNumber = (value: any): string => {
+        const num = Number(value);
+        if (isNaN(num)) return '0.00';
+        
+        // Utiliser toLocaleString pour un formatage natif avec séparateurs
+        // 'en-US' utilise des virgules comme séparateurs et un point pour les décimales
+        return num.toLocaleString('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+      };
 
       const doc = new jsPDF({
         orientation: "landscape",
@@ -349,44 +431,43 @@ export const NoteDetailView = ({
       
       let currentY = 40;
 
-      // === STATISTIQUES GÉNÉRALES (style moderne avec cartes) ===
+      // === Informations sur la pesée (style moderne avec cartes) ===
       // Titre avec style bleu comme les autres tableaux
       doc.setFillColor(66, 139, 202);
       doc.rect(marginLeft, currentY, availableWidth, 8, 'F');
       doc.setFontSize(9);
       doc.setFont("helvetica", "bold");
-      doc.setTextColor(255, 255, 255);
-      doc.text("STATISTIQUES GÉNÉRALES", marginLeft + 3, currentY + 5.5);
+      doc.setTextColor(0, 0, 0);
+      doc.text(t.weighingInfo, marginLeft + 3, currentY + 5.5);
       currentY += 10;
 
-      // Créer des cartes visuelles pour les métriques (6 cartes par ligne occupant toute la largeur)
-      const cardsPerLine = 6;
+      // Créer des cartes visuelles pour les métriques (4 cartes)
+      const cardsPerLine = 4;
       const cardSpacing = 3;
       const totalSpacing = cardSpacing * (cardsPerLine - 1);
       const cardWidth = (availableWidth - totalSpacing) / cardsPerLine;
       const cardHeight = 12;
       const cardY = currentY;
       
-      // Carte 1: Total Notes
-      doc.setFillColor(248, 250, 252);
+      // Carte: Paquetages
+      doc.setFillColor(255, 255, 255); // Blanc
       doc.roundedRect(marginLeft, cardY, cardWidth, cardHeight, 1, 1, 'F');
       doc.setDrawColor(226, 232, 240);
-      doc.setLineWidth(0.2);
       doc.roundedRect(marginLeft, cardY, cardWidth, cardHeight, 1, 1, 'S');
       
       doc.setFontSize(9);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(100, 116, 139);
-      doc.text("TOTAL", marginLeft + cardWidth / 2, cardY + 3.5, { align: 'center' });
+      doc.text(t.qty, marginLeft + cardWidth / 2, cardY + 3.5, { align: 'center' });
       
       doc.setFontSize(11);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(30, 41, 59);
-      doc.text(notes.length.toString(), marginLeft + cardWidth / 2, cardY + 9, { align: 'center' });
+      doc.text(totalPaquetage.toFixed(1), marginLeft + cardWidth / 2, cardY + 9, { align: 'center' });
       
-      // Carte 2: TTC
+      // Carte: Poids Brut
       const card2X = marginLeft + cardWidth + cardSpacing;
-      doc.setFillColor(248, 250, 252);
+      doc.setFillColor(255, 255, 255); // Blanc
       doc.roundedRect(card2X, cardY, cardWidth, cardHeight, 1, 1, 'F');
       doc.setDrawColor(226, 232, 240);
       doc.roundedRect(card2X, cardY, cardWidth, cardHeight, 1, 1, 'S');
@@ -394,16 +475,17 @@ export const NoteDetailView = ({
       doc.setFontSize(9);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(100, 116, 139);
-      doc.text("TTC", card2X + cardWidth / 2, cardY + 3.5, { align: 'center' });
+      doc.text(t.grossWeight, card2X + cardWidth / 2, cardY + 3.5, { align: 'center' });
       
+      const totalPoidsBrut = notes.reduce((sum, n) => sum + Number(n.Poids_Brut || 0), 0);
       doc.setFontSize(11);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(30, 41, 59);
-      doc.text(ttcCount.toString(), card2X + cardWidth / 2, cardY + 9, { align: 'center' });
+      doc.text(totalPoidsBrut.toFixed(2), card2X + cardWidth / 2, cardY + 9, { align: 'center' });
       
-      // Carte 3: 100% TR
+      // Carte: Poids Net
       const card3X = marginLeft + (cardWidth + cardSpacing) * 2;
-      doc.setFillColor(248, 250, 252);
+      doc.setFillColor(255, 255, 255); // Blanc
       doc.roundedRect(card3X, cardY, cardWidth, cardHeight, 1, 1, 'F');
       doc.setDrawColor(226, 232, 240);
       doc.roundedRect(card3X, cardY, cardWidth, cardHeight, 1, 1, 'S');
@@ -411,16 +493,17 @@ export const NoteDetailView = ({
       doc.setFontSize(9);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(100, 116, 139);
-      doc.text("100% TR", card3X + cardWidth / 2, cardY + 3.5, { align: 'center' });
+      doc.text(t.netWeight, card3X + cardWidth / 2, cardY + 3.5, { align: 'center' });
       
+      const totalPoidsNet = notes.reduce((sum, n) => sum + Number(n.Poids_Net || 0), 0);
       doc.setFontSize(11);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(30, 41, 59);
-      doc.text(tr100Count.toString(), card3X + cardWidth / 2, cardY + 9, { align: 'center' });
+      doc.text(totalPoidsNet.toFixed(2), card3X + cardWidth / 2, cardY + 9, { align: 'center' });
       
-      // Carte 4: 100% DC
+      // Carte: Volume Total
       const card4X = marginLeft + (cardWidth + cardSpacing) * 3;
-      doc.setFillColor(248, 250, 252);
+      doc.setFillColor(255, 255, 255); // Blanc
       doc.roundedRect(card4X, cardY, cardWidth, cardHeight, 1, 1, 'F');
       doc.setDrawColor(226, 232, 240);
       doc.roundedRect(card4X, cardY, cardWidth, cardHeight, 1, 1, 'S');
@@ -428,178 +511,76 @@ export const NoteDetailView = ({
       doc.setFontSize(9);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(100, 116, 139);
-      doc.text("100% DC", card4X + cardWidth / 2, cardY + 3.5, { align: 'center' });
+      doc.text(t.volume, card4X + cardWidth / 2, cardY + 3.5, { align: 'center' });
       
       doc.setFontSize(11);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(30, 41, 59);
-      doc.text(dc100Count.toString(), card4X + cardWidth / 2, cardY + 9, { align: 'center' });
-      
-      // Carte 5: EXO
-      const card5X = marginLeft + (cardWidth + cardSpacing) * 4;
-      doc.setFillColor(248, 250, 252);
-      doc.roundedRect(card5X, cardY, cardWidth, cardHeight, 1, 1, 'F');
-      doc.setDrawColor(226, 232, 240);
-      doc.roundedRect(card5X, cardY, cardWidth, cardHeight, 1, 1, 'S');
-      
-      doc.setFontSize(9);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(100, 116, 139);
-      doc.text("EXO", card5X + cardWidth / 2, cardY + 3.5, { align: 'center' });
-      
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(30, 41, 59);
-      doc.text(exoCount.toString(), card5X + cardWidth / 2, cardY + 9, { align: 'center' });
-      
-      // Carte 6: Ratios
-      const card6X = marginLeft + (cardWidth + cardSpacing) * 5;
-      doc.setFillColor(248, 250, 252);
-      doc.roundedRect(card6X, cardY, cardWidth, cardHeight, 1, 1, 'F');
-      doc.setDrawColor(226, 232, 240);
-      doc.roundedRect(card6X, cardY, cardWidth, cardHeight, 1, 1, 'S');
-      
-      doc.setFontSize(9);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(100, 116, 139);
-      doc.text("RATIOS", card6X + cardWidth / 2, cardY + 3.5, { align: 'center' });
-      
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(30, 41, 59);
-      doc.text(ratioCount.toString(), card6X + cardWidth / 2, cardY + 9, { align: 'center' });
-      
-      currentY += cardHeight + 3;
-      
-      // Deuxième ligne de cartes: Métriques physiques et valeur (6 cartes occupant toute la largeur)
-      const card2Width = (availableWidth - totalSpacing) / cardsPerLine;
-      const card2Y = currentY;
-      
-      // Carte: Paquetages
-      doc.setFillColor(248, 250, 252);
-      doc.roundedRect(marginLeft, card2Y, card2Width, cardHeight, 1, 1, 'F');
-      doc.setDrawColor(226, 232, 240);
-      doc.roundedRect(marginLeft, card2Y, card2Width, cardHeight, 1, 1, 'S');
-      
-      doc.setFontSize(9);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(100, 116, 139);
-      doc.text("PAQUETAGES", marginLeft + card2Width / 2, card2Y + 3.5, { align: 'center' });
-      
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(30, 41, 59);
-      doc.text(totalPaquetage.toFixed(1), marginLeft + card2Width / 2, card2Y + 9, { align: 'center' });
-      
-      // Carte: Poids Total
-      const card2_2X = marginLeft + card2Width + cardSpacing;
-      doc.setFillColor(248, 250, 252);
-      doc.roundedRect(card2_2X, card2Y, card2Width, cardHeight, 1, 1, 'F');
-      doc.setDrawColor(226, 232, 240);
-      doc.roundedRect(card2_2X, card2Y, card2Width, cardHeight, 1, 1, 'S');
-      
-      doc.setFontSize(9);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(100, 116, 139);
-      doc.text("POIDS (kg)", card2_2X + card2Width / 2, card2Y + 3.5, { align: 'center' });
-      
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(30, 41, 59);
-      doc.text(totalPoids.toFixed(2), card2_2X + card2Width / 2, card2Y + 9, { align: 'center' });
-      
-      // Carte: Volume Total
-      const card2_3X = marginLeft + (card2Width + cardSpacing) * 2;
-      doc.setFillColor(248, 250, 252);
-      doc.roundedRect(card2_3X, card2Y, card2Width, cardHeight, 1, 1, 'F');
-      doc.setDrawColor(226, 232, 240);
-      doc.roundedRect(card2_3X, card2Y, card2Width, cardHeight, 1, 1, 'S');
-      
-      doc.setFontSize(9);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(100, 116, 139);
-      doc.text("VOLUME (m³)", card2_3X + card2Width / 2, card2Y + 3.5, { align: 'center' });
-      
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(30, 41, 59);
-      doc.text(totalVolume.toFixed(1), card2_3X + card2Width / 2, card2Y + 9, { align: 'center' });
-      
-      // Carte 4: Poids Brut
-      const card2_4X = marginLeft + (card2Width + cardSpacing) * 3;
-      doc.setFillColor(248, 250, 252);
-      doc.roundedRect(card2_4X, card2Y, card2Width, cardHeight, 1, 1, 'F');
-      doc.setDrawColor(226, 232, 240);
-      doc.roundedRect(card2_4X, card2Y, card2Width, cardHeight, 1, 1, 'S');
-      
-      doc.setFontSize(9);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(100, 116, 139);
-      doc.text("POIDS BRUT", card2_4X + card2Width / 2, card2Y + 3.5, { align: 'center' });
-      
-      const totalPoidsBrut = notes.reduce((sum, n) => sum + Number(n.Poids_Brut || 0), 0);
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(30, 41, 59);
-      doc.text(totalPoidsBrut.toFixed(2), card2_4X + card2Width / 2, card2Y + 9, { align: 'center' });
-      
-      // Carte 5: Poids Net
-      const card2_5X = marginLeft + (card2Width + cardSpacing) * 4;
-      doc.setFillColor(248, 250, 252);
-      doc.roundedRect(card2_5X, card2Y, card2Width, cardHeight, 1, 1, 'F');
-      doc.setDrawColor(226, 232, 240);
-      doc.roundedRect(card2_5X, card2Y, card2Width, cardHeight, 1, 1, 'S');
-      
-      doc.setFontSize(9);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(100, 116, 139);
-      doc.text("POIDS NET", card2_5X + card2Width / 2, card2Y + 3.5, { align: 'center' });
-      
-      const totalPoidsNet = notes.reduce((sum, n) => sum + Number(n.Poids_Net || 0), 0);
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(30, 41, 59);
-      doc.text(totalPoidsNet.toFixed(2), card2_5X + card2Width / 2, card2Y + 9, { align: 'center' });
-      
-      // Carte 6: Valeur Totale (mise en évidence avec couleur verte) - EN DERNIÈRE POSITION
-      const card2_6X = marginLeft + (card2Width + cardSpacing) * 5;
-      doc.setFillColor(240, 253, 244); // Fond vert clair
-      doc.roundedRect(card2_6X, card2Y, card2Width, cardHeight, 1, 1, 'F');
-      doc.setDrawColor(134, 239, 172); // Bordure verte
-      doc.setLineWidth(0.3);
-      doc.roundedRect(card2_6X, card2Y, card2Width, cardHeight, 1, 1, 'S');
-      
-      doc.setFontSize(9);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(22, 163, 74); // Vert
-      doc.text("VALEUR TOTALE", card2_6X + card2Width / 2, card2Y + 3.5, { align: 'center' });
-      
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(22, 163, 74);
-      const valeurText = totalValeur.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      doc.text(valeurText, card2_6X + card2Width / 2, card2Y + 9, { align: 'center' });
+      doc.text(totalVolume.toFixed(1), card4X + cardWidth / 2, cardY + 9, { align: 'center' });
 
       currentY += cardHeight + 5;
+
+      // === SYNTHÈSE DE DÉCLARATION ===
+      // Titre avec style bleu comme les autres sections
+      doc.setFillColor(66, 139, 202);
+      doc.rect(marginLeft, currentY, availableWidth, 8, 'F');
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(0, 0, 0);
+      doc.text(t.declarationSummary, marginLeft + 3, currentY + 5.5);
+      currentY += 10;
+
+      // Afficher "Date de déclaration :" suivi de la date
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(30, 41, 59);
+      doc.text(t.declarationDate, marginLeft, currentY + 5);
+      
+      // Récupérer la date de déclaration du dossier
+      const dateDeclarationFormatted = dateDeclaration 
+        ? dateDeclaration.toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', { day: '2-digit', month: '2-digit', year: 'numeric' })
+        : new Date().toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      
+      // Calculer la position de la date juste après le label
+      const labelWidth = doc.getTextWidth(t.declarationDate + " ");
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(22, 163, 74); // Vert
+      doc.text(dateDeclarationFormatted, marginLeft + labelWidth, currentY + 5);
+
+      currentY += 10;
 
       // === TABLEAU 2: TOTAUX PAR RÉGIME ET DEVISE (tableau croisé avec Source) - Style Professionnel ===
       // Obtenir toutes les devises uniques triées
       const allDevises = Object.keys(deviseStats).sort();
       
+      // Calculer le nombre d'occurrences par régime
+      const regimeCount: { [regime: string]: number } = {};
+      notes.forEach((note) => {
+        const regime = note.Regime || "Non défini";
+        regimeCount[regime] = (regimeCount[regime] || 0) + 1;
+      });
+      
       // Créer les lignes de données
       const regimeDeviseDataCross: any[] = [];
       let grandTotal = 0;
       let grandTotalConverti = 0;
+      let grandTotalCount = 0;
       
       Object.keys(regimeStats).sort().forEach((regime) => {
         const row: any[] = [regime];
+        
+        // Ajouter le nombre d'occurrences
+        const count = regimeCount[regime] || 0;
+        row.push(count);
+        grandTotalCount += count;
+        
         let rowTotal = 0;
         let rowTotalConverti = 0;
         
         // Pour chaque devise, ajouter la valeur ou vide
         allDevises.forEach((devise) => {
           const valeur = regimeStats[regime][devise] || 0;
-          row.push(valeur > 0 ? valeur.toFixed(2) : "-");
+          row.push(valeur > 0 ? formatNumber(valeur) : "-");
           rowTotal += valeur;
           
           // Calculer le total converti avec le taux de change
@@ -610,7 +591,7 @@ export const NoteDetailView = ({
         });
         
         // Ajouter le total converti calculé
-        row.push(rowTotalConverti.toFixed(2));
+        row.push(formatNumber(rowTotalConverti));
         grandTotal += rowTotal;
         grandTotalConverti += rowTotalConverti;
         regimeDeviseDataCross.push(row);
@@ -625,35 +606,34 @@ export const NoteDetailView = ({
       
       // Calculer les largeurs de colonnes dynamiquement
       const nbDevises = allDevises.length;
-      const regimeColWidth = availableWidth * 0.20; // 20% pour la colonne des régimes
-      const totalColWidth = availableWidth * 0.20; // 20% pour Total Converti
-      const sourceColWidth = availableWidth - regimeColWidth - totalColWidth; // Reste pour Source
+      const regimeColWidth = availableWidth * 0.15; // 15% pour la colonne des régimes
+      const countColWidth = availableWidth * 0.08; // 8% pour Row count
+      const totalColWidth = availableWidth * 0.15; // 15% pour Total XOF
+      const sourceColWidth = availableWidth - regimeColWidth - countColWidth - totalColWidth; // Reste pour les devises
       const deviseColWidth = sourceColWidth / nbDevises;
       
       const columnStyles: any = {
-        0: { cellWidth: regimeColWidth, halign: 'left', fontStyle: 'bold', fillColor: [248, 250, 252] } // Colonne des régimes avec fond gris clair
+        0: { cellWidth: regimeColWidth, halign: 'left', fontStyle: 'bold', fillColor: [248, 250, 252] }, // Colonne des régimes
+        1: { cellWidth: countColWidth, halign: 'center', fontStyle: 'bold', fillColor: [248, 250, 252] } // Colonne Row count
       };
       
       // Colonnes des devises (alignées à droite)
-      for (let i = 1; i <= nbDevises; i++) {
+      for (let i = 2; i <= nbDevises + 1; i++) {
         columnStyles[i] = { cellWidth: deviseColWidth, halign: 'right' };
       }
       
-      // Colonne Total Converti (même style que les autres colonnes)
-      columnStyles[nbDevises + 1] = { cellWidth: totalColWidth, halign: 'right', fontStyle: 'bold' };
+      // Colonne Total XOF
+      columnStyles[nbDevises + 2] = { cellWidth: totalColWidth, halign: 'right', fontStyle: 'bold' };
 
-      // Créer l'en-tête avec style professionnel
+      // Créer l'en-tête avec style professionnel (sans Source, Total Converti renommé en Total XOF)
       autoTable(doc, {
         startY: currentY,
         head: [
           [
-            { content: '', styles: { fillColor: [255, 255, 255], lineWidth: 0 } },  // Cellule vide
-            { content: "Source", colSpan: nbDevises, styles: { halign: 'center' as const, fillColor: [66, 139, 202], textColor: [255, 255, 255], fontSize: 10, cellPadding: 2 } },
-            { content: "Total Converti", rowSpan: 2, styles: { valign: 'middle' as const, halign: 'center' as const, fillColor: [66, 139, 202], textColor: [255, 255, 255], fontSize: 10, cellPadding: 2 } }
-          ],
-          [
-            { content: '', styles: { fillColor: [255, 255, 255], lineWidth: 0 } },  // Cellule vide
-            ...allDevises
+            { content: '', styles: { fillColor: [255, 255, 255], lineWidth: 0 } },  // Cellule vide pour régimes
+            { content: t.rowCount, styles: { halign: 'center' as const, fillColor: [66, 139, 202], textColor: [255, 255, 255], fontSize: 10, cellPadding: 2 } }, // Row count
+            ...allDevises,
+            { content: t.totalXOF, styles: { halign: 'center' as const, fillColor: [66, 139, 202], textColor: [255, 255, 255], fontSize: 10, cellPadding: 2 } }
           ]
         ],
         body: regimeDeviseDataCross,
@@ -681,10 +661,10 @@ export const NoteDetailView = ({
         margin: { left: marginLeft, right: marginRight },
         tableWidth: availableWidth,
         didParseCell: (data: any) => {
-          // Style de la deuxième ligne d'en-tête (les devises)
-          if (data.section === 'head' && data.row.index === 1) {
-            data.cell.styles.fillColor = [248, 250, 252]; // Fond gris clair
-            data.cell.styles.textColor = [30, 41, 59]; // Texte gris foncé
+          // Style de l'en-tête (les devises)
+          if (data.section === 'head' && data.column.index > 1 && data.column.index <= nbDevises + 1) {
+            data.cell.styles.fillColor = [66, 139, 202]; // Fond bleu
+            data.cell.styles.textColor = [255, 255, 255]; // Texte blanc
             data.cell.styles.fontStyle = 'bold';
             data.cell.styles.fontSize = 10;
             data.cell.styles.cellPadding = 2;
@@ -692,21 +672,24 @@ export const NoteDetailView = ({
           // La première colonne du body contient les régimes
           if (data.section === 'body' && data.column.index === 0) {
             data.cell.styles.fontStyle = 'bold';
-            data.cell.styles.fillColor = [248, 250, 252]; // Fond gris clair
-            data.cell.styles.textColor = [30, 41, 59];
           }
-          // Colonne Total Converti (même style que les autres colonnes)
-          if (data.section === 'body' && data.column.index === nbDevises + 1) {
+          // La deuxième colonne du body contient Row count
+          if (data.section === 'body' && data.column.index === 1) {
+            data.cell.styles.fontStyle = 'bold';
+          }
+          // Colonne Total XOF
+          if (data.section === 'body' && data.column.index === nbDevises + 2) {
             data.cell.styles.fontStyle = 'bold';
           }
         },
         foot: [[
-          { content: "TOTAL", styles: { fontStyle: "bold" as const, halign: "right" as const, fontSize: 10, fillColor: [240, 253, 244], textColor: [22, 163, 74], cellPadding: 2 } },
+          { content: t.total, styles: { fontStyle: "bold" as const, halign: "right" as const, fontSize: 10, fillColor: [240, 253, 244], textColor: [22, 163, 74], cellPadding: 2 } },
+          { content: grandTotalCount.toString(), styles: { fontStyle: "bold" as const, halign: "center" as const, fontSize: 10, fillColor: [240, 253, 244], textColor: [22, 163, 74], cellPadding: 2 } },
           ...allDevises.map((devise) => ({
-            content: deviseStats[devise].toFixed(2),
+            content: formatNumber(deviseStats[devise]),
             styles: { fontStyle: "bold" as const, halign: "right" as const, fontSize: 10, fillColor: [240, 253, 244], textColor: [22, 163, 74], cellPadding: 2 }
           })),
-          { content: grandTotalConverti.toFixed(2), styles: { fontStyle: "bold" as const, halign: "right" as const, fillColor: [240, 253, 244], textColor: [22, 163, 74], fontSize: 10, cellPadding: 2 } },
+          { content: formatNumber(grandTotalConverti), styles: { fontStyle: "bold" as const, halign: "right" as const, fillColor: [240, 253, 244], textColor: [22, 163, 74], fontSize: 10, cellPadding: 2 } },
         ]],
         footStyles: {
           fillColor: [240, 253, 244],
@@ -717,23 +700,24 @@ export const NoteDetailView = ({
 
       currentY = (doc as any).lastAutoTable.finalY + 8;
 
-      // === TABLEAU 3: TAUX DE CHANGE APPLIQUÉS - Style Professionnel ===
-      // Préparer les données des taux de change
+      // === TABLEAU TAUX DE CHANGE - Style italique taille 9 ===
+      // Préparer les données des taux de change (avec devise et taux à 3 décimales)
       const tauxChangeData = allDevises.map((devise) => [
         devise,
-        (exchangeRates[devise] || 0).toFixed(6)
+        (exchangeRates[devise] || 0).toFixed(3)
       ]);
 
-      // Calculer la largeur du tableau (35% de la largeur disponible, aligné à gauche)
-      const tauxTableWidth = availableWidth * 0.35;
+      // Largeur du tableau: 1/4 de la largeur disponible
+      const tauxTableWidth = availableWidth * 0.25;
 
       autoTable(doc, {
         startY: currentY,
-        head: [["Devise", "Taux Appliqués"]],
+        head: [[{ content: "", styles: { fillColor: [255, 255, 255], lineWidth: 0 } }, t.xof]],
         body: tauxChangeData,
         theme: "striped",
         styles: {
-          fontSize: 10,
+          fontSize: 9,
+          fontStyle: 'italic',
           cellPadding: 2,
           lineColor: [226, 232, 240],
           lineWidth: 0.5,
@@ -742,9 +726,9 @@ export const NoteDetailView = ({
         headStyles: {
           fillColor: [66, 139, 202],
           textColor: [255, 255, 255],
-          fontStyle: "bold",
+          fontStyle: 'italic',
           halign: "center",
-          fontSize: 10,
+          fontSize: 9,
           cellPadding: 2,
           minCellHeight: 6,
         },
@@ -752,8 +736,8 @@ export const NoteDetailView = ({
           fillColor: [248, 250, 252],
         },
         columnStyles: {
-          0: { cellWidth: tauxTableWidth * 0.4, halign: 'center', fontStyle: 'bold', fillColor: [248, 250, 252], textColor: [30, 41, 59] },
-          1: { cellWidth: tauxTableWidth * 0.6, halign: 'right' }
+          0: { cellWidth: tauxTableWidth * 0.4, halign: 'center', fontStyle: 'italic', fillColor: [248, 250, 252], textColor: [30, 41, 59] },
+          1: { cellWidth: tauxTableWidth * 0.6, halign: 'right', fontStyle: 'italic' }
         },
         margin: { left: marginLeft, right: marginRight },
         tableWidth: tauxTableWidth,
@@ -763,7 +747,7 @@ export const NoteDetailView = ({
 
       // Forcer le tableau principal à commencer sur une nouvelle page
       doc.addPage();
-      currentY = 40; // Réinitialiser à la position de départ
+      currentY = 20; // Réinitialiser à la position de départ
 
       const tableData = notes.map((note) => [
         (note.Regroupement_Client || "").substring(0, 15),
@@ -779,6 +763,16 @@ export const NoteDetailView = ({
         Number(note.Poids_Net || 0).toFixed(1),
       ]);
 
+      // === BARRE DE TITRE "DETAILS" ===
+      doc.setFillColor(66, 139, 202); // Bleu
+      doc.rect(marginLeft, currentY, availableWidth, 8, "F");
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "bold");
+      doc.text(t.details, marginLeft + 2, currentY + 5.5);
+      doc.setTextColor(0, 0, 0);
+      currentY += 10;
+
       // === TABLEAU DES DONNÉES DÉTAILLÉES ===
       autoTable(doc, {
         startY: currentY,
@@ -786,17 +780,17 @@ export const NoteDetailView = ({
         tableWidth: availableWidth,
         head: [
           [
-            "Groupement",
-            "Régime Décl.",
-            "Pays D'origine",
-            "HS Code",
+            t.grouping,
+            t.regimeDecl,
+            t.originCountry,
+            t.hsCode,
             "",
-            "Nbre Paq.",
-            "Dev.",
-            "Valeur",
-            "Volume",
-            "Poids Brut",
-            "Poids Net",
+            t.nbPackages,
+            t.currency,
+            t.value,
+            t.volumeCol,
+            t.grossWeightCol,
+            t.netWeightCol,
           ],
         ],
         body: tableData,
@@ -843,18 +837,18 @@ export const NoteDetailView = ({
       doc.setFontSize(9);
       doc.setTextColor(100, 100, 100);
       doc.text(
-        `©Copyright Softronic Innoving`,
+        t.copyright,
         14,
         pageHeight - 10,
       );
 
       // Numéro de page (côté droit)
-      doc.text(`Page ${totalPages}/${totalPages}`, 270, pageHeight - 10);
+      doc.text(`${t.page} ${totalPages}/${totalPages}`, 270, pageHeight - 10);
 
       doc.save(
-        `note-details-dossier-${dossierName}-${new Date().toISOString().split("T")[0]}.pdf`,
+        `Note-Details-Dossier-${dossierName}-${language}-${new Date().toISOString().split("T")[0]}.pdf`,
       );
-      toast.success("Export PDF réussi");
+      toast.success(`Export PDF réussi (${language === 'fr' ? 'Français' : 'English'})`);
     } catch (error) {
       toast.error("Erreur lors de l'export PDF");
       console.error(error);
@@ -1041,10 +1035,20 @@ export const NoteDetailView = ({
                       <FileSpreadsheet className="w-4 h-4 mr-2" />
                       Excel (.xlsx)
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={exportToPDF}>
-                      <FileText className="w-4 h-4 mr-2" />
-                      PDF
-                    </DropdownMenuItem>
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger>
+                        <FileText className="w-4 h-4 mr-2" />
+                        PDF
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent>
+                        <DropdownMenuItem onClick={() => exportToPDF('fr')}>
+                          🇫🇷 Français
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => exportToPDF('en')}>
+                          🇬🇧 English
+                        </DropdownMenuItem>
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
                     <DropdownMenuItem onClick={exportToCSV}>
                       <FileDown className="w-4 h-4 mr-2" />
                       CSV

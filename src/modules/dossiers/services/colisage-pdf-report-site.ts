@@ -35,7 +35,7 @@ interface DossierInfo {
   volumePesee?: number;
 }
 
-export class ColisagePDFReportV2 {
+export class ColisagePDFReportSite {
   private doc: jsPDF;
   private pageHeight: number;
   private pageWidth: number;
@@ -47,7 +47,7 @@ export class ColisagePDFReportV2 {
   // Traductions complètes
   private translations = {
     fr: {
-      title: "RAPPORT DE COLISAGE PAR FACTURE",
+      title: "RAPPORT DE COLISAGE PAR SITE",
       dossier: "DOSSIER:",
       exportDate: "Date d'export:",
       time: "Heure:",
@@ -62,7 +62,7 @@ export class ColisagePDFReportV2 {
       nbreHsCodeDiff: "NBRE HS CODE DIFF",
       nbreLigne: "NBRE LIGNE",
       nbreSite: "NBRE SITE",
-      detailFacture: "DETAIL FACTURE",
+      detailFacture: "DETAIL SITE",
       fournisseur: "FOURNISSEUR:",
       factureNo: "Facture N°:",
       commandeNo: "Commande N°:",
@@ -84,7 +84,7 @@ export class ColisagePDFReportV2 {
       sur: "sur",
     },
     en: {
-      title: "PACKING REPORT BY INVOICE",
+      title: "PACKING REPORT BY SITE",
       dossier: "FILE:",
       exportDate: "Export date:",
       time: "Time:",
@@ -99,7 +99,7 @@ export class ColisagePDFReportV2 {
       nbreHsCodeDiff: "NB HS CODE DIFF",
       nbreLigne: "NB LINE",
       nbreSite: "NB SITE",
-      detailFacture: "INVOICE DETAIL",
+      detailFacture: "SITE DETAIL",
       fournisseur: "SUPPLIER:",
       factureNo: "Invoice No:",
       commandeNo: "Order No:",
@@ -451,181 +451,113 @@ export class ColisagePDFReportV2 {
     this.doc.text(t.detailFacture, this.margin + 5, this.currentY + 6.5);
     this.currentY += 12;
 
-    // Regrouper par FOURNISSEUR → NUMÉRO DE COMMANDE → NUMÉRO DE FACTURE (3 niveaux)
-    const groupedData = colisages.reduce((acc, colisage) => {
-      const fournisseur = colisage.Nom_Fournisseur || 'Fournisseur non spécifié';
-      const numeroCommande = colisage.No_Commande || 'Sans numéro de commande';
-      const numeroFacture = colisage.No_Facture || 'Sans numéro de facture';
+    // Regrouper par SITE (Regroupement_Client)
+    const groupedBySite = colisages.reduce((acc, colisage) => {
+      const site = colisage.Regroupement_Client || 'Site non spécifié';
       
-      if (!acc[fournisseur]) {
-        acc[fournisseur] = {};
-      }
-      if (!acc[fournisseur][numeroCommande]) {
-        acc[fournisseur][numeroCommande] = {};
-      }
-      if (!acc[fournisseur][numeroCommande][numeroFacture]) {
-        acc[fournisseur][numeroCommande][numeroFacture] = [];
+      if (!acc[site]) {
+        acc[site] = [];
       }
       
-      acc[fournisseur][numeroCommande][numeroFacture].push(colisage);
+      acc[site].push(colisage);
       return acc;
-    }, {} as Record<string, Record<string, Record<string, ColisageData[]>>>);
+    }, {} as Record<string, ColisageData[]>);
 
-    Object.entries(groupedData).forEach(([fournisseur, commandes]) => {
+    Object.entries(groupedBySite).forEach(([site, colisagesGroup]) => {
       // Vérifier si on a assez de place pour le groupe (1cm = 10mm de la fin)
       if (this.currentY > this.pageHeight - 10) {
         this.doc.addPage();
         this.currentY = this.margin;
       }
 
-      // NIVEAU 1: Titre du FOURNISSEUR avec style professionnel
+      // Titre du SITE avec style professionnel
       this.doc.setFillColor(70, 70, 70);
       this.doc.rect(this.margin, this.currentY, this.usableWidth, 10, 'F');
       
       this.doc.setFontSize(11);
       this.doc.setFont("helvetica", "bold");
       this.doc.setTextColor(255, 255, 255);
-      this.doc.text(`${t.fournisseur} ${fournisseur.toUpperCase()}`, this.margin + 5, this.currentY + 6.5);
+      this.doc.text(site.toUpperCase(), this.margin + 5, this.currentY + 6.5);
       this.currentY += 12;
 
-      Object.entries(commandes).forEach(([numeroCommande, factures]) => {
-        Object.entries(factures).forEach(([numeroFacture, colisagesGroup]) => {
-          // Vérifier si on a assez de place (1cm = 10mm de la fin)
-          if (this.currentY > this.pageHeight - 10) {
-            this.doc.addPage();
-            this.currentY = this.margin;
-          }
-
-          // NIVEAU 2 & 3: Facture, Commande et Nbre Ligne sur la même ligne
-          this.doc.setFillColor(245, 245, 245);
-          this.doc.rect(this.margin, this.currentY, this.usableWidth, 8, 'F');
-          
-          // Bordure gauche colorée pour l'accent
-          this.doc.setFillColor(46, 125, 50);
-          this.doc.rect(this.margin, this.currentY, 3, 8, 'F');
-          
-          // Tout sur une seule ligne
-          this.doc.setFontSize(9);
-          this.doc.setFont("helvetica", "bold");
-          this.doc.setTextColor(50, 50, 50);
-          
-          let currentX = this.margin + 8;
-          
-          // Facture N°:
-          this.doc.text(`${t.factureNo} ${numeroFacture}`, currentX, this.currentY + 5.5);
-          currentX += this.doc.getTextWidth(`${t.factureNo} ${numeroFacture}`) + 15;
-          
-          // Commande N°:
-          this.doc.text(`${t.commandeNo} ${numeroCommande}`, currentX, this.currentY + 5.5);
-          currentX += this.doc.getTextWidth(`${t.commandeNo} ${numeroCommande}`) + 15;
-          
-          // Nbre Ligne:
-          const nbreLignes = colisagesGroup.length;
-          this.doc.text(`${t.nbreLigneLabel} ${nbreLignes}`, currentX, this.currentY + 5.5);
-          
-          this.currentY += 10;
-
-          // Préparer les données du tableau
-          const tableData = colisagesGroup.map(colisage => [
-            colisage.Item_No || '-',
-            (colisage.Description_Colis || '').substring(0, 35),
-            colisage.HS_Code || '-',
-            (colisage.Libelle_Regime_Declaration || '').substring(0, 20),
-            this.formatNumber(colisage.Qte_Colis),
-            `${this.formatNumber(colisage.Prix_Unitaire_Colis)} ${colisage.Code_Devise || ''}`,
-            this.formatNumber(colisage.Volume),
-            colisage.Regroupement_Client || '-',
-            colisage.Pays_Origine || '-',
-          ]);
-
-          // Calculer les totaux du groupe
-          const totalQte = colisagesGroup.reduce((sum, c) => sum + Number(c.Qte_Colis || 0), 0);
-          const totalVolume = colisagesGroup.reduce((sum, c) => sum + Number(c.Volume || 0), 0);
-          
-          // Calculer la valeur totale par devise
-          const valeurParDevise = colisagesGroup.reduce((acc, c) => {
-            const devise = c.Code_Devise || 'N/A';
-            const valeur = Number(c.Qte_Colis || 0) * Number(c.Prix_Unitaire_Colis || 0);
-            acc[devise] = (acc[devise] || 0) + valeur;
-            return acc;
-          }, {} as Record<string, number>);
-          
-          const devisesPrincipales = Object.entries(valeurParDevise).sort(([,a], [,b]) => b - a);
-          const totalValeur = devisesPrincipales.length > 0 
-            ? `${this.formatNumber(devisesPrincipales[0][1])} ${devisesPrincipales[0][0]}`
-            : '-';
-
-          // Ajouter ligne de total
-          tableData.push([
-            t.total,
-            '',
-            '',
-            '',
-            this.formatNumber(totalQte),
-            totalValeur,
-            this.formatNumber(totalVolume),
-            '',
-            ''
-          ]);
-
-          autoTable(this.doc, {
-            startY: this.currentY,
-            head: [[
-              t.itemNo,
-              t.description,
-              t.hsCode,
-              t.regime,
-              t.quantite,
-              t.prixUnit,
-              t.volume,
-              t.site,
-              t.paysOrigine
-            ]],
-            body: tableData,
-            theme: 'grid',
-            headStyles: { 
-              fillColor: [52, 152, 219], 
-              textColor: 255,
-              fontSize: 9,
-              fontStyle: 'bold',
-              halign: 'center',
-              valign: 'middle'
-            },
-            bodyStyles: {
-              fontSize: 8,
-              cellPadding: 2,
-              halign: 'center',
-              valign: 'middle'
-            },
-            alternateRowStyles: {
-              fillColor: [248, 249, 250]
-            },
-            columnStyles: {
-              0: { cellWidth: 22, halign: 'center' },
-              1: { cellWidth: 60, halign: 'left' },
-              2: { cellWidth: 25, halign: 'center' },
-              3: { cellWidth: 28, halign: 'left' },
-              4: { cellWidth: 20, halign: 'right' },
-              5: { cellWidth: 30, halign: 'right' },
-              6: { cellWidth: 20, halign: 'right' },
-              7: { cellWidth: 28, halign: 'center' },
-              8: { cellWidth: 25, halign: 'center' },
-            },
-            margin: { left: this.margin, right: this.margin },
-            tableWidth: this.usableWidth,
-            pageBreak: 'auto',
-            didParseCell: (data: any) => {
-              if (data.row.index === tableData.length - 1) {
-                data.cell.styles.fontStyle = 'bold';
-                data.cell.styles.fillColor = [255, 235, 59];
-                data.cell.styles.textColor = [0, 0, 0];
-              }
-            }
-          });
-
-          this.currentY = (this.doc as any).lastAutoTable.finalY + 10;
-        });
+      // Trier les colisages par fournisseur pour les regrouper visuellement
+      const colisagesSorted = colisagesGroup.sort((a, b) => {
+        const fournisseurA = a.Nom_Fournisseur || '';
+        const fournisseurB = b.Nom_Fournisseur || '';
+        return fournisseurA.localeCompare(fournisseurB);
       });
+
+      // Préparer les données du tableau avec toutes les lignes du site
+      const tableData = colisagesSorted.map(colisage => [
+        colisage.Nom_Fournisseur || '-',
+        colisage.No_Commande || '-',
+        colisage.No_Facture || '-',
+        colisage.Item_No || '-',
+        (colisage.Description_Colis || '').substring(0, 35),
+        colisage.HS_Code || '-',
+        (colisage.Libelle_Regime_Declaration || '').substring(0, 20),
+        this.formatNumber(colisage.Qte_Colis),
+        `${this.formatNumber(colisage.Prix_Unitaire_Colis)} ${colisage.Code_Devise || ''}`,
+        this.formatNumber(colisage.Volume),
+        colisage.Regroupement_Client || '-',
+        colisage.Pays_Origine || '-',
+      ]);
+
+      autoTable(this.doc, {
+        startY: this.currentY,
+        head: [[
+          this.language === 'fr' ? 'Fournisseur' : 'Supplier',
+          t.commandeNo.replace(':', ''),
+          t.factureNo.replace(':', ''),
+          t.itemNo,
+          t.description,
+          t.hsCode,
+          t.regime,
+          t.quantite,
+          t.prixUnit,
+          t.volume,
+          t.site,
+          t.paysOrigine
+        ]],
+        body: tableData,
+        theme: 'grid',
+        headStyles: { 
+          fillColor: [52, 152, 219], 
+          textColor: 255,
+          fontSize: 9,
+          fontStyle: 'bold',
+          halign: 'center',
+          valign: 'middle'
+        },
+        bodyStyles: {
+          fontSize: 8,
+          cellPadding: 1.5,
+          halign: 'center',
+          valign: 'middle'
+        },
+        alternateRowStyles: {
+          fillColor: [248, 249, 250]
+        },
+        columnStyles: {
+          0: { cellWidth: 25, halign: 'left' },
+          1: { cellWidth: 20, halign: 'center' },
+          2: { cellWidth: 20, halign: 'center' },
+          3: { cellWidth: 18, halign: 'center' },
+          4: { cellWidth: 40, halign: 'left' },
+          5: { cellWidth: 20, halign: 'center' },
+          6: { cellWidth: 30, halign: 'left' },
+          7: { cellWidth: 18, halign: 'right' },
+          8: { cellWidth: 25, halign: 'right' },
+          9: { cellWidth: 18, halign: 'right' },
+          10: { cellWidth: 22, halign: 'center' },
+          11: { cellWidth: 20, halign: 'center' },
+        },
+        margin: { left: this.margin, right: this.margin },
+        tableWidth: this.usableWidth,
+        pageBreak: 'auto'
+      });
+
+      this.currentY = (this.doc as any).lastAutoTable.finalY + 10;
     });
     
     // === SYNTHESE PAR DEVISE (À LA FIN DE TOUS LES TABLEAUX) ===
@@ -658,11 +590,9 @@ export class ColisagePDFReportV2 {
 
     // Afficher le bloc SYNTHESE PAR DEVISE
     if (regimeDeviseMap.size > 0 && allDevises.size > 0) {
-      // Vérifier si on a assez de place (1cm = 10mm de la fin)
-      if (this.currentY > this.pageHeight - 10) {
-        this.doc.addPage();
-        this.currentY = this.margin;
-      }
+      // FORCER UNE NOUVELLE PAGE pour éviter que le bloc soit coupé
+      this.doc.addPage();
+      this.currentY = this.margin;
       
       // Titre du bloc
       this.doc.setFillColor(52, 152, 219);
@@ -694,7 +624,9 @@ export class ColisagePDFReportV2 {
         deviseArray.forEach(devise => {
           const data = deviseMap.get(devise);
           if (data && data.valeur > 0) {
-            row.push(this.formatNumber(data.valeur));
+            const formatted = this.formatNumber(data.valeur);
+            console.log(`💰 Devise ${devise}: ${data.valeur} → ${formatted}`);
+            row.push(formatted);
           } else {
             row.push('-');
           }
@@ -761,6 +693,15 @@ export class ColisagePDFReportV2 {
         },
         margin: { left: this.margin, right: this.margin },
         tableWidth: this.usableWidth,
+        didDrawCell: (data: any) => {
+          // Forcer le formatage des valeurs numériques dans les colonnes de devises
+          if (data.section === 'body' && data.column.index >= 2) {
+            const cellValue = tableData[data.row.index][data.column.index];
+            if (cellValue && cellValue !== '-') {
+              // Le texte est déjà formaté par formatNumber, pas besoin de reformater
+            }
+          }
+        },
         didParseCell: (data: any) => {
           // La première colonne du body contient les régimes
           if (data.section === 'body' && data.column.index === 0) {
@@ -812,7 +753,7 @@ export class ColisagePDFReportV2 {
       this.addColisagesByGroup(colisages);
       this.addFooter();
       
-      const fileName = `Rapport_Colisages_Facture_${dossierInfo.noDossier || dossierInfo.noOT || dossierInfo.id}_${new Date().toISOString().split('T')[0]}.pdf`;
+      const fileName = `Rapport_Colisages_Site_${dossierInfo.noDossier || dossierInfo.noOT || dossierInfo.id}_${new Date().toISOString().split('T')[0]}.pdf`;
       this.doc.save(fileName);
     } catch (error) {
       console.error('Erreur lors de la génération du PDF:', error);
