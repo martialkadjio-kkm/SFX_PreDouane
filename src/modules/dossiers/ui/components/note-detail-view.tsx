@@ -683,13 +683,13 @@ export const NoteDetailView = ({
           }
         },
         foot: [[
-          { content: t.total, styles: { fontStyle: "bold" as const, halign: "right" as const, fontSize: 10, fillColor: [240, 253, 244], textColor: [22, 163, 74], cellPadding: 2 } },
-          { content: grandTotalCount.toString(), styles: { fontStyle: "bold" as const, halign: "center" as const, fontSize: 10, fillColor: [240, 253, 244], textColor: [22, 163, 74], cellPadding: 2 } },
+          { content: t.total, styles: { fontStyle: "bold" as const, halign: "right" as const, fontSize: 10, fillColor: [240, 253, 244] as [number, number, number], textColor: [22, 163, 74] as [number, number, number], cellPadding: 2 } },
+          { content: grandTotalCount.toString(), styles: { fontStyle: "bold" as const, halign: "center" as const, fontSize: 10, fillColor: [240, 253, 244] as [number, number, number], textColor: [22, 163, 74] as [number, number, number], cellPadding: 2 } },
           ...allDevises.map((devise) => ({
             content: formatNumber(deviseStats[devise]),
-            styles: { fontStyle: "bold" as const, halign: "right" as const, fontSize: 10, fillColor: [240, 253, 244], textColor: [22, 163, 74], cellPadding: 2 }
+            styles: { fontStyle: "bold" as const, halign: "right" as const, fontSize: 10, fillColor: [240, 253, 244] as [number, number, number], textColor: [22, 163, 74] as [number, number, number], cellPadding: 2 }
           })),
-          { content: formatNumber(grandTotalConverti), styles: { fontStyle: "bold" as const, halign: "right" as const, fillColor: [240, 253, 244], textColor: [22, 163, 74], fontSize: 10, cellPadding: 2 } },
+          { content: formatNumber(grandTotalConverti), styles: { fontStyle: "bold" as const, halign: "right" as const, fillColor: [240, 253, 244] as [number, number, number], textColor: [22, 163, 74] as [number, number, number], fontSize: 10, cellPadding: 2 } },
         ]],
         footStyles: {
           fillColor: [240, 253, 244],

@@ -637,11 +637,11 @@ export class ColisagePDFReportSite {
 
       // Créer l'en-tête du tableau
       const headers = [
-        { content: '', styles: { fillColor: [255, 255, 255], lineWidth: 0 } },
-        { content: t.rowCount, styles: { halign: 'center' as const, fillColor: [66, 139, 202], textColor: [255, 255, 255], fontSize: 10, cellPadding: 2 } },
+        { content: '', styles: { fillColor: [255, 255, 255] as [number, number, number], lineWidth: 0 } },
+        { content: t.rowCount, styles: { halign: 'center' as const, fillColor: [66, 139, 202] as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 10, cellPadding: 2 } },
         ...deviseArray.map(devise => ({ 
           content: devise, 
-          styles: { halign: 'center' as const, fillColor: [66, 139, 202], textColor: [255, 255, 255], fontSize: 10, cellPadding: 2 } 
+          styles: { halign: 'center' as const, fillColor: [66, 139, 202] as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 10, cellPadding: 2 } 
         }))
       ];
 
