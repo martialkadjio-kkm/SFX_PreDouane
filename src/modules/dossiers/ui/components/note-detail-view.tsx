@@ -846,7 +846,7 @@ export const NoteDetailView = ({
       doc.text(`${t.page} ${totalPages}/${totalPages}`, 270, pageHeight - 10);
 
       doc.save(
-        `note-details-dossier-${dossierName}-${language}-${new Date().toISOString().split("T")[0]}.pdf`,
+        `Note-Details-Dossier-${dossierName}-${language}-${new Date().toISOString().split("T")[0]}.pdf`,
       );
       toast.success(`Export PDF réussi (${language === 'fr' ? 'Français' : 'English'})`);
     } catch (error) {

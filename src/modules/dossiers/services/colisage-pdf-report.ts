@@ -525,7 +525,7 @@ export class ColisagePDFReport {
       this.addColisagesByGroup(colisages);
       this.addFooter();
       
-      const fileName = `Rapport_Colisages_${dossierInfo.noDossier || dossierInfo.noOT || dossierInfo.id}_${new Date().toISOString().split('T')[0]}.pdf`;
+      const fileName = `Rapport_Colisages_Facture_${dossierInfo.noDossier || dossierInfo.noOT || dossierInfo.id}_${new Date().toISOString().split('T')[0]}.pdf`;
       this.doc.save(fileName);
     } catch (error) {
       console.error('Erreur lors de la génération du PDF:', error);
