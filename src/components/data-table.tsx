@@ -30,6 +30,7 @@ interface DataTableProps<TData, TValue> {
     data: TData[],
     onRowClick?: (row: TData) => void
     searchKey?: string
+    searchKeys?: string[]
     searchPlaceholder?: string
     enableRowSelection?: boolean
     onSelectionChange?: (selectedRows: TData[]) => void
@@ -40,6 +41,7 @@ export function DataTable<TData, TValue>({
     data,
     onRowClick,
     searchKey,
+    searchKeys,
     searchPlaceholder = "Rechercher...",
     enableRowSelection = false,
     onSelectionChange,
@@ -47,6 +49,10 @@ export function DataTable<TData, TValue>({
     const [sorting, setSorting] = useState<SortingState>([])
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
+    const [globalFilter, setGlobalFilter] = useState("")
+
+    // Utiliser searchKeys si fourni, sinon utiliser searchKey unique
+    const keysToSearch = searchKeys || (searchKey ? [searchKey] : [])
 
     const table = useReactTable({
         data,
@@ -59,11 +65,29 @@ export function DataTable<TData, TValue>({
         onColumnFiltersChange: setColumnFilters,
         onRowSelectionChange: setRowSelection,
         enableRowSelection: enableRowSelection,
+        globalFilterFn: (row, columnId, filterValue) => {
+            // Recherche sur plusieurs colonnes
+            if (keysToSearch.length > 0) {
+                const searchValue = String(filterValue).toLowerCase()
+                return keysToSearch.some(key => {
+                    try {
+                        const cellValue = row.getValue(key)
+                        return String(cellValue || "").toLowerCase().includes(searchValue)
+                    } catch (error) {
+                        // Si la colonne n'existe pas, ignorer silencieusement
+                        return false
+                    }
+                })
+            }
+            return true
+        },
         state: {
             sorting,
             columnFilters,
             rowSelection,
+            globalFilter,
         },
+        onGlobalFilterChange: setGlobalFilter,
     })
 
     // Notify parent of selection changes
@@ -76,14 +100,12 @@ export function DataTable<TData, TValue>({
 
     return (
         <div className="space-y-4">
-            {searchKey && (
+            {(searchKey || searchKeys) && (
                 <div className="flex items-center">
                     <Input
                         placeholder={searchPlaceholder}
-                        value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ""}
-                        onChange={(event) =>
-                            table.getColumn(searchKey)?.setFilterValue(event.target.value)
-                        }
+                        value={globalFilter ?? ""}
+                        onChange={(event) => setGlobalFilter(event.target.value)}
                         className="max-w-sm"
                     />
                 </div>

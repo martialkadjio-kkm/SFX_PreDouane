@@ -349,8 +349,17 @@ export const ColisageListForDossier = ({ dossierId }: ColisageListForDossierProp
                     columns={columns} 
                     data={colisages}
                     onRowClick={handleRowClick}
-                    searchKey="HS_Code"
-                    searchPlaceholder="Rechercher par HS Code..."
+                    searchKeys={[
+                        "Nom_Fournisseur",
+                        "No_Commande",
+                        "No_Facture",
+                        "HS_Code",
+                        "Libelle_Regime_Declaration",
+                        "Code_Devise",
+                        "Pays_Origine",
+                        "Regroupement_Client"
+                    ]}
+                    searchPlaceholder="Rechercher par Fournisseur, N° Commande, N° Facture, HS Code, Régime, Devise, Pays, Regroupement..."
                     enableRowSelection={true}
                     onSelectionChange={setSelectedRows}
                 />
