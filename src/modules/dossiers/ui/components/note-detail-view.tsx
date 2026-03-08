@@ -1089,91 +1089,112 @@ export const NoteDetailView = ({
         </div>
 
         {notes.length > 0 && (
-          <Card>
-            <CardContent className="pt-6">
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Lignes</p>
-                  <p className="text-2xl font-bold">{notes.length}</p>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            {/* Bloc 1: Informations sur la Pesée - Gauche */}
+            <Card>
+              <CardContent className="p-3">
+                <div className="mb-3 text-center">
+                  <h3 className="text-base font-semibold text-primary">
+                    Informations sur la Pesée
+                  </h3>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">TTC</p>
-                  <p className="text-2xl font-bold text-purple-600">
-                    {notes.filter((n) => n.Regime === "TTC").length}
-                  </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-xs text-muted-foreground">
+                      Total Paquetages
+                    </p>
+                    <p className="text-xl font-bold text-indigo-600">
+                      {notes
+                        .reduce(
+                          (sum, n) => sum + Number(n.Nbre_Paquetage || 0),
+                          0,
+                        )
+                        .toFixed(1)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Poids Total</p>
+                    <p className="text-xl font-bold">
+                      {notes
+                        .reduce(
+                          (sum, n) => sum + Number(n.Poids_Brut || 0),
+                          0,
+                        )
+                        .toFixed(2)}{" "}
+                      kg
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Volume Total</p>
+                    <p className="text-xl font-bold text-blue-600">
+                      {notes
+                        .reduce((sum, n) => sum + Number(n.Volume || 0), 0)
+                        .toFixed(1)}{" "}
+                      m³
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Valeur Totale</p>
+                    <p className="text-xl font-bold text-green-600">
+                      {notes
+                        .reduce((sum, n) => sum + Number(n.Valeur || 0), 0)
+                        .toFixed(2)}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">100% TR</p>
-                  <p className="text-2xl font-bold text-green-600">
-                    {notes.filter((n) => n.Regime === "100% TR").length}
-                  </p>
+              </CardContent>
+            </Card>
+
+            {/* Bloc 2: Synthèse de Colisage - Droite */}
+            <Card>
+              <CardContent className="p-3">
+                <div className="mb-3 text-center">
+                  <h3 className="text-base font-semibold text-primary">
+                    Synthèse de Colisage
+                  </h3>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">100% DC</p>
-                  <p className="text-2xl font-bold text-red-600">
-                    {notes.filter((n) => n.Regime === "100% DC").length}
-                  </p>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Total Lignes</p>
+                    <p className="text-xl font-bold">{notes.length}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">TTC</p>
+                    <p className="text-xl font-bold text-purple-600">
+                      {notes.filter((n) => n.Regime === "TTC").length}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">100% TR</p>
+                    <p className="text-xl font-bold text-green-600">
+                      {notes.filter((n) => n.Regime === "100% TR").length}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">100% DC</p>
+                    <p className="text-xl font-bold text-red-600">
+                      {notes.filter((n) => n.Regime === "100% DC").length}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">EXO</p>
+                    <p className="text-xl font-bold text-zinc-600">
+                      {notes.filter((n) => n.Regime === "EXO").length}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Ratios</p>
+                    <p className="text-xl font-bold text-orange-600">
+                      {notes.filter((n) => {
+                        const regime = n.Regime || "";
+                        return regime.includes("%") && !regime.includes("100%");
+                      }).length}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">EXO</p>
-                  <p className="text-2xl font-bold text-zinc-600">
-                    {notes.filter((n) => n.Regime === "EXO").length}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Ratios</p>
-                  <p className="text-2xl font-bold text-orange-600">
-                    {notes.filter((n) => {
-                      const regime = n.Regime || "";
-                      return regime.includes("%") && !regime.includes("100%");
-                    }).length}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">
-                    Total Paquetages
-                  </p>
-                  <p className="text-2xl font-bold text-indigo-600">
-                    {notes
-                          .reduce(
-                            (sum, n) => sum + Number(n.Nbre_Paquetage || 0),
-                            0,
-                          )
-                          .toFixed(1)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Poids Total</p>
-                  <p className="text-2xl font-bold">
-                    {notes
-                          .reduce(
-                            (sum, n) => sum + Number(n.Poids_Brut || 0),
-                            0,
-                          )
-                          .toFixed(2)}{" "}
-                    kg
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Volume Total</p>
-                  <p className="text-2xl font-bold text-blue-600">
-                    {notes
-                      .reduce((sum, n) => sum + Number(n.Volume || 0), 0)
-                      .toFixed(1)}{" "}
-                    m³
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Valeur Totale</p>
-                  <p className="text-2xl font-bold text-green-600">
-                    {notes
-                      .reduce((sum, n) => sum + Number(n.Valeur || 0), 0)
-                      .toFixed(2)}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {notes.length > 0 ? (
