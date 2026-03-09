@@ -91,6 +91,46 @@ export const DossierIdView = ({ dossierId, dossier }: Props) => {
         return colors[status] || "bg-gray-100 text-gray-800";
     };
 
+    const getCardColorByStatus = (status: string) => {
+        const statusLower = status.toLowerCase();
+        
+        // Operations in progress - Orange
+        if (statusLower.includes("en cours") || statusLower.includes("in progress") || statusLower.includes("ouvert")) {
+            return {
+                border: "border-orange-500",
+                header: "bg-orange-50 dark:bg-orange-950/30",
+                badge: "bg-orange-500 text-white dark:bg-orange-600"
+            };
+        }
+        
+        // Operations completed - Green
+        if (statusLower.includes("clôturé") || statusLower.includes("completed") || statusLower.includes("terminé")) {
+            return {
+                border: "border-green-500",
+                header: "bg-green-50 dark:bg-green-950/30",
+                badge: "bg-green-600 text-white dark:bg-green-700"
+            };
+        }
+        
+        // File Cancelled - Red
+        if (statusLower.includes("annulé") || statusLower.includes("cancelled") || statusLower.includes("canceled")) {
+            return {
+                border: "border-red-500",
+                header: "bg-red-50 dark:bg-red-950/30",
+                badge: "bg-red-600 text-white dark:bg-red-700"
+            };
+        }
+        
+        // Default - Gray
+        return {
+            border: "border-gray-300",
+            header: "bg-gray-50 dark:bg-gray-950/30",
+            badge: "bg-gray-600 text-white dark:bg-gray-700"
+        };
+    };
+
+    const cardColors = getCardColorByStatus(dossier.libelleStatutDossier);
+
     // Le dossier peut être annulé seulement s'il est en cours (statut = 0)
     const canCancel = dossier.idStatutDossier === 0;
 
@@ -137,7 +177,7 @@ export const DossierIdView = ({ dossierId, dossier }: Props) => {
                                     N° OT: {dossier.noOT || "N/A"}
                                 </p>
                             </div>
-                            <Badge className={`${getStatusColor(dossier.libelleStatutDossier)} text-sm px-3 py-1`}>
+                            <Badge className={`${cardColors.badge} text-sm px-3 py-1 font-semibold border-0`}>
                                 {dossier.libelleStatutDossier}
                             </Badge>
                         </div>
