@@ -545,7 +545,7 @@ export class ColisagePDFReportSite {
           3: { cellWidth: 18, halign: 'center' },
           4: { cellWidth: 40, halign: 'left' },
           5: { cellWidth: 20, halign: 'center' },
-          6: { cellWidth: 30, halign: 'left' },
+          6: { cellWidth: 31, halign: 'left' },
           7: { cellWidth: 18, halign: 'right' },
           8: { cellWidth: 25, halign: 'right' },
           9: { cellWidth: 18, halign: 'right' },
@@ -646,7 +646,7 @@ export class ColisagePDFReportSite {
       ];
 
       // Calculer les largeurs de colonnes - 4cm (40mm) pour les colonnes de devises
-      const regimeColWidth = this.usableWidth * 0.15;
+      const regimeColWidth = this.usableWidth * 0.25;
       const countColWidth = this.usableWidth * 0.08;
       const deviseColWidth = 40; // 4 centimètres = 40mm
 
