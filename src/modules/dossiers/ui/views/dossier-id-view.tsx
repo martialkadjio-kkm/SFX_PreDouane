@@ -275,7 +275,7 @@ export const DossierIdView = ({ dossierId, dossier }: Props) => {
                 {/* Poids et Volume */}
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-lg">Poids et Volume</CardTitle>
+                        <CardTitle className="text-lg">Informations sur la Pesée</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
