@@ -658,11 +658,9 @@ export class ColisagePDFReportV2 {
 
     // Afficher le bloc SYNTHESE PAR DEVISE
     if (regimeDeviseMap.size > 0 && allDevises.size > 0) {
-      // Vérifier si on a assez de place (1cm = 10mm de la fin)
-      if (this.currentY > this.pageHeight - 10) {
-        this.doc.addPage();
-        this.currentY = this.margin;
-      }
+      // FORCER UNE NOUVELLE PAGE pour éviter que le bloc soit coupé
+      this.doc.addPage();
+      this.currentY = this.margin;
       
       // Titre du bloc
       this.doc.setFillColor(52, 152, 219);
