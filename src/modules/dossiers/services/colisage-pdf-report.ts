@@ -208,7 +208,7 @@ export class ColisagePDFReport {
       body: summaryData1,
       theme: 'grid',
       headStyles: { fillColor: [41, 128, 185], textColor: 255 },
-      styles: { fontSize: 9 },
+      styles: { fontSize: 10 },
       margin: { left: this.margin, right: this.margin },
     });
 
@@ -220,7 +220,7 @@ export class ColisagePDFReport {
       body: summaryData2,
       theme: 'grid',
       headStyles: { fillColor: [41, 128, 185], textColor: 255 },
-      styles: { fontSize: 9 },
+      styles: { fontSize: 10 },
       margin: { left: this.margin, right: this.margin },
     });
 
@@ -333,8 +333,8 @@ export class ColisagePDFReport {
           head: [['Item', 'Description', 'HS Code', 'Régime', 'Qté', 'Poids (kg)', 'Volume (m³)']],
           body: tableData,
           theme: 'striped',
-          headStyles: { fillColor: [52, 152, 219], textColor: 255, fontSize: 8 },
-          bodyStyles: { fontSize: 7 },
+          headStyles: { fillColor: [52, 152, 219], textColor: 255, fontSize: 11 },
+          bodyStyles: { fontSize: 10 },
           margin: { left: this.margin, right: this.margin },
         });
 
@@ -420,10 +420,10 @@ export class ColisagePDFReport {
       const availableWidth = this.pageWidth - (this.margin * 2);
       const headers = [
         { content: '', styles: { fillColor: [255, 255, 255] as [number, number, number], lineWidth: 0 } },
-        { content: 'Row count', styles: { halign: 'center' as const, fillColor: [66, 139, 202] as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 10, cellPadding: 2 } },
+        { content: 'Row count', styles: { halign: 'center' as const, fillColor: [66, 139, 202] as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 11, cellPadding: 2 } },
         ...deviseArray.map(devise => ({ 
           content: devise, 
-          styles: { halign: 'center' as const, fillColor: [66, 139, 202] as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 10, cellPadding: 2 } 
+          styles: { halign: 'center' as const, fillColor: [66, 139, 202] as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 11, cellPadding: 2 } 
         }))
       ];
 
