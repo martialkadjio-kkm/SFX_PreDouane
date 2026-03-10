@@ -74,7 +74,6 @@ export class ColisagePDFReportSite {
       quantite: "Quantité",
       prixUnit: "Prix Unit.",
       volume: "Volume",
-      site: "Site",
       paysOrigine: "Pays d'Origine",
       total: "TOTAL",
       syntheseParDevise: "SYNTHESE PAR DEVISE",
@@ -111,7 +110,6 @@ export class ColisagePDFReportSite {
       quantite: "Quantity",
       prixUnit: "Unit Price",
       volume: "Volume",
-      site: "Site",
       paysOrigine: "Origin Country",
       total: "TOTAL",
       syntheseParDevise: "SUMMARY BY CURRENCY",
@@ -499,7 +497,6 @@ export class ColisagePDFReportSite {
         this.formatNumber(colisage.Qte_Colis),
         `${this.formatNumber(colisage.Prix_Unitaire_Colis)} ${colisage.Code_Devise || ''}`,
         this.formatNumber(colisage.Volume),
-        colisage.Regroupement_Client || '-',
         colisage.Pays_Origine || '-',
       ]);
 
@@ -516,7 +513,6 @@ export class ColisagePDFReportSite {
           t.quantite,
           t.prixUnit,
           t.volume,
-          t.site,
           t.paysOrigine
         ]],
         body: tableData,
@@ -533,24 +529,24 @@ export class ColisagePDFReportSite {
           fontSize: 8,
           cellPadding: 1.5,
           halign: 'center',
-          valign: 'middle'
+          valign: 'middle',
+          overflow: 'visible'
         },
         alternateRowStyles: {
           fillColor: [248, 249, 250]
         },
         columnStyles: {
-          0: { cellWidth: 25, halign: 'left' },
-          1: { cellWidth: 20, halign: 'center' },
-          2: { cellWidth: 20, halign: 'center' },
-          3: { cellWidth: 18, halign: 'center' },
-          4: { cellWidth: 40, halign: 'left' },
-          5: { cellWidth: 20, halign: 'center' },
-          6: { cellWidth: 31, halign: 'left' },
-          7: { cellWidth: 18, halign: 'right' },
-          8: { cellWidth: 25, halign: 'right' },
-          9: { cellWidth: 18, halign: 'right' },
-          10: { cellWidth: 22, halign: 'center' },
-          11: { cellWidth: 20, halign: 'center' },
+          0: { cellWidth: 30, halign: 'left', overflow: 'linebreak' },    // Fournisseur - 30mm
+          1: { cellWidth: 'auto', halign: 'center' },
+          2: { cellWidth: 'auto', halign: 'center' },
+          3: { cellWidth: 'auto', halign: 'center' },
+          4: { cellWidth: 'auto', halign: 'left' },
+          5: { cellWidth: 'auto', halign: 'center' },
+          6: { cellWidth: 'wrap', halign: 'left', overflow: 'visible' },    // Régime - s'adapte au contenu
+          7: { cellWidth: 'auto', halign: 'right' },
+          8: { cellWidth: 'auto', halign: 'right' },
+          9: { cellWidth: 'auto', halign: 'right' },
+          10: { cellWidth: 20, halign: 'center', overflow: 'linebreak' },    // Pays d'Origine - 20mm avec retour à la ligne
         },
         margin: { left: this.margin, right: this.margin },
         tableWidth: this.usableWidth,

@@ -65,11 +65,71 @@ export const NoteDetailView = ({
     loadNotes();
   }, [dossierId]);
 
+  // Fonction pour grouper les notes par régime avec tri spécial pour les ratios (pour les exports)
+  const groupNotesByRegime = (notes: any[]) => {
+    // Créer un map pour grouper par identifiant unique (Regroupement_Client + HS_Code + Pays_Origine)
+    const groups = new Map<string, any[]>();
+    
+    notes.forEach(note => {
+      const groupKey = `${note.Regroupement_Client || ''}_${note.HS_Code || ''}_${note.Pays_Origine || ''}`;
+      if (!groups.has(groupKey)) {
+        groups.set(groupKey, []);
+      }
+      groups.get(groupKey)!.push(note);
+    });
+
+    // Trier chaque groupe selon la logique des régimes et assembler le résultat final
+    const sortedGroups: any[] = [];
+    
+    // Trier les groupes par clé pour avoir un ordre cohérent
+    const sortedGroupKeys = Array.from(groups.keys()).sort();
+    
+    sortedGroupKeys.forEach((groupKey) => {
+      const groupNotes = groups.get(groupKey)!;
+      
+      // Trier les notes dans le groupe selon la priorité des régimes
+      const sortedGroupNotes = groupNotes.sort((a, b) => {
+        const regimeA = a.Regime || '';
+        const regimeB = b.Regime || '';
+        
+        // Fonction pour déterminer la priorité d'un régime
+        const getRegimePriority = (regime: string): number => {
+          if (regime.includes('DC') && regime.includes('%') && !regime.includes('100%')) {
+            return 1; // Ratio DC en premier (ex: "50% DC")
+          }
+          if (regime.includes('TR') && regime.includes('%') && !regime.includes('100%')) {
+            return 2; // Ratio TR en second (ex: "50% TR")
+          }
+          if (regime === '100% DC') return 3;
+          if (regime === '100% TR') return 4;
+          if (regime === 'TTC') return 5;
+          if (regime === 'EXO') return 6;
+          return 7; // Autres régimes
+        };
+        
+        const priorityA = getRegimePriority(regimeA);
+        const priorityB = getRegimePriority(regimeB);
+        
+        if (priorityA !== priorityB) {
+          return priorityA - priorityB;
+        }
+        
+        // Si même priorité, trier par nom de régime
+        return regimeA.localeCompare(regimeB);
+      });
+      
+      sortedGroups.push(...sortedGroupNotes);
+    });
+
+    return sortedGroups;
+  };
+
   const loadNotes = async () => {
     setIsLoading(true);
     try {
       const result = await getNotesDetail(dossierId);
       if (result.success && result.data) {
+        // Garder les données originales pour l'interface
         setNotes(result.data);
       }
 
@@ -126,7 +186,9 @@ export const NoteDetailView = ({
     try {
       const XLSX = require("xlsx");
 
-      const exportData = notes.map((note) => ({
+      // Appliquer le regroupement par régime pour l'export
+      const groupedNotes = groupNotesByRegime(notes);
+      const exportData = groupedNotes.map((note) => ({
         Groupement: note.Regroupement_Client || "",
         "Pays d'origine": note.Pays_Origine || "",
         "HS Code": note.HS_Code || "",
@@ -179,7 +241,9 @@ export const NoteDetailView = ({
         "Poids Net (kg)",
       ];
 
-      const rows = notes.map((note) => [
+      // Appliquer le regroupement par régime pour l'export
+      const groupedNotes = groupNotesByRegime(notes);
+      const rows = groupedNotes.map((note) => [
         `"${(note.Regroupement_Client || "").replace(/"/g, '""')}"`,
         `"${(note.Pays_Origine || "").replace(/"/g, '""')}"`,
         note.HS_Code || "",
@@ -745,7 +809,9 @@ export const NoteDetailView = ({
       doc.addPage();
       currentY = 20; // Réinitialiser à la position de départ
 
-      const tableData = notes.map((note) => [
+      // Appliquer le regroupement par régime pour l'export PDF
+      const groupedNotes = groupNotesByRegime(notes);
+      const tableData = groupedNotes.map((note) => [
         (note.Regroupement_Client || "").substring(0, 15),
         (note.Pays_Origine || "").substring(0, 15),
         note.HS_Code || "",
