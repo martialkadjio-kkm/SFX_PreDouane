@@ -128,10 +128,9 @@ export const NoteDetailView = ({
 
       const exportData = notes.map((note) => ({
         Groupement: note.Regroupement_Client || "",
-        "Régime Déclaration": note.Libelle_Regime_Declaration || "",
-        Régime: note.Regime || "",
         "Pays d'origine": note.Pays_Origine || "",
         "HS Code": note.HS_Code || "",
+        Régime: note.Regime || "",
         "Nbre Paquetage": note.Nbre_paquetage,
         Devise: note.Code_Devise || "",
         Valeur: Number(note.Valeur),
@@ -146,10 +145,9 @@ export const NoteDetailView = ({
 
       worksheet["!cols"] = [
         { wch: 15 }, // Groupement
-        { wch: 30 }, // Régime Déclaration
-        { wch: 10 }, // Régime
         { wch: 20 }, // Pays d'origine
         { wch: 15 }, // HS Code
+        { wch: 10 }, // Régime
         { wch: 15 }, // Nbre Paquetage
         { wch: 10 }, // Devise
         { wch: 15 }, // Valeur
@@ -170,10 +168,9 @@ export const NoteDetailView = ({
     try {
       const headers = [
         "Groupement",
-        "Régime Déclaration",
-        "Régime",
         "Pays d'origine",
         "HS Code",
+        "Régime",
         "Nbre Paquetage",
         "Devise",
         "Valeur",
@@ -184,10 +181,9 @@ export const NoteDetailView = ({
 
       const rows = notes.map((note) => [
         `"${(note.Regroupement_Client || "").replace(/"/g, '""')}"`,
-        `"${(note.Libelle_Regime_Declaration || "").replace(/"/g, '""')}"`,
-        note.Regime || "",
         `"${(note.Pays_Origine || "").replace(/"/g, '""')}"`,
         note.HS_Code || "",
+        note.Regime || "",
         Number(note.Nbre_Paquetage),
         note.Code_Devise || "",
         Number(note.Valeur),
@@ -241,9 +237,9 @@ export const NoteDetailView = ({
           total: "TOTAL",
           details: "DETAILS",
           grouping: "Groupement",
-          regimeDecl: "Régime Décl.",
           originCountry: "Pays D'origine",
           hsCode: "HS Code",
+          regime: "Régime",
           nbPackages: "Nbre Paq.",
           currency: "Dev.",
           value: "Valeur",
@@ -267,9 +263,9 @@ export const NoteDetailView = ({
           total: "TOTAL",
           details: "DETAILS",
           grouping: "Grouping",
-          regimeDecl: "Decl. Regime",
           originCountry: "Origin Country",
           hsCode: "HS Code",
+          regime: "Regime",
           nbPackages: "Nb Packages",
           currency: "Curr.",
           value: "Value",
@@ -751,7 +747,6 @@ export const NoteDetailView = ({
 
       const tableData = notes.map((note) => [
         (note.Regroupement_Client || "").substring(0, 15),
-        (note.Libelle_Regime_Declaration || "").substring(0, 20),
         (note.Pays_Origine || "").substring(0, 15),
         note.HS_Code || "",
         note.Regime || "",
@@ -781,10 +776,9 @@ export const NoteDetailView = ({
         head: [
           [
             t.grouping,
-            t.regimeDecl,
             t.originCountry,
             t.hsCode,
-            "",
+            t.regime,
             t.nbPackages,
             t.currency,
             t.value,
@@ -811,14 +805,15 @@ export const NoteDetailView = ({
         },
         alternateRowStyles: { fillColor: [248, 249, 250] },
         columnStyles: {
-          2: { halign: "center" }, // Régime
-          4: { halign: "center" }, // HS Code
-          5: { halign: "right" }, // Nbre Paq.
-          6: { halign: "center" }, // Devise
-          7: { halign: "right" }, // Valeur
-          8: { halign: "right" }, // Volume
-          9: { halign: "right" }, // Poids Brut
-          10: { halign: "right" }, // Poids Net
+          1: { halign: "center" }, // Pays d'origine
+          2: { halign: "center" }, // HS Code
+          3: { halign: "center" }, // Régime
+          4: { halign: "right" }, // Nbre Paq.
+          5: { halign: "center" }, // Devise
+          6: { halign: "right" }, // Valeur
+          7: { halign: "right" }, // Volume
+          8: { halign: "right" }, // Poids Brut
+          9: { halign: "right" }, // Poids Net
         },
       });
 
@@ -869,20 +864,7 @@ export const NoteDetailView = ({
         );
       },
     },
-    // 2. Régime déclaration
-    {
-      accessorKey: "Libelle_Regime_Declaration",
-      header: "Régime Décl.",
-      cell: ({ row }) => {
-        const libelle = row.getValue("Libelle_Regime_Declaration") as string;
-        return (
-          <div className="max-w-xs truncate text-xs" title={libelle}>
-            {libelle || "-"}
-          </div>
-        );
-      },
-    },
-    // 3. Pays d'origine
+    // 2. Pays d'origine
     {
       accessorKey: "Pays_Origine",
       header: "Pays d'origine",
@@ -895,7 +877,7 @@ export const NoteDetailView = ({
         );
       },
     },
-    // 4. HS Code
+    // 3. HS Code
     {
       accessorKey: "HS_Code",
       header: "HS Code",
@@ -908,10 +890,10 @@ export const NoteDetailView = ({
         );
       },
     },
-    // 5. Régime
+    // 4. Régime
     {
       accessorKey: "Regime",
-      header: "-",
+      header: "Régime",
       cell: ({ row }) => {
         const regime = row.getValue("Regime") as string;
         const color =
@@ -923,7 +905,7 @@ export const NoteDetailView = ({
         return <Badge className={color}>{regime || ""}</Badge>;
       },
     },
-    // 6. Nbre Paquetage
+    // 5. Nbre Paquetage
     {
       accessorKey: "Nbre_Paquetage",
       header: "Nbre Paq.",
@@ -932,7 +914,7 @@ export const NoteDetailView = ({
         return Number(nbre).toFixed(2);
       },
     },
-    // 7. Devise
+    // 6. Devise
     {
       accessorKey: "Code_Devise",
       header: "Devise",
@@ -945,7 +927,7 @@ export const NoteDetailView = ({
         );
       },
     },
-    // 8. Valeur
+    // 7. Valeur
     {
       accessorKey: "Valeur",
       header: "Valeur",
@@ -958,7 +940,7 @@ export const NoteDetailView = ({
         );
       },
     },
-    // 9. Volume
+    // 8. Poids Brut
     {
       accessorKey: "Poids_Brut",
       header: "Poids Brut",
@@ -967,7 +949,7 @@ export const NoteDetailView = ({
         return `${Number(poids || 0).toFixed(2)} kg`;
       },
     },
-    // 11. Poids Net
+    // 9. Poids Net
     {
       accessorKey: "Poids_Net",
       header: "Poids Net",
@@ -1201,8 +1183,8 @@ export const NoteDetailView = ({
           <DataTable
             columns={columns}
             data={notes}
-            searchKey="Libelle_Regime_Declaration"
-            searchPlaceholder="Rechercher par régime déclaration..."
+            searchKey="Regroupement_Client"
+            searchPlaceholder="Rechercher par groupement..."
           />
         ) : (
           <EmptyState
