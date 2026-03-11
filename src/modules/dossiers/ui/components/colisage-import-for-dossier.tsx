@@ -205,7 +205,7 @@ export const ColisageImportForDossier = ({ dossierId }: ColisageImportForDossier
                         size="sm"
                         className="flex items-center gap-2"
                     >
-                        <Download className="w-4 h-4" />
+                        <Download className="w-4 h-4 text-green-600" />
                         Template
                     </Button>
 
@@ -217,7 +217,7 @@ export const ColisageImportForDossier = ({ dossierId }: ColisageImportForDossier
                             size="sm"
                         >
                             <span className="flex items-center gap-2">
-                                <Upload className="w-4 h-4" />
+                                <Upload className="w-4 h-4 text-green-600" />
                                 {isLoading ? "Chargement..." : "Importer Excel"}
                             </span>
                         </Button>

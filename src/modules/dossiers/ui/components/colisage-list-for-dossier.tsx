@@ -262,7 +262,7 @@ export const ColisageListForDossier = ({ dossierId }: ColisageListForDossierProp
                                     size="sm"
                                     disabled={isGenerating}
                                 >
-                                    <FileText className="w-4 h-4 mr-2" />
+                                    <FileText className="w-4 h-4 mr-2 text-red-600" />
                                     {isGenerating ? 'Génération...' : 'Rapport Par Facture'}
                                     <ChevronDown className="w-4 h-4 ml-2" />
                                 </Button>
@@ -283,7 +283,7 @@ export const ColisageListForDossier = ({ dossierId }: ColisageListForDossierProp
                                     size="sm"
                                     disabled={isGeneratingSite}
                                 >
-                                    <FileText className="w-4 h-4 mr-2" />
+                                    <FileText className="w-4 h-4 mr-2 text-red-600" />
                                     {isGeneratingSite ? 'Génération...' : 'Rapport Par Site'}
                                     <ChevronDown className="w-4 h-4 ml-2" />
                                 </Button>

@@ -338,7 +338,7 @@ export const DossierIdView = ({ dossierId, dossier }: Props) => {
                                         <CardContent className="px-3 pt-1 pb-2">
                                             <div className="space-y-1.5">
                                                 <div className="flex items-center justify-between">
-                                                    <h3 className="font-semibold text-black text-sm">Format remplissage Regime_Ratio</h3>
+                                                    <h3 className="font-bold text-black text-sm">Format remplissage Regime_Ratio</h3>
                                                     <Dialog open={regimeRatioPopupOpen} onOpenChange={setRegimeRatioPopupOpen}>
                                                         <DialogTrigger asChild>
                                                             <Button variant="outline" size="sm" className="text-xs">
@@ -397,21 +397,21 @@ export const DossierIdView = ({ dossierId, dossier }: Props) => {
                                                         </DialogContent>
                                                     </Dialog>
                                                 </div>
-                                                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-black">
+                                                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-black">
                                                     <div className="flex items-center gap-2">
-                                                        <div className="w-1.5 h-1.5 bg-green-600 rounded-full flex-shrink-0"></div>
+                                                        <div className="w-2 h-2 bg-green-600 rounded-full flex-shrink-0"></div>
                                                         <strong>0</strong> pour <strong>EXO</strong>
                                                     </div>
                                                     <div className="flex items-center gap-2">
-                                                        <div className="w-1.5 h-1.5 bg-green-600 rounded-full flex-shrink-0"></div>
+                                                        <div className="w-2 h-2 bg-green-600 rounded-full flex-shrink-0"></div>
                                                         <strong>1</strong> pour <strong>100% DC</strong>
                                                     </div>
                                                     <div className="flex items-center gap-2">
-                                                        <div className="w-1.5 h-1.5 bg-green-600 rounded-full flex-shrink-0"></div>
+                                                        <div className="w-2 h-2 bg-green-600 rounded-full flex-shrink-0"></div>
                                                         <strong>-1</strong> pour <strong>100% TR</strong>
                                                     </div>
                                                     <div className="flex items-center gap-2">
-                                                        <div className="w-1.5 h-1.5 bg-green-600 rounded-full flex-shrink-0"></div>
+                                                        <div className="w-2 h-2 bg-green-600 rounded-full flex-shrink-0"></div>
                                                         <strong>-2</strong> pour <strong>TTC</strong>
                                                     </div>
                                                 </div>
