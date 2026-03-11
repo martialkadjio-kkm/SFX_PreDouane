@@ -14,6 +14,8 @@ import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DossierIdHeader } from "../components/dossier-id-header";
 import { UpdateDossierDialog } from "../components/update-dossier-dialog";
 import { UpdatePeseeDialog } from "../components/update-pesee-dialog";
@@ -31,6 +33,7 @@ export const DossierIdView = ({ dossierId, dossier }: Props) => {
     const router = useRouter();
     const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
     const [updatePeseeDialogOpen, setUpdatePeseeDialogOpen] = useState(false);
+    const [regimeRatioPopupOpen, setRegimeRatioPopupOpen] = useState(false);
 
     const [RemoveConfirmation, confirmRemove] = useConfirm(
         "Êtes-vous sûr?",
@@ -317,16 +320,106 @@ export const DossierIdView = ({ dossierId, dossier }: Props) => {
                 <Card>
                     <Tabs defaultValue="colisages" className="w-full">
                         <CardHeader className="pb-3">
-                            <TabsList className="grid w-full max-w-md grid-cols-2">
-                                <TabsTrigger value="colisages" className="flex items-center gap-2">
-                                    <Package className="w-4 h-4" />
-                                    Colisages
-                                </TabsTrigger>
-                                <TabsTrigger value="note-details" className="flex items-center gap-2">
-                                    <FileText className="w-4 h-4" />
-                                    Note de Détails
-                                </TabsTrigger>
-                            </TabsList>
+                            <div className="flex items-start justify-between w-full">
+                                <TabsList className="grid w-full max-w-md grid-cols-2">
+                                    <TabsTrigger value="colisages" className="flex items-center gap-2">
+                                        <Package className="w-4 h-4" />
+                                        Colisages
+                                    </TabsTrigger>
+                                    <TabsTrigger value="note-details" className="flex items-center gap-2">
+                                        <FileText className="w-4 h-4" />
+                                        Note de Détails
+                                    </TabsTrigger>
+                                </TabsList>
+                                
+                                {/* Carte Regime_Ratio - largeur réduite à l'extrême droite */}
+                                <div className="w-[32%]">
+                                    <Card className="bg-green-50 border-green-200">
+                                        <CardContent className="px-3 pt-1 pb-2">
+                                            <div className="space-y-1.5">
+                                                <div className="flex items-center justify-between">
+                                                    <h3 className="font-semibold text-black text-sm">Format remplissage Regime_Ratio</h3>
+                                                    <Dialog open={regimeRatioPopupOpen} onOpenChange={setRegimeRatioPopupOpen}>
+                                                        <DialogTrigger asChild>
+                                                            <Button variant="outline" size="sm" className="text-xs">
+                                                                Voir Exemples
+                                                            </Button>
+                                                        </DialogTrigger>
+                                                        <DialogContent className="max-w-6xl w-[90vw]">
+                                                            <DialogHeader>
+                                                                <DialogTitle className="text-black text-center">Comment remplir la colonne Regime_Ratio ?</DialogTitle>
+                                                            </DialogHeader>
+                                                            <div className="space-y-4">
+                                                                {/* Scénario 1 */}
+                                                                <Card className="bg-green-50 border-green-200 w-full">
+                                                                    <CardContent className="p-6">
+                                                                        <h4 className="font-semibold mb-3 text-black">Scénario 1:</h4>
+                                                                        <p className="mb-2 text-black">Si ligne 3 et 10 en <strong>DC 100%</strong>, ligne 4 en <strong>EXO</strong>, ligne 5 en <strong>TTC</strong>, le reste <strong>TR5% 100%</strong> signifie que:</p>
+                                                                        <ul className="space-y-1 text-black">
+                                                                            <li className="flex items-center gap-2">
+                                                                                <div className="w-2 h-2 bg-green-600 rounded-full flex-shrink-0"></div>
+                                                                                Ligne 3 et 10 : <strong>1 (100% DC)</strong>
+                                                                            </li>
+                                                                            <li className="flex items-center gap-2">
+                                                                                <div className="w-2 h-2 bg-green-600 rounded-full flex-shrink-0"></div>
+                                                                                Ligne 4 : <strong>0 (EXO)</strong>
+                                                                            </li>
+                                                                            <li className="flex items-center gap-2">
+                                                                                <div className="w-2 h-2 bg-green-600 rounded-full flex-shrink-0"></div>
+                                                                                Ligne 5 : <strong>-2 (TTC)</strong>
+                                                                            </li>
+                                                                            <li className="flex items-center gap-2">
+                                                                                <div className="w-2 h-2 bg-green-600 rounded-full flex-shrink-0"></div>
+                                                                                Le reste de ligne : <strong>-1 (100%TR)</strong>
+                                                                            </li>
+                                                                        </ul>
+                                                                    </CardContent>
+                                                                </Card>
+
+                                                                {/* Scénario 2 */}
+                                                                <Card className="bg-green-50 border-green-200 w-full">
+                                                                    <CardContent className="p-6">
+                                                                        <h4 className="font-semibold mb-3 text-black">Scénario 2:</h4>
+                                                                        <p className="mb-2 text-black text-justify">Si ligne 5 en <strong>DC 100%</strong> le reste en <strong>ratio 48.51 TR 5%</strong> et <strong>51.49% DC</strong> signifie que:</p>
+                                                                        <ul className="space-y-1 text-black">
+                                                                            <li className="flex items-start gap-2">
+                                                                                <div className="w-2 h-2 bg-green-600 rounded-full flex-shrink-0 mt-1.5"></div>
+                                                                                <span className="text-justify">Ligne 5 : <strong>1 (100% DC)</strong></span>
+                                                                            </li>
+                                                                            <li className="flex items-start gap-2">
+                                                                                <div className="w-2 h-2 bg-green-600 rounded-full flex-shrink-0 mt-1.5"></div>
+                                                                                <span className="text-justify">Dans le reste des lignes renseigner uniquement le <strong>ratio DC</strong> en <strong>décimale</strong>, le <strong>ratio TR</strong> sera <strong>calculer automatiquement</strong> en fonction de ce dernier. On aura donc : <strong>0.5149</strong> dans le reste des lignes</span>
+                                                                            </li>
+                                                                        </ul>
+                                                                    </CardContent>
+                                                                </Card>
+                                                            </div>
+                                                        </DialogContent>
+                                                    </Dialog>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-black">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-1.5 h-1.5 bg-green-600 rounded-full flex-shrink-0"></div>
+                                                        <strong>0</strong> pour <strong>EXO</strong>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-1.5 h-1.5 bg-green-600 rounded-full flex-shrink-0"></div>
+                                                        <strong>1</strong> pour <strong>100% DC</strong>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-1.5 h-1.5 bg-green-600 rounded-full flex-shrink-0"></div>
+                                                        <strong>-1</strong> pour <strong>100% TR</strong>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-1.5 h-1.5 bg-green-600 rounded-full flex-shrink-0"></div>
+                                                        <strong>-2</strong> pour <strong>TTC</strong>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                </div>
+                            </div>
                         </CardHeader>
 
                         <CardContent>
