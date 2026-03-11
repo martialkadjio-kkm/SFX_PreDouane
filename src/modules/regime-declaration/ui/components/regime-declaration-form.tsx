@@ -44,13 +44,13 @@ export const RegimeDeclarationForm = ({
         },
     });
 
-    // Watch le taux Regime pour auto-remplir le libellé
+    // Watch le taux Regime DC pour auto-remplir le libellé
     const tauxRegime = form.watch("tauxRegime");
 
     const isPending = form.formState.isSubmitting;
     const isEdit = !!initialValues?.id;
 
-    // Auto-remplir le libellé quand le taux Regime change
+    // Auto-remplir le libellé quand le taux Regime DC change
     useEffect(() => {
         if (tauxRegime !== undefined && tauxRegime !== null) {
             let autoLibelle = "";
@@ -87,7 +87,7 @@ export const RegimeDeclarationForm = ({
         // S'assurer que le régime douanier est toujours 0 (régime par défaut)
         finalData.regimeDouanierId = "0";
 
-        // Le taux Regime est déjà au bon format (décimal)
+        // Le taux Regime DC est déjà au bon format (décimal)
         // Pas de conversion nécessaire
 
         // S'assurer que le libellé est rempli
@@ -153,13 +153,13 @@ export const RegimeDeclarationForm = ({
                     name="tauxRegime"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Taux Régime*</FormLabel>
+                            <FormLabel>Taux Regime DC*</FormLabel>
                             <FormControl>
                                 <Input
                                     value={field.value}
                                     type="number"
                                     step="0.0001"
-                                    placeholder="Ex: -2, -1, 0, 0.5149, 1"
+                                    placeholder="0.5149"
                                     onChange={(e) => {
                                         const value = e.target.value;
                                         if (value === '' || value === '-') {
@@ -175,6 +175,9 @@ export const RegimeDeclarationForm = ({
                                     name={field.name}
                                 />
                             </FormControl>
+                            <p className="text-sm text-muted-foreground italic">
+                                Exemple: Pour 51.49% remplir 0.5149
+                            </p>
                             <FormMessage />
                         </FormItem>
                     )}

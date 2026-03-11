@@ -16,6 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { ClientDossiers } from "../components/client-dossiers";
+import { ClientRegimesAssociated } from "../components/client-regimes-associated";
 
 // Type pour VClients (vue SQL Server)
 type VClient = {
@@ -142,6 +143,9 @@ export const ClientIdView = ({ clientId, client, dossiers = [] }: Props) => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Régimes associés */}
+        <ClientRegimesAssociated clientId={clientId} />
 
         {/* Dossiers associés */}
         <ClientDossiers dossiers={dossiers} />
