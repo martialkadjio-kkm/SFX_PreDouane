@@ -17,7 +17,6 @@ import { DeleteAllColisagesDialog } from "./delete-all-colisages-dialog";
 import { deleteColisage } from "../../server/colisage-actions";
 import { useColisagePDFReport } from "../../hooks/use-colisage-pdf-report";
 import { useColisagePDFReportSite } from "../../hooks/use-colisage-pdf-report-site";
-import { useColisagePDFReportRegime } from "../../hooks/use-colisage-pdf-report-regime";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,7 +38,6 @@ export const ColisageListForDossier = ({ dossierId }: ColisageListForDossierProp
     const router = useRouter();
     const { generatePDFReport, isGenerating } = useColisagePDFReport();
     const { generatePDFReport: generatePDFReportSite, isGenerating: isGeneratingSite } = useColisagePDFReportSite();
-    const { generatePDFReport: generatePDFReportRegime, isGenerating: isGeneratingRegime } = useColisagePDFReportRegime();
     
 
 
@@ -81,10 +79,6 @@ export const ColisageListForDossier = ({ dossierId }: ColisageListForDossierProp
 
     const handleGeneratePDFSite = async (language: 'fr' | 'en') => {
         await generatePDFReportSite(dossierId, language);
-    };
-
-    const handleGeneratePDFRegime = async (language: 'fr' | 'en') => {
-        await generatePDFReportRegime(dossierId, language);
     };
 
     const handleRefresh = async () => {
@@ -299,27 +293,6 @@ export const ColisageListForDossier = ({ dossierId }: ColisageListForDossierProp
                                     🇫🇷 Français
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleGeneratePDFSite('en')}>
-                                    🇺🇸 English
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    disabled={isGeneratingRegime}
-                                >
-                                    <FileText className="w-4 h-4 mr-2 text-red-600" />
-                                    {isGeneratingRegime ? 'Génération...' : 'Fiche de Régimes'}
-                                    <ChevronDown className="w-4 h-4 ml-2" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleGeneratePDFRegime('fr')}>
-                                    🇫🇷 Français
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleGeneratePDFRegime('en')}>
                                     🇺🇸 English
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
