@@ -34,14 +34,14 @@ export const ClientDossiers = ({ dossiers }: Props) => {
     const columns: ColumnDef<DossierClient>[] = [
         {
             accessorKey: "No_Dossier",
-            header: "NÂ° Dossier",
+            header: "N° Dossier",
             cell: ({ row }) => (
                 <span className="font-semibold">{row.original.No_Dossier}</span>
             ),
         },
         {
             accessorKey: "No_OT",
-            header: "NÂ° OT",
+            header: "N° OT",
             cell: ({ row }) => (
                 <span className="text-sm">{row.original.No_OT || "-"}</span>
             ),
@@ -60,8 +60,8 @@ export const ClientDossiers = ({ dossiers }: Props) => {
                 const statut = row.original.Statut_Dossier;
                 const statusColor: Record<number, string> = {
                     0: "bg-blue-100 text-blue-800", // En cours
-                    1: "bg-green-100 text-green-800", // TerminÃ©
-                    2: "bg-red-100 text-red-800", // AnnulÃ©
+                    1: "bg-green-100 text-green-800", // Terminé
+                    2: "bg-red-100 text-red-800", // Annulé
                 };
 
                 return (
@@ -73,7 +73,7 @@ export const ClientDossiers = ({ dossiers }: Props) => {
         },
         {
             accessorKey: "Libelle_Etape_Actuelle",
-            header: "Ã‰tape",
+            header: "Étape",
             cell: ({ row }) => (
                 <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded">
                     {row.original.Libelle_Etape_Actuelle || "-"}
@@ -82,7 +82,7 @@ export const ClientDossiers = ({ dossiers }: Props) => {
         },
         {
             accessorKey: "Date_Creation",
-            header: "Date crÃ©ation",
+            header: "Date création",
             cell: ({ row }) => {
                 const date = row.original.Date_Creation;
                 if (!date) return "-";
@@ -121,7 +121,7 @@ export const ClientDossiers = ({ dossiers }: Props) => {
                     columns={columns}
                     onRowClick={(row) => router.push(`/dossiers/${row.ID_Dossier}`)}
                     searchKey="No_Dossier"
-                    searchPlaceholder="Rechercher par nÂ° dossier..."
+                    searchPlaceholder="Rechercher par n° dossier..."
                 />
             </CardContent>
         </Card>
