@@ -262,7 +262,7 @@ export const ColisageListForDossier = ({ dossierId }: ColisageListForDossierProp
                                     size="sm"
                                     disabled={isGenerating}
                                 >
-                                    <FileText className="w-4 h-4 mr-2" />
+                                    <FileText className="w-4 h-4 mr-2 text-red-600" />
                                     {isGenerating ? 'Génération...' : 'Rapport Par Facture'}
                                     <ChevronDown className="w-4 h-4 ml-2" />
                                 </Button>
@@ -283,7 +283,7 @@ export const ColisageListForDossier = ({ dossierId }: ColisageListForDossierProp
                                     size="sm"
                                     disabled={isGeneratingSite}
                                 >
-                                    <FileText className="w-4 h-4 mr-2" />
+                                    <FileText className="w-4 h-4 mr-2 text-red-600" />
                                     {isGeneratingSite ? 'Génération...' : 'Rapport Par Site'}
                                     <ChevronDown className="w-4 h-4 ml-2" />
                                 </Button>
@@ -297,13 +297,6 @@ export const ColisageListForDossier = ({ dossierId }: ColisageListForDossierProp
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
-                        <Button
-                            onClick={() => setShowCreateDialog(true)}
-                            size="sm"
-                        >
-                            <Plus className="w-4 h-4" />
-                            Nouveau colisage
-                        </Button>
                     </div>
                 </div>
 
@@ -316,10 +309,17 @@ export const ColisageListForDossier = ({ dossierId }: ColisageListForDossierProp
                                     {selectedRows.length} ligne(s) sélectionnée(s)
                                 </span>
                                 <Button
+                                    onClick={() => setShowCreateDialog(true)}
+                                    size="sm"
+                                    className="ml-auto"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    Nouveau colisage
+                                </Button>
+                                <Button
                                     variant="destructive"
                                     size="sm"
                                     onClick={handleDeleteClick}
-                                    className="ml-auto"
                                 >
                                     <Trash2 className="w-4 h-4 mr-2" />
                                     Supprimer la sélection
@@ -331,10 +331,17 @@ export const ColisageListForDossier = ({ dossierId }: ColisageListForDossierProp
                                     {colisages.length} colisage(s) au total
                                 </span>
                                 <Button
+                                    onClick={() => setShowCreateDialog(true)}
+                                    size="sm"
+                                    className="ml-auto"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    Nouveau colisage
+                                </Button>
+                                <Button
                                     variant="destructive"
                                     size="sm"
                                     onClick={handleDeleteClick}
-                                    className="ml-auto"
                                 >
                                     <Trash2 className="w-4 h-4 mr-2" />
                                     Supprimer tout

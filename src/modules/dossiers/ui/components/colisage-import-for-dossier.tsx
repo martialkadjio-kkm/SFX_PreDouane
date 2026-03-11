@@ -205,7 +205,7 @@ export const ColisageImportForDossier = ({ dossierId }: ColisageImportForDossier
                         size="sm"
                         className="flex items-center gap-2"
                     >
-                        <Download className="w-4 h-4" />
+                        <Download className="w-4 h-4 text-green-600" />
                         Template
                     </Button>
 
@@ -217,7 +217,7 @@ export const ColisageImportForDossier = ({ dossierId }: ColisageImportForDossier
                             size="sm"
                         >
                             <span className="flex items-center gap-2">
-                                <Upload className="w-4 h-4" />
+                                <Upload className="w-4 h-4 text-green-600" />
                                 {isLoading ? "Chargement..." : "Importer Excel"}
                             </span>
                         </Button>
@@ -232,10 +232,10 @@ export const ColisageImportForDossier = ({ dossierId }: ColisageImportForDossier
                     </label>
                 </div>
                 
-                <div className="text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950 p-2 rounded border border-blue-200 dark:border-blue-800">
+                {/* <div className="text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950 p-2 rounded border border-blue-200 dark:border-blue-800">
                     <strong>Format Regime_Ratio:</strong> Utilisez des valeurs décimales: 
                     <span className="ml-1">0 (EXO), 0.4578 (45.78% DC), 1 (100% DC), -1 (100% TR), -2 (TTC)</span>
-                </div>
+                </div>   */}
             </div>
 
             <MissingRegimeDeclarationsDialog
