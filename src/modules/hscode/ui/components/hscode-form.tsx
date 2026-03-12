@@ -72,6 +72,11 @@ export const HscodeForm = ({
     <>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          {isEdit && initialValues?.id && (
+            <div className="text-sm text-gray-500 mb-4">
+              #{initialValues.id}
+            </div>
+          )}
           <FormField
             control={form.control}
             name="code"
