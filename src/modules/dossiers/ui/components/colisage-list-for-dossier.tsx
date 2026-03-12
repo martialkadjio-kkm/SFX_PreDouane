@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getColisagesDossier } from "../../server/colisage-actions";
+import { useColisageRefresh } from "../../hooks/use-colisage-refresh";
 import { LoadingState } from "@/components/laoding-state";
 import { EmptyState } from "@/components/empty-state";
 import { DataTable } from "@/components/data-table";
@@ -38,12 +39,20 @@ export const ColisageListForDossier = ({ dossierId }: ColisageListForDossierProp
     const router = useRouter();
     const { generatePDFReport, isGenerating } = useColisagePDFReport();
     const { generatePDFReport: generatePDFReportSite, isGenerating: isGeneratingSite } = useColisagePDFReportSite();
+    const { refreshTrigger } = useColisageRefresh(dossierId);
     
 
 
     useEffect(() => {
         loadColisages();
     }, [dossierId]);
+
+    // Rafraîchir automatiquement quand refreshTrigger change
+    useEffect(() => {
+        if (refreshTrigger > 0) {
+            loadColisages();
+        }
+    }, [refreshTrigger]);
 
     const loadColisages = async () => {
         setIsLoading(true);
@@ -241,6 +250,7 @@ export const ColisageListForDossier = ({ dossierId }: ColisageListForDossierProp
                 colisages={colisages}
                 selectedRows={selectedRows}
                 onSuccess={handleDeleteSuccess}
+                dossierId={dossierId}
             />
             <div className="space-y-4">
                 {/* Header avec boutons */}
