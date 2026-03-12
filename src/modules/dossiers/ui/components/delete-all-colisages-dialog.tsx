@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Trash2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { deleteColisage } from "../../server/colisage-actions";
+import { triggerColisageRefresh } from "../../hooks/use-colisage-refresh";
 
 interface DeleteAllColisagesDialogProps {
     open: boolean;
@@ -20,6 +21,7 @@ interface DeleteAllColisagesDialogProps {
     colisages: any[];
     selectedRows?: any[];
     onSuccess: () => void;
+    dossierId: number; // Ajout du dossierId
 }
 
 export const DeleteAllColisagesDialog = ({
@@ -28,6 +30,7 @@ export const DeleteAllColisagesDialog = ({
     colisages,
     selectedRows = [],
     onSuccess,
+    dossierId,
 }: DeleteAllColisagesDialogProps) => {
     const [isDeleting, setIsDeleting] = useState(false);
     const [progress, setProgress] = useState({ current: 0, total: 0 });
@@ -81,6 +84,9 @@ export const DeleteAllColisagesDialog = ({
             // Fermer la modal et actualiser
             onOpenChange(false);
             onSuccess();
+            
+            // Déclencher le rafraîchissement automatique du tableau
+            triggerColisageRefresh(dossierId);
 
         } catch (error) {
             console.error("Erreur lors de la suppression:", error);

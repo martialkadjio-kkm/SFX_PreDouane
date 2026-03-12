@@ -7,6 +7,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { ColisageFormForDossier } from "./colisage-form-for-dossier";
+import { triggerColisageRefresh } from "../../hooks/use-colisage-refresh";
 
 interface CreateColisageDialogProps {
     open: boolean;
@@ -43,6 +44,8 @@ export const CreateColisageDialog = ({
     const handleSuccess = () => {
         onOpenChange(false);
         onSuccess?.();
+        // Déclencher le rafraîchissement automatique du tableau
+        triggerColisageRefresh(dossierId);
     };
 
     const handleCancel = () => {

@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { EditableColisageCard } from "./editable-colisage-card";
 import { EditImportColisageDialog } from "./edit-import-colisage-dialog";
+import { triggerColisageRefresh } from "../../hooks/use-colisage-refresh";
 
 interface ParsedRow {
     _rowIndex: number;
@@ -56,7 +57,7 @@ export const ColisageImportPreviewDialog = ({
     existingRowKeys = [],
 }: ColisageImportPreviewDialogProps) => {
     const [selectedRows, setSelectedRows] = useState<Set<number>>(
-        new Set(parsedRows.map((_, idx) => idx))
+        new Set() // Démarrer avec aucune ligne sélectionnée
     );
     const [isImporting, setIsImporting] = useState(false);
     const [updateExisting, setUpdateExisting] = useState(false);
@@ -69,7 +70,7 @@ export const ColisageImportPreviewDialog = ({
         console.log('🔄 [ColisageImportPreview] parsedRows mis à jour:', parsedRows);
         console.log('🔄 [ColisageImportPreview] parsedRows.length:', parsedRows.length);
         setEditedRows(parsedRows);
-        setSelectedRows(new Set(parsedRows.map((_, idx) => idx)));
+        setSelectedRows(new Set()); // Démarrer avec aucune ligne sélectionnée
     }, [parsedRows]);
     const router = useRouter();
 
@@ -146,13 +147,8 @@ export const ColisageImportPreviewDialog = ({
                     });
                 }
 
-                // Forcer le rechargement de la page du dossier
-                router.refresh();
-                
-                // Naviguer vers la même page pour forcer le rechargement
-                setTimeout(() => {
-                    router.push(`/dossiers/${dossierId}`);
-                }, 300);
+                // Déclencher le rafraîchissement automatique du tableau
+                triggerColisageRefresh(dossierId);
                 
                 onOpenChange(false);
             }
@@ -185,7 +181,7 @@ export const ColisageImportPreviewDialog = ({
                 <div className="flex items-center gap-4 py-2 border-b">
                     <div className="flex items-center gap-2">
                         <Checkbox
-                            checked={selectedRows.size === editedRows.length}
+                            checked={selectedRows.size === editedRows.length && editedRows.length > 0}
                             onCheckedChange={toggleAll}
                         />
                         <span className="text-sm font-medium">
