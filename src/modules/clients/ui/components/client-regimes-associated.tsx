@@ -3,10 +3,13 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { LoadingState } from "@/components/laoding-state";
 import { ErrorState } from "@/components/error-state";
-import { getRegimesByClient } from "../../server/regime-client-actions";
-import { Shield } from "lucide-react";
+import { useConfirm } from "@/hooks/use-confirm";
+import { getRegimesByClient, deleteRegimeClient } from "../../server/regime-client-actions";
+import { Shield, Unlink } from "lucide-react";
+import { toast } from "sonner";
 
 interface RegimeAssociated {
   id: number;
@@ -23,41 +26,67 @@ export const ClientRegimesAssociated = ({ clientId }: ClientRegimesAssociatedPro
   const [regimes, setRegimes] = useState<RegimeAssociated[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [ConfirmDialog, confirm] = useConfirm(
+    "Dissocier le régime",
+    "Êtes-vous sûr de vouloir dissocier ce régime du client ? Cette action est irréversible."
+  );
+
+  const loadRegimes = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const result = await getRegimesByClient(parseInt(clientId));
+      
+      if (result.success) {
+        setRegimes(result.data || []);
+      } else {
+        setError(result.error || "Erreur lors du chargement des régimes");
+      }
+    } catch (err) {
+      setError("Erreur lors du chargement des régimes");
+      console.error("Erreur:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDissociate = async (regimeId: number, regimeLibelle: string) => {
+    const confirmed = await confirm();
+    if (!confirmed) return;
+
+    try {
+      const result = await deleteRegimeClient(regimeId);
+      
+      if (result.success) {
+        toast.success(`Régime "${regimeLibelle}" dissocié avec succès`);
+        // Recharger la liste des régimes
+        await loadRegimes();
+      } else {
+        toast.error(result.error || "Erreur lors de la dissociation");
+      }
+    } catch (error) {
+      toast.error("Erreur lors de la dissociation du régime");
+      console.error("Erreur:", error);
+    }
+  };
 
   useEffect(() => {
-    const loadRegimes = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        
-        const result = await getRegimesByClient(parseInt(clientId));
-        
-        if (result.success) {
-          setRegimes(result.data || []);
-        } else {
-          setError(result.error || "Erreur lors du chargement des régimes");
-        }
-      } catch (err) {
-        setError("Erreur lors du chargement des régimes");
-        console.error("Erreur:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     loadRegimes();
   }, [clientId]);
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="w-5 h-5" />
+      <Card className="border-0 shadow-lg bg-gradient-to-br from-slate-50 to-slate-100">
+        <CardHeader className="border-b border-slate-200 pb-4">
+          <CardTitle className="flex items-center gap-3 text-xl font-bold text-slate-800">
+            <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center">
+              <Shield className="w-5 h-5 text-white" />
+            </div>
             Régimes associés
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           <LoadingState
             title="Chargement des régimes..."
             description="Veuillez patienter..."
@@ -69,14 +98,16 @@ export const ClientRegimesAssociated = ({ clientId }: ClientRegimesAssociatedPro
 
   if (error) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="w-5 h-5" />
+      <Card className="border-0 shadow-lg bg-gradient-to-br from-slate-50 to-slate-100">
+        <CardHeader className="border-b border-slate-200 pb-4">
+          <CardTitle className="flex items-center gap-3 text-xl font-bold text-slate-800">
+            <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center">
+              <Shield className="w-5 h-5 text-white" />
+            </div>
             Régimes associés
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           <ErrorState
             title="Erreur de chargement"
             description={error}
@@ -88,17 +119,26 @@ export const ClientRegimesAssociated = ({ clientId }: ClientRegimesAssociatedPro
 
   if (regimes.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="w-5 h-5" />
+      <Card className="border-0 shadow-lg bg-gradient-to-br from-slate-50 to-slate-100">
+        <CardHeader className="border-b border-slate-200 pb-4">
+          <CardTitle className="flex items-center gap-3 text-xl font-bold text-slate-800">
+            <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center">
+              <Shield className="w-5 h-5 text-white" />
+            </div>
             Régimes associés
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <Shield className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">Aucun régime associé à ce client</p>
+        <CardContent className="p-6">
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center mb-4">
+              <Shield className="w-8 h-8 text-slate-400" />
+            </div>
+            <p className="text-slate-500 text-center font-medium">
+              Aucun régime associé à ce client
+            </p>
+            <p className="text-slate-400 text-sm text-center mt-1">
+              Les régimes apparaîtront ici une fois associés
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -106,31 +146,56 @@ export const ClientRegimesAssociated = ({ clientId }: ClientRegimesAssociatedPro
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Shield className="w-5 h-5" />
-          Régimes associés
-          <Badge variant="secondary" className="ml-2">
-            {regimes.length}
-          </Badge>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-          {regimes.map((regime) => (
-            <Card key={regime.id} className="border hover:shadow-md transition-shadow">
-              <CardContent className="p-3">
-                <div className="text-center">
-                  <h4 className="font-medium text-sm text-foreground line-clamp-2">
-                    {regime.regimeLibelle}
-                  </h4>
+    <>
+      <ConfirmDialog />
+      <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-slate-50 overflow-hidden">
+        <CardHeader className="bg-white border-b border-slate-200 pb-4">
+          <CardTitle className="flex items-center gap-3 text-xl font-bold text-slate-800">
+            <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center">
+              <Shield className="w-5 h-5 text-white" />
+            </div>
+            Régimes associés
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="grid grid-cols-3 gap-4">
+            {regimes.map((regime, index) => (
+              <div
+                key={regime.id}
+                className="group relative bg-white border border-slate-200 rounded-xl p-4 hover:shadow-xl hover:border-slate-300 transition-all duration-300 hover:-translate-y-1"
+              >
+                {/* Numéro de rang */}
+                <div className="absolute -top-2 -left-2 w-6 h-6 bg-gradient-to-br from-slate-600 to-slate-700 text-white text-xs font-bold rounded-full flex items-center justify-center shadow-lg">
+                  {index + 1}
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+                
+                {/* Contenu du régime */}
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 pr-2">
+                    <h4 className="font-bold text-slate-800 text-base line-clamp-2">
+                      {regime.regimeLibelle}
+                    </h4>
+                  </div>
+                  
+                  {/* Bouton de dissociation */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 text-red-600 hover:bg-red-100 hover:text-red-700 rounded-full"
+                    onClick={() => handleDissociate(regime.id, regime.regimeLibelle)}
+                    title="Dissocier ce régime"
+                  >
+                    <Unlink className="w-4 h-4" />
+                  </Button>
+                </div>
+                
+                {/* Effet de survol */}
+                <div className="absolute inset-0 bg-gradient-to-r from-slate-600/5 to-slate-700/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl pointer-events-none" />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </>
   );
 };
