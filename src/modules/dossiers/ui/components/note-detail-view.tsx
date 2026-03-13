@@ -67,61 +67,38 @@ export const NoteDetailView = ({
 
   // Fonction pour grouper les notes par régime avec tri spécial pour les ratios (pour les exports)
   const groupNotesByRegime = (notes: any[]) => {
-    // Créer un map pour grouper par identifiant unique (Regroupement_Client + HS_Code + Pays_Origine)
-    const groups = new Map<string, any[]>();
-    
-    notes.forEach(note => {
-      const groupKey = `${note.Regroupement_Client || ''}_${note.HS_Code || ''}_${note.Pays_Origine || ''}`;
-      if (!groups.has(groupKey)) {
-        groups.set(groupKey, []);
+    // Fonction pour déterminer la priorité d'un régime
+    const getRegimePriority = (regime: string): number => {
+      if (regime === '100% DC') return 1;
+      if (regime === '100% TR') return 2;
+      if (regime === 'EXO') return 3;
+      if (regime.includes('DC') && regime.includes('%') && !regime.includes('100%')) {
+        return 4; // Ratio DC (ex: "51.49% DC")
       }
-      groups.get(groupKey)!.push(note);
+      if (regime.includes('TR') && regime.includes('%') && !regime.includes('100%')) {
+        return 5; // Ratio TR (ex: "48.51%TR")
+      }
+      if (regime === 'TTC') return 6;
+      return 7; // Autres régimes
+    };
+    
+    // Trier toutes les notes selon la priorité des régimes
+    const sortedNotes = [...notes].sort((a, b) => {
+      const regimeA = a.Regime || '';
+      const regimeB = b.Regime || '';
+      
+      const priorityA = getRegimePriority(regimeA);
+      const priorityB = getRegimePriority(regimeB);
+      
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB;
+      }
+      
+      // Si même priorité, trier par nom de régime
+      return regimeA.localeCompare(regimeB);
     });
 
-    // Trier chaque groupe selon la logique des régimes et assembler le résultat final
-    const sortedGroups: any[] = [];
-    
-    // Trier les groupes par clé pour avoir un ordre cohérent
-    const sortedGroupKeys = Array.from(groups.keys()).sort();
-    
-    sortedGroupKeys.forEach((groupKey) => {
-      const groupNotes = groups.get(groupKey)!;
-      
-      // Trier les notes dans le groupe selon la priorité des régimes
-      const sortedGroupNotes = groupNotes.sort((a, b) => {
-        const regimeA = a.Regime || '';
-        const regimeB = b.Regime || '';
-        
-        // Fonction pour déterminer la priorité d'un régime
-        const getRegimePriority = (regime: string): number => {
-          if (regime.includes('DC') && regime.includes('%') && !regime.includes('100%')) {
-            return 1; // Ratio DC en premier (ex: "50% DC")
-          }
-          if (regime.includes('TR') && regime.includes('%') && !regime.includes('100%')) {
-            return 2; // Ratio TR en second (ex: "50% TR")
-          }
-          if (regime === '100% DC') return 3;
-          if (regime === '100% TR') return 4;
-          if (regime === 'TTC') return 5;
-          if (regime === 'EXO') return 6;
-          return 7; // Autres régimes
-        };
-        
-        const priorityA = getRegimePriority(regimeA);
-        const priorityB = getRegimePriority(regimeB);
-        
-        if (priorityA !== priorityB) {
-          return priorityA - priorityB;
-        }
-        
-        // Si même priorité, trier par nom de régime
-        return regimeA.localeCompare(regimeB);
-      });
-      
-      sortedGroups.push(...sortedGroupNotes);
-    });
-
-    return sortedGroups;
+    return sortedNotes;
   };
 
   const loadNotes = async () => {
@@ -129,8 +106,9 @@ export const NoteDetailView = ({
     try {
       const result = await getNotesDetail(dossierId);
       if (result.success && result.data) {
-        // Garder les données originales pour l'interface
-        setNotes(result.data);
+        // Appliquer le tri par régime aux données
+        const sortedNotes = groupNotesByRegime(result.data);
+        setNotes(sortedNotes);
       }
 
       // Récupérer les taux de change
