@@ -301,6 +301,50 @@ export async function deleteColisage(id: string | number) {
 }
 
 /**
+ * Supprime plusieurs colisages en une seule transaction
+ */
+export async function deleteManyColisages(ids: (string | number)[]) {
+    try {
+        if (!ids || ids.length === 0) {
+            return { success: false, error: "Aucun ID fourni" };
+        }
+
+        // Convertir les IDs en nombres
+        const numericIds = ids.map(id => typeof id === 'string' ? parseInt(id) : id);
+
+        // Récupérer les dossiers concernés avant suppression pour revalidation
+        const colisages = await prisma.tColisageDossiers.findMany({
+            where: { id: { in: numericIds } },
+            select: { dossier: true },
+            distinct: ['dossier'],
+        });
+
+        // Suppression en transaction unique
+        const result = await prisma.$transaction(async (tx) => {
+            return await tx.tColisageDossiers.deleteMany({
+                where: {
+                    id: { in: numericIds }
+                }
+            });
+        });
+
+        // Revalidation des paths
+        const uniqueDossiers = [...new Set(colisages.map(c => c.dossier))];
+        uniqueDossiers.forEach(dossierId => {
+            revalidatePath(`/dossiers/${dossierId}/colisages`);
+        });
+
+        return {
+            success: true,
+            data: { deleted: result.count }
+        };
+    } catch (error: any) {
+        console.error("deleteManyColisages error:", error);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
  * Type pour l'import Excel
  */
 export interface ImportColisageRow {

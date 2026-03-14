@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
-import { deleteColisage, deleteAllColisagesByDossierId } from "../../server/actions";
+import { deleteManyColisages, deleteAllColisagesByDossierId } from "../../server/actions";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useConfirm } from "@/hooks/use-confirm";
@@ -38,23 +38,14 @@ export const ColisageBulkActions = ({
 
         setIsDeleting(true);
         try {
-            let successCount = 0;
-            let errorCount = 0;
+            // Suppression en une seule transaction
+            const result = await deleteManyColisages(selectedIds);
 
-            for (const id of selectedIds) {
-                const res = await deleteColisage(id);
-                if (res.success) {
-                    successCount++;
-                } else {
-                    errorCount++;
-                }
-            }
-
-            if (successCount > 0) {
-                toast.success(`${successCount} colisage(s) supprimé(s) avec succès`);
-            }
-            if (errorCount > 0) {
-                toast.error(`${errorCount} colisage(s) n'ont pas pu être supprimés`);
+            if (result.success && result.data) {
+                toast.success(`${result.data.deleted} colisage(s) supprimé(s) avec succès`);
+            } else {
+                toast.error("Erreur lors de la suppression");
+                console.error(result.error);
             }
 
             onSelectionChange([]);

@@ -229,6 +229,59 @@ export async function deleteColisage(id: string) {
 }
 
 /**
+ * Supprime plusieurs colisages en une seule transaction
+ */
+export async function deleteManyColisages(ids: string[]) {
+    try {
+        const session = await auth.api.getSession({
+            headers: await headers(),
+        });
+
+        if (!session) {
+            throw new Error("Missing User Session");
+        }
+
+        if (!ids || ids.length === 0) {
+            return { success: false, error: "Aucun ID fourni" };
+        }
+
+        // Convertir les IDs en nombres
+        const numericIds = ids.map(id => parseInt(id));
+
+        // Récupérer les dossiers concernés avant suppression pour revalidation
+        const colisages = await prisma.tColisageDossiers.findMany({
+            where: { id: { in: numericIds } },
+            select: { dossier: true },
+            distinct: ['dossier'],
+        });
+
+        // Suppression en transaction unique
+        const result = await prisma.$transaction(async (tx) => {
+            return await tx.tColisageDossiers.deleteMany({
+                where: {
+                    id: { in: numericIds }
+                }
+            });
+        });
+
+        // Revalidation des paths
+        const uniqueDossiers = [...new Set(colisages.map(c => c.dossier))];
+        uniqueDossiers.forEach(dossierId => {
+            revalidatePath(`/dossiers/${dossierId}`);
+        });
+        revalidatePath("/colisage");
+
+        return {
+            success: true,
+            data: { deleted: result.count }
+        };
+    } catch (error) {
+        console.error("deleteManyColisages error:", error);
+        return { success: false, error };
+    }
+}
+
+/**
  * Récupère tous les dossiers pour le sélecteur
  */
 export async function getAllDossiersForSelect() {
