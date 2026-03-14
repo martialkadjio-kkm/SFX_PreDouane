@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Loader2, Trash2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
-import { deleteColisage } from "../../server/colisage-actions";
+import { deleteManyColisages } from "../../server/colisage-actions";
 import { triggerColisageRefresh } from "../../hooks/use-colisage-refresh";
 
 interface DeleteAllColisagesDialogProps {
@@ -46,39 +46,17 @@ export const DeleteAllColisagesDialog = ({
         setProgress({ current: 0, total: count });
 
         try {
-            let successCount = 0;
-            let errorCount = 0;
+            // Extraire les IDs des colisages à supprimer
+            const idsToDelete = itemsToDelete.map(item => item.ID_Colisage_Dossier.toString());
 
-            for (let i = 0; i < itemsToDelete.length; i++) {
-                const item = itemsToDelete[i];
-                setProgress({ current: i + 1, total: count });
+            // Suppression en une seule transaction
+            const result = await deleteManyColisages(idsToDelete);
 
-                try {
-                    const result = await deleteColisage(item.ID_Colisage_Dossier.toString());
-                    if (result.success) {
-                        successCount++;
-                    } else {
-                        errorCount++;
-                        console.error(`Erreur suppression colisage ${item.ID_Colisage_Dossier}:`, result.error);
-                    }
-                } catch (error) {
-                    errorCount++;
-                    console.error(`Erreur suppression colisage ${item.ID_Colisage_Dossier}:`, error);
-                }
-
-                // Petite pause pour éviter de surcharger le serveur
-                if (i < itemsToDelete.length - 1) {
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                }
-            }
-
-            // Afficher les résultats
-            if (successCount > 0) {
-                toast.success(`${successCount} colisage(s) supprimé(s) avec succès`);
-            }
-
-            if (errorCount > 0) {
-                toast.error(`${errorCount} colisage(s) n'ont pas pu être supprimés`);
+            if (result.success && result.data) {
+                toast.success(`${result.data.deleted} colisage(s) supprimé(s) avec succès`);
+            } else {
+                toast.error("Erreur lors de la suppression des colisages");
+                console.error("Erreur suppression:", result.error);
             }
 
             // Fermer la modal et actualiser
@@ -136,16 +114,8 @@ export const DeleteAllColisagesDialog = ({
                                 Suppression en cours...
                             </span>
                         </div>
-                        <div className="w-full bg-secondary rounded-full h-2">
-                            <div
-                                className="bg-destructive h-2 rounded-full transition-all duration-300"
-                                style={{
-                                    width: `${(progress.current / progress.total) * 100}%`,
-                                }}
-                            />
-                        </div>
                         <div className="text-xs text-muted-foreground mt-1">
-                            {progress.current} / {progress.total} colisages traités
+                            Suppression de {count} colisages en une seule transaction
                         </div>
                     </div>
                 )}
