@@ -1,7 +1,6 @@
 ﻿"use client";
 
 import { DataTable } from "@/components/data-table";
-import { DataPagination } from "@/components/data-pagination";
 import { columns } from "../components/columns";
 import { useRouter } from "next/navigation";
 import { RegimeDeclarationWithDouanier } from "../../types";
@@ -17,16 +16,7 @@ export const RegimeDeclarationView = ({
     total,
     currentPage,
 }: RegimeDeclarationViewProps) => {
-    const pageSize = 10;
-    const totalPages = Math.ceil(total / pageSize);
-
     const router = useRouter();
-
-    const handlePageChange = (page: number) => {
-        const url = new URL(window.location.href);
-        url.searchParams.set("page", page.toString());
-        window.location.href = url.toString();
-    };
 
     return (
         <div className="py-4 px-4 md:px-8 flex flex-col gap-y-4">
@@ -34,11 +24,6 @@ export const RegimeDeclarationView = ({
                 columns={columns} 
                 data={regimeDeclarations} 
                 onRowClick={(row) => router.push(`/regime-declaration/${row.id}`)}
-            />
-            <DataPagination
-                page={currentPage}
-                totalPages={totalPages}
-                onPageChange={handlePageChange}
             />
         </div>
     );
