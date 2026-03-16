@@ -225,6 +225,27 @@ export async function getRegimesByClient(clientId: number) {
             }
         });
 
+        // Récupérer les informations du client
+        let clientInfo = null;
+        if (regimes.length > 0) {
+            clientInfo = {
+                id: regimes[0].idClient,
+                nomClient: regimes[0].nomClient
+            };
+        } else {
+            // Si pas de régimes, récupérer quand même les infos du client
+            const client = await prisma.tClients.findUnique({
+                where: { id: clientId },
+                select: { id: true, nomClient: true }
+            });
+            if (client) {
+                clientInfo = {
+                    id: client.id,
+                    nomClient: client.nomClient
+                };
+            }
+        }
+
         // Adapter les noms de colonnes pour correspondre à l'interface attendue
         const adaptedData = regimes.map(regime => ({
             id: regime.idRegimeClient,
@@ -235,7 +256,11 @@ export async function getRegimesByClient(clientId: number) {
 
         const serializedData = convertDecimalsToNumbers(adaptedData);
 
-        return { success: true, data: serializedData };
+        return { 
+            success: true, 
+            data: serializedData,
+            clientInfo: clientInfo
+        };
     } catch (error) {
         console.error("getRegimesByClient error:", error);
         return {

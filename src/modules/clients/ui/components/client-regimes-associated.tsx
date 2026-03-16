@@ -8,8 +8,9 @@ import { LoadingState } from "@/components/laoding-state";
 import { ErrorState } from "@/components/error-state";
 import { useConfirm } from "@/hooks/use-confirm";
 import { getRegimesByClient, deleteRegimeClient } from "../../server/regime-client-actions";
-import { Shield, Unlink } from "lucide-react";
+import { Shield, Unlink, Link } from "lucide-react";
 import { toast } from "sonner";
+import { AssociateRegimeDialog } from "./associate-regime-dialog";
 
 interface RegimeAssociated {
   id: number;
@@ -26,6 +27,8 @@ export const ClientRegimesAssociated = ({ clientId }: ClientRegimesAssociatedPro
   const [regimes, setRegimes] = useState<RegimeAssociated[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showAssociateDialog, setShowAssociateDialog] = useState(false);
+  const [clientInfo, setClientInfo] = useState<{ id: number; nomClient: string } | null>(null);
   const [ConfirmDialog, confirm] = useConfirm(
     "Dissocier le régime",
     "Êtes-vous sûr de vouloir dissocier ce régime du client ? Cette action est irréversible."
@@ -40,6 +43,10 @@ export const ClientRegimesAssociated = ({ clientId }: ClientRegimesAssociatedPro
       
       if (result.success) {
         setRegimes(result.data || []);
+        // Récupérer les infos du client pour le dialog (on peut les obtenir depuis les actions)
+        if (result.clientInfo) {
+          setClientInfo(result.clientInfo);
+        }
       } else {
         setError(result.error || "Erreur lors du chargement des régimes");
       }
@@ -71,90 +78,170 @@ export const ClientRegimesAssociated = ({ clientId }: ClientRegimesAssociatedPro
     }
   };
 
+  const handleAssociateSuccess = () => {
+    setShowAssociateDialog(false);
+    loadRegimes(); // Recharger la liste des régimes
+  };
+
   useEffect(() => {
     loadRegimes();
+    // Récupérer les infos du client si pas encore disponibles
+    if (!clientInfo) {
+      // On peut créer une action pour récupérer les infos du client ou les passer en props
+      setClientInfo({ id: parseInt(clientId), nomClient: `Client ${clientId}` });
+    }
   }, [clientId]);
 
   if (isLoading) {
     return (
-      <Card className="border-0 shadow-lg bg-gradient-to-br from-slate-50 to-slate-100">
-        <CardHeader className="border-b border-slate-200 pb-4">
-          <CardTitle className="flex items-center gap-3 text-xl font-bold text-slate-800">
-            <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center">
-              <Shield className="w-5 h-5 text-white" />
-            </div>
-            Régimes associés
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <LoadingState
-            title="Chargement des régimes..."
-            description="Veuillez patienter..."
-          />
-        </CardContent>
-      </Card>
+      <>
+        <AssociateRegimeDialog
+          open={showAssociateDialog}
+          onOpenChange={setShowAssociateDialog}
+          client={clientInfo}
+          onSuccess={handleAssociateSuccess}
+        />
+        <Card className="border-0 shadow-lg bg-gradient-to-br from-slate-50 to-slate-100">
+          <CardHeader className="border-b border-slate-200 pb-4">
+            <CardTitle className="flex items-center justify-between text-xl font-bold text-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-white" />
+                </div>
+                Régimes associés
+              </div>
+              <Button
+                onClick={() => setShowAssociateDialog(true)}
+                size="sm"
+                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-md hover:shadow-lg transition-all duration-200"
+              >
+                <Link className="w-4 h-4 mr-2" />
+                Associer Régime
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <LoadingState
+              title="Chargement des régimes..."
+              description="Veuillez patienter..."
+            />
+          </CardContent>
+        </Card>
+      </>
     );
   }
 
   if (error) {
     return (
-      <Card className="border-0 shadow-lg bg-gradient-to-br from-slate-50 to-slate-100">
-        <CardHeader className="border-b border-slate-200 pb-4">
-          <CardTitle className="flex items-center gap-3 text-xl font-bold text-slate-800">
-            <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center">
-              <Shield className="w-5 h-5 text-white" />
-            </div>
-            Régimes associés
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <ErrorState
-            title="Erreur de chargement"
-            description={error}
-          />
-        </CardContent>
-      </Card>
+      <>
+        <AssociateRegimeDialog
+          open={showAssociateDialog}
+          onOpenChange={setShowAssociateDialog}
+          client={clientInfo}
+          onSuccess={handleAssociateSuccess}
+        />
+        <Card className="border-0 shadow-lg bg-gradient-to-br from-slate-50 to-slate-100">
+          <CardHeader className="border-b border-slate-200 pb-4">
+            <CardTitle className="flex items-center justify-between text-xl font-bold text-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-white" />
+                </div>
+                Régimes associés
+              </div>
+              <Button
+                onClick={() => setShowAssociateDialog(true)}
+                size="sm"
+                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-md hover:shadow-lg transition-all duration-200"
+              >
+                <Link className="w-4 h-4 mr-2" />
+                Associer Régime
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <ErrorState
+              title="Erreur de chargement"
+              description={error}
+            />
+          </CardContent>
+        </Card>
+      </>
     );
   }
 
   if (regimes.length === 0) {
     return (
-      <Card className="border-0 shadow-lg bg-gradient-to-br from-slate-50 to-slate-100">
-        <CardHeader className="border-b border-slate-200 pb-4">
-          <CardTitle className="flex items-center gap-3 text-xl font-bold text-slate-800">
-            <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center">
-              <Shield className="w-5 h-5 text-white" />
+      <>
+        <AssociateRegimeDialog
+          open={showAssociateDialog}
+          onOpenChange={setShowAssociateDialog}
+          client={clientInfo}
+          onSuccess={handleAssociateSuccess}
+        />
+        <Card className="border-0 shadow-lg bg-gradient-to-br from-slate-50 to-slate-100">
+          <CardHeader className="border-b border-slate-200 pb-4">
+            <CardTitle className="flex items-center justify-between text-xl font-bold text-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-white" />
+                </div>
+                Régimes associés
+              </div>
+              <Button
+                onClick={() => setShowAssociateDialog(true)}
+                size="sm"
+                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-md hover:shadow-lg transition-all duration-200"
+              >
+                <Link className="w-4 h-4 mr-2" />
+                Associer Régime
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center mb-4">
+                <Shield className="w-8 h-8 text-slate-400" />
+              </div>
+              <p className="text-slate-500 text-center font-medium">
+                Aucun régime associé à ce client
+              </p>
+              <p className="text-slate-400 text-sm text-center mt-1">
+                Les régimes apparaîtront ici une fois associés
+              </p>
             </div>
-            Régimes associés
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center mb-4">
-              <Shield className="w-8 h-8 text-slate-400" />
-            </div>
-            <p className="text-slate-500 text-center font-medium">
-              Aucun régime associé à ce client
-            </p>
-            <p className="text-slate-400 text-sm text-center mt-1">
-              Les régimes apparaîtront ici une fois associés
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </>
     );
   }
 
   return (
     <>
       <ConfirmDialog />
+      <AssociateRegimeDialog
+        open={showAssociateDialog}
+        onOpenChange={setShowAssociateDialog}
+        client={clientInfo}
+        onSuccess={handleAssociateSuccess}
+      />
       <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-slate-50 overflow-hidden">
         <CardHeader className="bg-white border-b border-slate-200 pb-4">
-          <CardTitle className="flex items-center gap-3 text-xl font-bold text-slate-800">
-            <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center">
-              <Shield className="w-5 h-5 text-white" />
+          <CardTitle className="flex items-center justify-between text-xl font-bold text-slate-800">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center">
+                <Shield className="w-5 h-5 text-white" />
+              </div>
+              Régimes associés
             </div>
-            Régimes associés
+            <Button
+              onClick={() => setShowAssociateDialog(true)}
+              size="sm"
+              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-md hover:shadow-lg transition-all duration-200"
+            >
+              <Link className="w-4 h-4 mr-2" />
+              Associer Régime
+            </Button>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6">
