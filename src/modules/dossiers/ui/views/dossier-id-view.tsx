@@ -345,7 +345,7 @@ export const DossierIdView = ({ dossierId, dossier }: Props) => {
                                                                 Voir Exemples
                                                             </Button>
                                                         </DialogTrigger>
-                                                        <DialogContent className="max-w-6xl w-[90vw]">
+                                                        <DialogContent className="max-w-2xl! w-[90vw]!">
                                                             <DialogHeader>
                                                                 <DialogTitle className="text-black text-center">Comment remplir la colonne Regime_Ratio ?</DialogTitle>
                                                             </DialogHeader>
@@ -357,19 +357,19 @@ export const DossierIdView = ({ dossierId, dossier }: Props) => {
                                                                         <p className="mb-2 text-black">Si ligne 3 et 10 en <strong>DC 100%</strong>, ligne 4 en <strong>EXO</strong>, ligne 5 en <strong>TTC</strong>, le reste <strong>TR5% 100%</strong> signifie que:</p>
                                                                         <ul className="space-y-1 text-black">
                                                                             <li className="flex items-center gap-2">
-                                                                                <div className="w-2 h-2 bg-green-600 rounded-full flex-shrink-0"></div>
+                                                                                <div className="w-2 h-2 bg-green-600 rounded-full shrink-0"></div>
                                                                                 Ligne 3 et 10 : <strong>1 (100% DC)</strong>
                                                                             </li>
                                                                             <li className="flex items-center gap-2">
-                                                                                <div className="w-2 h-2 bg-green-600 rounded-full flex-shrink-0"></div>
+                                                                                <div className="w-2 h-2 bg-green-600 rounded-full shrink-0"></div>
                                                                                 Ligne 4 : <strong>0 (EXO)</strong>
                                                                             </li>
                                                                             <li className="flex items-center gap-2">
-                                                                                <div className="w-2 h-2 bg-green-600 rounded-full flex-shrink-0"></div>
+                                                                                <div className="w-2 h-2 bg-green-600 rounded-full shrink-0"></div>
                                                                                 Ligne 5 : <strong>-2 (TTC)</strong>
                                                                             </li>
                                                                             <li className="flex items-center gap-2">
-                                                                                <div className="w-2 h-2 bg-green-600 rounded-full flex-shrink-0"></div>
+                                                                                <div className="w-2 h-2 bg-green-600 rounded-full shrink-0"></div>
                                                                                 Le reste de ligne : <strong>-1 (100%TR)</strong>
                                                                             </li>
                                                                         </ul>
@@ -383,11 +383,11 @@ export const DossierIdView = ({ dossierId, dossier }: Props) => {
                                                                         <p className="mb-2 text-black text-justify">Si ligne 5 en <strong>DC 100%</strong> le reste en <strong>ratio 48.51 TR 5%</strong> et <strong>51.49% DC</strong> signifie que:</p>
                                                                         <ul className="space-y-1 text-black">
                                                                             <li className="flex items-start gap-2">
-                                                                                <div className="w-2 h-2 bg-green-600 rounded-full flex-shrink-0 mt-1.5"></div>
+                                                                                <div className="w-2 h-2 bg-green-600 rounded-full shrink-0 mt-1.5"></div>
                                                                                 <span className="text-justify">Ligne 5 : <strong>1 (100% DC)</strong></span>
                                                                             </li>
                                                                             <li className="flex items-start gap-2">
-                                                                                <div className="w-2 h-2 bg-green-600 rounded-full flex-shrink-0 mt-1.5"></div>
+                                                                                <div className="w-2 h-2 bg-green-600 rounded-full shrink-0 mt-1.5"></div>
                                                                                 <span className="text-justify">Dans le reste des lignes renseigner uniquement le <strong>ratio DC</strong> en <strong>décimale</strong>, le <strong>ratio TR</strong> sera <strong>calculer automatiquement</strong> en fonction de ce dernier. On aura donc : <strong>0.5149</strong> dans le reste des lignes</span>
                                                                             </li>
                                                                         </ul>
@@ -399,19 +399,19 @@ export const DossierIdView = ({ dossierId, dossier }: Props) => {
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-black">
                                                     <div className="flex items-center gap-2">
-                                                        <div className="w-2 h-2 bg-green-600 rounded-full flex-shrink-0"></div>
+                                                        <div className="w-2 h-2 bg-green-600 rounded-full shrink-0"></div>
                                                         <strong>0</strong> pour <strong>EXO</strong>
                                                     </div>
                                                     <div className="flex items-center gap-2">
-                                                        <div className="w-2 h-2 bg-green-600 rounded-full flex-shrink-0"></div>
+                                                        <div className="w-2 h-2 bg-green-600 rounded-full shrink-0"></div>
                                                         <strong>1</strong> pour <strong>100% DC</strong>
                                                     </div>
                                                     <div className="flex items-center gap-2">
-                                                        <div className="w-2 h-2 bg-green-600 rounded-full flex-shrink-0"></div>
+                                                        <div className="w-2 h-2 bg-green-600 rounded-full shrink-0"></div>
                                                         <strong>-1</strong> pour <strong>100% TR</strong>
                                                     </div>
                                                     <div className="flex items-center gap-2">
-                                                        <div className="w-2 h-2 bg-green-600 rounded-full flex-shrink-0"></div>
+                                                        <div className="w-2 h-2 bg-green-600 rounded-full shrink-0"></div>
                                                         <strong>-2</strong> pour <strong>TTC</strong>
                                                     </div>
                                                 </div>
