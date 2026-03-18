@@ -631,7 +631,11 @@ export class ColisagePDFReportSite {
         tableData.push(row);
       });
 
-      // Créer l'en-tête du tableau
+      // Créer l'en-tête du tableau principal
+      const mainTableWidth = this.usableWidth * 0.55; // 55% pour le tableau principal
+      const sideTableWidth = this.usableWidth * 0.40; // 40% pour le nouveau tableau
+      const tableSpacing = this.usableWidth * 0.05; // 5% d'espacement
+      
       const headers = [
         { content: '', styles: { fillColor: [255, 255, 255] as [number, number, number], lineWidth: 0 } },
         { content: t.rowCount, styles: { halign: 'center' as const, fillColor: [66, 139, 202] as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 10, cellPadding: 2 } },
@@ -641,10 +645,10 @@ export class ColisagePDFReportSite {
         }))
       ];
 
-      // Calculer les largeurs de colonnes - 4cm (40mm) pour les colonnes de devises
-      const regimeColWidth = this.usableWidth * 0.25;
-      const countColWidth = this.usableWidth * 0.08;
-      const deviseColWidth = 40; // 4 centimètres = 40mm
+      // Calculer les largeurs de colonnes pour le tableau principal
+      const regimeColWidth = mainTableWidth * 0.25;
+      const countColWidth = mainTableWidth * 0.15;
+      const deviseColWidth = (mainTableWidth - regimeColWidth - countColWidth) / deviseArray.length;
 
       autoTable(this.doc, {
         startY: this.currentY,
@@ -679,7 +683,7 @@ export class ColisagePDFReportSite {
         columnStyles: {
           0: { cellWidth: regimeColWidth, halign: 'left', fontStyle: 'bold', fillColor: [248, 250, 252] },
           1: { cellWidth: countColWidth, halign: 'center', fontStyle: 'bold', fillColor: [248, 250, 252] },
-          // Les colonnes de devises ont une largeur fixe de 4cm (40mm)
+          // Les colonnes de devises
           ...Object.fromEntries(
             deviseArray.map((_, index) => [
               index + 2,
@@ -688,7 +692,7 @@ export class ColisagePDFReportSite {
           )
         },
         margin: { left: this.margin, right: this.margin },
-        tableWidth: this.usableWidth,
+        tableWidth: mainTableWidth,
         didDrawCell: (data: any) => {
           // Forcer le formatage des valeurs numériques dans les colonnes de devises
           if (data.section === 'body' && data.column.index >= 2) {
@@ -710,7 +714,75 @@ export class ColisagePDFReportSite {
         }
       });
 
-      this.currentY = (this.doc as any).lastAutoTable.finalY + 15;
+      const mainTableFinalY = (this.doc as any).lastAutoTable.finalY;
+
+      // === NOUVEAU TABLEAU : DEVISES ET ROWS COUNT (À DROITE) ===
+      // Calculer les totaux par devise
+      const deviseCountMap = new Map<string, number>();
+      colisages.forEach(c => {
+        const devise = c.Code_Devise || 'N/A';
+        deviseCountMap.set(devise, (deviseCountMap.get(devise) || 0) + 1);
+      });
+
+      // Préparer les données du tableau des devises
+      const deviseTableData: any[] = [];
+      Array.from(deviseCountMap.entries())
+        .sort(([a], [b]) => a.localeCompare(b))
+        .forEach(([devise, count]) => {
+          deviseTableData.push([devise, count.toString()]);
+        });
+
+      // Position du nouveau tableau (à droite du premier)
+      const sideTableX = this.margin + mainTableWidth + tableSpacing;
+
+      // Traductions pour les en-têtes du nouveau tableau
+      const deviseHeader = this.language === 'fr' ? 'Devises' : 'Currencies';
+      const rowsCountHeader = this.language === 'fr' ? 'Rows Count' : 'Rows Count';
+
+      autoTable(this.doc, {
+        startY: this.currentY,
+        head: [
+          [
+            { content: deviseHeader, styles: { halign: 'center' as const, fillColor: [66, 139, 202] as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 10, cellPadding: 2 } },
+            { content: rowsCountHeader, styles: { halign: 'center' as const, fillColor: [66, 139, 202] as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 10, cellPadding: 2 } }
+          ]
+        ],
+        body: deviseTableData,
+        theme: 'striped',
+        styles: {
+          fontSize: 10,
+          cellPadding: 2,
+          lineColor: [226, 232, 240],
+          lineWidth: 0.5,
+          minCellHeight: 6,
+        },
+        headStyles: { 
+          fillColor: [66, 139, 202], 
+          textColor: [255, 255, 255],
+          fontSize: 10,
+          fontStyle: 'bold',
+          halign: 'center',
+          cellPadding: 2,
+          minCellHeight: 6,
+        },
+        bodyStyles: {
+          fontSize: 10,
+          cellPadding: 2,
+          halign: 'center',
+          valign: 'middle'
+        },
+        alternateRowStyles: {
+          fillColor: [248, 250, 252]
+        },
+        columnStyles: {
+          0: { cellWidth: sideTableWidth * 0.6, halign: 'center', fontStyle: 'bold', fillColor: [248, 250, 252] },
+          1: { cellWidth: sideTableWidth * 0.4, halign: 'center', fontStyle: 'bold' }
+        },
+        margin: { left: sideTableX, right: this.margin },
+        tableWidth: sideTableWidth,
+      });
+
+      this.currentY = Math.max(mainTableFinalY, (this.doc as any).lastAutoTable.finalY) + 15;
     }
   }
 

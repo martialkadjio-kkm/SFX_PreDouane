@@ -173,7 +173,7 @@ export const NoteDetailView = ({
         Régime: note.Regime || "",
         "Nbre Paquetage": note.Nbre_paquetage,
         Devise: note.Code_Devise || "",
-        Valeur: Number(note.Valeur),
+        "Valeur Totale": Number(note.Valeur),
         "Volume (m³)": Number(note.Volume),
         "Poids Brut (kg)": Number(note.Poids_Brut || 0),
         "Poids Net (kg)": Number(note.Poids_Net || 0),
@@ -190,7 +190,7 @@ export const NoteDetailView = ({
         { wch: 10 }, // Régime
         { wch: 15 }, // Nbre Paquetage
         { wch: 10 }, // Devise
-        { wch: 15 }, // Valeur
+        { wch: 15 }, // Valeur Totale
         { wch: 12 }, // Volume
         { wch: 12 }, // Poids Brut
         { wch: 12 }, // Poids Net
@@ -213,7 +213,7 @@ export const NoteDetailView = ({
         "Régime",
         "Nbre Paquetage",
         "Devise",
-        "Valeur",
+        "Valeur Totale",
         "Volume (m³)",
         "Poids Brut (kg)",
         "Poids Net (kg)",
@@ -284,7 +284,7 @@ export const NoteDetailView = ({
           regime: "Régime",
           nbPackages: "Nbre Paq.",
           currency: "Dev.",
-          value: "Valeur",
+          value: "Valeur Totale",
           volumeCol: "Volume",
           grossWeightCol: "Poids Brut",
           netWeightCol: "Poids Net",
@@ -310,7 +310,7 @@ export const NoteDetailView = ({
           regime: "Regime",
           nbPackages: "Nb Packages",
           currency: "Curr.",
-          value: "Value",
+          value: "Total Value",
           volumeCol: "Volume",
           grossWeightCol: "Gross Weight",
           netWeightCol: "Net Weight",
@@ -854,7 +854,7 @@ export const NoteDetailView = ({
           3: { halign: "center" }, // Régime
           4: { halign: "right" }, // Nbre Paq.
           5: { halign: "center" }, // Devise
-          6: { halign: "right" }, // Valeur
+          6: { halign: "right" }, // Valeur Totale
           7: { halign: "right" }, // Volume
           8: { halign: "right" }, // Poids Brut
           9: { halign: "right" }, // Poids Net
@@ -971,10 +971,10 @@ export const NoteDetailView = ({
         );
       },
     },
-    // 7. Valeur
+    // 7. Valeur Totale
     {
       accessorKey: "Valeur",
-      header: "Valeur",
+      header: "Valeur Totale",
       cell: ({ row }) => {
         const valeur = row.getValue("Valeur") as number;
         return (
