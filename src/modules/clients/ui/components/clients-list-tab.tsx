@@ -142,14 +142,7 @@ export const ClientsListTab = () => {
 
             {clients.length === 0 ? (
                 <div className="space-y-4">
-                    <div className="flex items-center justify-between mb-4">
-                        <div>
-                            <h3 className="text-lg font-medium">Liste des clients</h3>
-                            <p className="text-sm text-muted-foreground">
-                                Aucun client n'a été trouvé
-                            </p>
-                        </div>
-                        
+                    <div className="flex items-center justify-end mb-4">
                         <Button onClick={() => setShowNewClientDialog(true)}>
                             <Plus className="h-4 w-4 mr-2" />
                             Nouveau client
@@ -163,14 +156,7 @@ export const ClientsListTab = () => {
                 </div>
             ) : (
                 <>
-                    <div className="flex items-center justify-between mb-4">
-                        <div>
-                            <h3 className="text-lg font-medium">Liste des clients</h3>
-                            <p className="text-sm text-muted-foreground">
-                                Sélectionnez un client pour lui associer un régime
-                            </p>
-                        </div>
-                        
+                    <div className="flex items-center justify-end mb-4">
                         <Button onClick={() => setShowNewClientDialog(true)}>
                             <Plus className="h-4 w-4 mr-2" />
                             Nouveau client
