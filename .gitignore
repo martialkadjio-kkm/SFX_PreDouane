@@ -57,3 +57,10 @@ next-env.d.ts
 /certificates
 server.js
 /service_log
+
+# Prisma views (generated automatically)
+/prisma/views
+
+# Prisma schema (generated automatically)
+/prisma/schema.prisma
+pSP_CreerNoteDetail_updated.sql
