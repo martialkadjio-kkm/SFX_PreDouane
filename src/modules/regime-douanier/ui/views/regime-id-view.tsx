@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RegimeIdViewHeader } from "../components/regime-id-view-header";
 import { UpdateRegimeDouanierDialog } from "../components/update-regime-dialog";
 import { format } from "date-fns";
+import { Shield } from "lucide-react";
 
 interface Props {
   regimeId: string;
@@ -64,8 +65,16 @@ export const RegimeIdView = ({ regimeId, regime }: Props) => {
         />
 
         <div className="grid grid-cols-1 max-w-[600px] gap-6">
-          <Card>
-            <CardContent className="flex flex-col">
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-slate-50 overflow-hidden">
+            <CardHeader className="bg-white border-b border-slate-200 pb-4">
+              <CardTitle className="text-xl font-bold text-slate-800 flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-white" />
+                </div>
+                Informations du régime
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col p-6">
               <div className="grid grid-cols-2 gap-3 ">
                 <p>Code : {regime.code}</p>
                 <p>Libelle : {regime.libelle}</p>

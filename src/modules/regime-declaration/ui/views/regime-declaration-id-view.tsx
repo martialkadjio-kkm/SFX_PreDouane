@@ -3,7 +3,7 @@
 import { toast } from "sonner";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Calendar, Percent } from "lucide-react";
+import { Calendar, Percent, Shield, Clock } from "lucide-react";
 
 import { ErrorState } from "@/components/error-state";
 import { LoadingState } from "@/components/laoding-state";
@@ -96,12 +96,16 @@ export const RegimeDeclarationIdView = ({
                 />
 
                 {/* Carte principale avec informations */}
-                <Card className="border-2">
-                    <CardHeader className="pb-3">
-                        <CardTitle>Informations</CardTitle>
+                <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-slate-50 overflow-hidden">
+                    <CardHeader className="bg-white border-b border-slate-200 pb-4">
+                        <CardTitle className="text-xl font-bold text-slate-800 flex items-center gap-3">
+                            <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center">
+                                <Shield className="w-5 h-5 text-white" />
+                            </div>
+                            Informations
+                        </CardTitle>
                     </CardHeader>
-                    <Separator />
-                    <CardContent className="pt-6">
+                    <CardContent className="pt-6 p-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             {/* Colonne gauche */}
                             <div className="space-y-6">
@@ -167,11 +171,16 @@ export const RegimeDeclarationIdView = ({
                 {/* Deux cartes sur la même ligne */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Statut du régime */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-base">Statut</CardTitle>
+                    <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-slate-50 overflow-hidden">
+                        <CardHeader className="bg-white border-b border-slate-200 pb-4">
+                            <CardTitle className="text-xl font-bold text-slate-800 flex items-center gap-3">
+                                <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center">
+                                    <Percent className="w-5 h-5 text-white" />
+                                </div>
+                                Statut
+                            </CardTitle>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="p-6">
                             <p className="text-sm">
                                 {isExoneration ? (
                                     <span className="text-amber-600 font-semibold">Exonération (DC = 0%)</span>
@@ -193,11 +202,16 @@ export const RegimeDeclarationIdView = ({
                     </Card>
 
                     {/* Date de modification */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-base">Dernière modification</CardTitle>
+                    <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-slate-50 overflow-hidden">
+                        <CardHeader className="bg-white border-b border-slate-200 pb-4">
+                            <CardTitle className="text-xl font-bold text-slate-800 flex items-center gap-3">
+                                <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center">
+                                    <Clock className="w-5 h-5 text-white" />
+                                </div>
+                                Dernière modification
+                            </CardTitle>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="p-6">
                             <p className="text-base font-medium">
                                 {regimeDeclaration.dateCreation 
                                     ? format(new Date(regimeDeclaration.dateCreation), "d MMMM yyyy", { locale: fr })

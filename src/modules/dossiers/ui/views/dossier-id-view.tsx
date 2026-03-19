@@ -169,24 +169,28 @@ export const DossierIdView = ({ dossierId, dossier }: Props) => {
                 />
 
                 {/* Carte principale avec statut */}
-                <Card className="border-2">
-                    <CardHeader className="pb-3">
+                <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-slate-50 overflow-hidden">
+                    <CardHeader className="bg-white border-b border-slate-200 pb-4">
                         <div className="flex items-start justify-between">
-                            <div>
-                                <CardTitle className="text-3xl font-bold">
-                                    {dossier.noDossier || "N/A"}
-                                </CardTitle>
-                                <p className="text-sm text-muted-foreground mt-1">
-                                    N° OT: {dossier.noOT || "N/A"}
-                                </p>
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center">
+                                    <FileText className="w-5 h-5 text-white" />
+                                </div>
+                                <div>
+                                    <CardTitle className="text-2xl font-bold text-slate-800">
+                                        {dossier.noDossier || "N/A"}
+                                    </CardTitle>
+                                    <p className="text-sm text-muted-foreground mt-1">
+                                        N° OT: {dossier.noOT || "N/A"}
+                                    </p>
+                                </div>
                             </div>
                             <Badge className={`${cardColors.badge} text-sm px-3 py-1 font-semibold border-0`}>
                                 {dossier.libelleStatutDossier}
                             </Badge>
                         </div>
                     </CardHeader>
-                    <Separator />
-                    <CardContent className="pt-6">
+                    <CardContent className="pt-6 p-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             {/* Colonne gauche - Informations principales */}
                             <div className="space-y-6">
@@ -276,11 +280,16 @@ export const DossierIdView = ({ dossierId, dossier }: Props) => {
                 </Card>
 
                 {/* Poids et Volume */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-lg">Informations sur la Pesée</CardTitle>
+                <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-slate-50 overflow-hidden">
+                    <CardHeader className="bg-white border-b border-slate-200 pb-4">
+                        <CardTitle className="text-xl font-bold text-slate-800 flex items-center gap-3">
+                            <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center">
+                                <Package className="w-5 h-5 text-white" />
+                            </div>
+                            Informations sur la Pesée
+                        </CardTitle>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-6">
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             <div>
                                 <p className="text-sm text-muted-foreground">Nbre de paquetages Pesée</p>
@@ -304,11 +313,16 @@ export const DossierIdView = ({ dossierId, dossier }: Props) => {
 
                 {/* Description */}
                 {dossier.descriptionDossier && (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-lg">Description</CardTitle>
+                    <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-slate-50 overflow-hidden">
+                        <CardHeader className="bg-white border-b border-slate-200 pb-4">
+                            <CardTitle className="text-xl font-bold text-slate-800 flex items-center gap-3">
+                                <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center">
+                                    <FileText className="w-5 h-5 text-white" />
+                                </div>
+                                Description
+                            </CardTitle>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="p-6">
                             <p className="text-base text-muted-foreground leading-relaxed">
                                 {dossier.descriptionDossier}
                             </p>
@@ -317,9 +331,9 @@ export const DossierIdView = ({ dossierId, dossier }: Props) => {
                 )}
 
                 {/* Onglets Colisages et Note de Détails */}
-                <Card>
+                <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-slate-50 overflow-hidden">
                     <Tabs defaultValue="colisages" className="w-full">
-                        <CardHeader className="pb-3">
+                        <CardHeader className="bg-white border-b border-slate-200 pb-4">
                             <div className="flex items-start justify-between w-full">
                                 <TabsList className="grid w-full max-w-md grid-cols-2">
                                     <TabsTrigger value="colisages" className="flex items-center gap-2">
@@ -422,7 +436,7 @@ export const DossierIdView = ({ dossierId, dossier }: Props) => {
                             </div>
                         </CardHeader>
 
-                        <CardContent>
+                        <CardContent className="p-6">
                             <TabsContent value="colisages" className="mt-0">
                                 <div className="space-y-4">
                                     <div className="flex items-center justify-between">

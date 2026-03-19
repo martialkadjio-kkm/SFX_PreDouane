@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Package, DollarSign, Scale, Settings } from "lucide-react";
 
 interface Colisage {
     ID_Colisage_Dossier: number;
@@ -49,11 +50,16 @@ export const ColisageDetailView = ({ dossierId, colisage }: ColisageDetailViewPr
     return (
         <div className="px-4 md:px-8 pb-8 space-y-6">
             {/* Informations générales */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Informations générales</CardTitle>
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-slate-50 overflow-hidden">
+                <CardHeader className="bg-white border-b border-slate-200 pb-4">
+                    <CardTitle className="text-xl font-bold text-slate-800 flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center">
+                            <Package className="w-5 h-5 text-white" />
+                        </div>
+                        Informations générales
+                    </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 p-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div>
                             <label className="text-sm font-medium text-muted-foreground">
@@ -152,11 +158,16 @@ export const ColisageDetailView = ({ dossierId, colisage }: ColisageDetailViewPr
             </Card>
 
             {/* Quantités et mesures */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Quantités et mesures</CardTitle>
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-slate-50 overflow-hidden">
+                <CardHeader className="bg-white border-b border-slate-200 pb-4">
+                    <CardTitle className="text-xl font-bold text-slate-800 flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center">
+                            <Scale className="w-5 h-5 text-white" />
+                        </div>
+                        Quantités et mesures
+                    </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div className="text-center p-4 bg-muted/50 rounded-lg">
                             <p className="text-2xl font-bold text-blue-600">
@@ -190,11 +201,16 @@ export const ColisageDetailView = ({ dossierId, colisage }: ColisageDetailViewPr
             </Card>
 
             {/* Informations financières */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Informations financières</CardTitle>
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-slate-50 overflow-hidden">
+                <CardHeader className="bg-white border-b border-slate-200 pb-4">
+                    <CardTitle className="text-xl font-bold text-slate-800 flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center">
+                            <DollarSign className="w-5 h-5 text-white" />
+                        </div>
+                        Informations financières
+                    </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label className="text-sm font-medium text-muted-foreground">
@@ -229,11 +245,16 @@ export const ColisageDetailView = ({ dossierId, colisage }: ColisageDetailViewPr
             </Card>
 
             {/* Informations système */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Informations système</CardTitle>
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-slate-50 overflow-hidden">
+                <CardHeader className="bg-white border-b border-slate-200 pb-4">
+                    <CardTitle className="text-xl font-bold text-slate-800 flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center">
+                            <Settings className="w-5 h-5 text-white" />
+                        </div>
+                        Informations système
+                    </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         
                         <div>
