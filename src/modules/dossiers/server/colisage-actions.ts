@@ -694,6 +694,7 @@ export async function getColisageForEdit(id: number) {
             numeroCommande: serializedColisage.No_Commande || null,
             nomFournisseur: serializedColisage.Nom_Fournisseur || null,
             numeroFacture: serializedColisage.No_Facture || null,
+            itemNo: serializedColisage.Item_No || null,
             quantite: Number(serializedColisage.Qte_Colis) || 1,
             prixUnitaireColis: Number(serializedColisage.Prix_Unitaire_Colis) || 0,
             poidsBrut: Number(serializedColisage.Poids_Brut) || 0,
