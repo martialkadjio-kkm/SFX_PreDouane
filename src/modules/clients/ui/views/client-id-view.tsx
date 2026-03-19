@@ -83,14 +83,19 @@ export const ClientIdView = ({ clientId, client, dossiers = [] }: Props) => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Informations principales */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="text-2xl">{client.Nom_Client}</CardTitle>
+          <Card className="lg:col-span-2 border-0 shadow-lg bg-gradient-to-br from-white to-slate-50 overflow-hidden">
+            <CardHeader className="bg-white border-b border-slate-200 pb-4">
+              <CardTitle className="text-xl font-bold text-slate-800 flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center">
+                  <Mail className="w-5 h-5 text-white" />
+                </div>
+                {client.Nom_Client}
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-6 p-6">
               {/* Informations */}
               <div className="space-y-4">
-                <h3 className="font-semibold text-lg">Informations du client</h3>
+                <h3 className="font-semibold text-lg text-slate-800">Informations du client</h3>
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
                     <Calendar className="w-5 h-5 text-muted-foreground" />
@@ -116,11 +121,16 @@ export const ClientIdView = ({ clientId, client, dossiers = [] }: Props) => {
           </Card>
 
           {/* Informations secondaires */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Détails</CardTitle>
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-slate-50 overflow-hidden">
+            <CardHeader className="bg-white border-b border-slate-200 pb-4">
+              <CardTitle className="text-xl font-bold text-slate-800 flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center">
+                  <Calendar className="w-5 h-5 text-white" />
+                </div>
+                Détails
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 p-6">
               <div>
                 <p className="text-sm text-muted-foreground flex items-center gap-2">
                   <Calendar className="w-4 h-4" />

@@ -62,5 +62,4 @@ server.js
 /prisma/views
 
 # Prisma schema (generated automatically)
-/prisma/schema.prisma
 pSP_CreerNoteDetail_updated.sql
