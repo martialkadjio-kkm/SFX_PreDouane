@@ -48,7 +48,13 @@ export const GenererNotesDialog = ({
             setDateDeclaration(undefined);
             setCheckResult(null);
             getDevisesColisageDossier(dossierId).then((res) => {
-                if (res.success && res.data) setDevises(res.data);
+                if (res.success && res.data) {
+                    setDevises(res.data);
+                    // Sélectionner automatiquement la devise s'il n'y en a qu'une seule
+                    if (res.data.length === 1) {
+                        setSelectedDeviseId(res.data[0].id);
+                    }
+                }
             });
         }
     }, [open, dossierId]);
