@@ -5,7 +5,8 @@ import { fr } from "date-fns/locale";
 import { ColumnDef } from "@tanstack/react-table";
 import { RegimeDeclarationWithDouanier } from "../../types";
 import { Button } from "@/components/ui/button";
-import { PencilIcon, TrashIcon } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { PencilIcon, TrashIcon, CalendarIcon } from "lucide-react";
 import { useState } from "react";
 import { UpdateRegimeDeclarationDialog } from "./update-regime-declaration-dialog";
 import { useConfirm } from "@/hooks/use-confirm";
@@ -93,7 +94,7 @@ export const columns: ColumnDef<RegimeDeclarationWithDouanier>[] = [
         accessorKey: "libelle",
         header: "Libellé",
         cell: ({ row }) => (
-            <span className="font-semibold">{row.original.libelleRegimeDeclaration}</span>
+            <span className="font-semibold text-base">{row.original.libelleRegimeDeclaration}</span>
         ),
     },
     {
@@ -101,7 +102,19 @@ export const columns: ColumnDef<RegimeDeclarationWithDouanier>[] = [
         header: "Taux Régime",
         cell: ({ row }) => {
             const taux = row.original.tauxRegime;
-            return <span className="text-sm">{formatTauxRegime(Number(taux))}</span>;
+            const formattedTaux = formatTauxRegime(Number(taux));
+            
+            // Couleurs selon le type de taux
+            let badgeClass = "bg-blue-100 text-blue-800 border-blue-200";
+            if (formattedTaux === "EXO") badgeClass = "bg-green-100 text-green-800 border-green-200";
+            if (formattedTaux === "TTC") badgeClass = "bg-purple-100 text-purple-800 border-purple-200";
+            if (formattedTaux.includes("TR")) badgeClass = "bg-orange-100 text-orange-800 border-orange-200";
+            
+            return (
+                <Badge className={badgeClass} variant="outline">
+                    {formattedTaux}
+                </Badge>
+            );
         },
     },
     {
@@ -109,17 +122,24 @@ export const columns: ColumnDef<RegimeDeclarationWithDouanier>[] = [
         header: "Créé le",
         cell: ({ row }) => {
             const date = row.original.dateCreation;
-            if (!date) return "-";
+            if (!date) return <span className="text-muted-foreground">-</span>;
             try {
-                return format(new Date(date), "dd MMM yyyy", { locale: fr });
+                return (
+                    <div className="flex items-center gap-2">
+                        <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">
+                            {format(new Date(date), "dd MMMM yyyy", { locale: fr })}
+                        </span>
+                    </div>
+                );
             } catch {
-                return "-";
+                return <span className="text-muted-foreground">-</span>;
             }
         },
     },
     {
         id: "actions",
-        header: "Actions",
+        header: () => <div className="text-center">Actions</div>,
         cell: ({ row }) => <ActionsCell row={row} />,
     },
 ];

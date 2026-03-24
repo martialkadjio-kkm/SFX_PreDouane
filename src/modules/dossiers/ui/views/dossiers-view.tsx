@@ -33,13 +33,30 @@ export const DossiersView = ({ dossiers }: Props) => {
     }, [dossiers, search]);
 
     return (
-        <div className="flex-1 pb-4 px-4 md:px-8 flex flex-col gap-y-4">
+        <div className="flex-1 pb-4 px-4 md:px-8 flex flex-col gap-y-6">
+            {/* Header */}
+            <div className="flex flex-col gap-2">
+                <div>
+                    <h2 className="text-2xl font-bold tracking-tight">Dossiers</h2>
+                    <p className="text-sm text-muted-foreground mt-1">
+                        Gérez vos dossiers de transit et suivez leur progression
+                    </p>
+                </div>
+                {search && (
+                    <div className="text-sm text-muted-foreground">
+                        {filteredDossiers.length} résultat{filteredDossiers.length > 1 ? 's' : ''} pour "{search}"
+                    </div>
+                )}
+            </div>
+
             {filteredDossiers && filteredDossiers.length > 0 ? (
-                <DataTable
-                    data={filteredDossiers}
-                    columns={columns}
-                    onRowClick={(row) => router.push(`/dossiers/${row.idDossier}`)}
-                />
+                <div className="rounded-lg border bg-card">
+                    <DataTable
+                        data={filteredDossiers}
+                        columns={columns}
+                        onRowClick={(row) => router.push(`/dossiers/${row.idDossier}`)}
+                    />
+                </div>
             ) : (
                 <EmptyState
                     title={search ? "Aucun dossier trouvé" : "Créer votre premier dossier"}
