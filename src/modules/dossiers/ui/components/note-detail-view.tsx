@@ -19,8 +19,10 @@ import {
   supprimerNotesDetail,
   getNotesDetail,
   getTauxChangeDossier,
+  getDossierDeviseNoteDetail,
 } from "../../server/note-detail-actions";
 import { GenererNotesDialog } from "./generer-notes-dialog";
+import { SelectDeviseNoteDetailDialog } from "./select-devise-note-detail-dialog";
 import { DataTable } from "@/components/data-table";
 import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
@@ -52,6 +54,8 @@ export const NoteDetailView = ({
   const [isLoading, setIsLoading] = useState(true);
   const [notes, setNotes] = useState<any[]>([]);
   const [showGenererDialog, setShowGenererDialog] = useState(false);
+  const [showSelectDeviseDialog, setShowSelectDeviseDialog] = useState(false);
+  const [deviseNoteDetail, setDeviseNoteDetail] = useState<number | null>(null);
   const [exchangeRates, setExchangeRates] = useState<{ [devise: string]: number }>({});
   const [dateDeclaration, setDateDeclaration] = useState<Date | null>(null);
   const router = useRouter();
@@ -106,12 +110,15 @@ export const NoteDetailView = ({
     try {
       const result = await getNotesDetail(dossierId);
       if (result.success && result.data) {
-        // Appliquer le tri par régime aux données
         const sortedNotes = groupNotesByRegime(result.data);
         setNotes(sortedNotes);
       }
 
-      // Récupérer les taux de change
+      const deviseResult = await getDossierDeviseNoteDetail(dossierId);
+      if (deviseResult.success && deviseResult.data) {
+        setDeviseNoteDetail(deviseResult.data.deviseNoteDetail ?? null);
+      }
+
       const tauxResult = await getTauxChangeDossier(dossierId);
       if (tauxResult.success && tauxResult.data) {
         const rates: { [devise: string]: number } = {};
@@ -119,16 +126,9 @@ export const NoteDetailView = ({
           rates[taux.Code_Devise] = Number(taux.Taux_Change || 0);
         });
         setExchangeRates(rates);
-        
-        // Récupérer la date de déclaration
         if (tauxResult.dateDeclaration) {
           setDateDeclaration(new Date(tauxResult.dateDeclaration));
         }
-        
-        console.log("[NoteDetailView] Taux de change chargés:", rates);
-        console.log("[NoteDetailView] Date de déclaration:", tauxResult.dateDeclaration);
-      } else {
-        console.warn("[NoteDetailView] Impossible de charger les taux de change:", tauxResult.error);
       }
     } catch (error) {
       console.error("Error loading notes:", error);
@@ -1017,13 +1017,20 @@ export const NoteDetailView = ({
   return (
     <>
       <DeleteConfirmation />
+      <SelectDeviseNoteDetailDialog
+        open={showSelectDeviseDialog}
+        onOpenChange={setShowSelectDeviseDialog}
+        dossierId={dossierId}
+        entiteId={entiteId}
+        onSuccess={() => {
+          loadNotes();
+        }}
+      />
       <GenererNotesDialog
         open={showGenererDialog}
         onOpenChange={(open) => {
           setShowGenererDialog(open);
-          if (!open) {
-            loadNotes();
-          }
+          if (!open) loadNotes();
         }}
         dossierId={dossierId}
         entiteId={entiteId}
@@ -1040,12 +1047,7 @@ export const NoteDetailView = ({
           <div className="flex items-center gap-2">
             {notes.length > 0 && (
               <>
-                <Button
-                  onClick={loadNotes}
-                  variant="outline"
-                  size="sm"
-                  disabled={isDeleting}
-                >
+                <Button onClick={loadNotes} variant="outline" size="sm" disabled={isDeleting}>
                   <RefreshCw className="w-4 h-4" />
                 </Button>
 
@@ -1067,12 +1069,8 @@ export const NoteDetailView = ({
                         PDF
                       </DropdownMenuSubTrigger>
                       <DropdownMenuSubContent>
-                        <DropdownMenuItem onClick={() => exportToPDF('fr')}>
-                          🇫🇷 Français
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => exportToPDF('en')}>
-                          🇬🇧 English
-                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => exportToPDF('fr')}>🇫🇷 Français</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => exportToPDF('en')}>🇬🇧 English</DropdownMenuItem>
                       </DropdownMenuSubContent>
                     </DropdownMenuSub>
                     <DropdownMenuItem onClick={exportToCSV}>
@@ -1090,27 +1088,36 @@ export const NoteDetailView = ({
                   className="text-destructive hover:text-destructive"
                 >
                   {isDeleting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Suppression...
-                    </>
+                    <><Loader2 className="w-4 h-4 animate-spin" />Suppression...</>
                   ) : (
-                    <>
-                      <Trash2 className="w-4 h-4" />
-                      Supprimer
-                    </>
+                    <><Trash2 className="w-4 h-4" />Supprimer</>
                   )}
                 </Button>
               </>
             )}
+
+            {/* Étape 1 : sélectionner la devise (toujours visible) */}
             <Button
-              onClick={() => setShowGenererDialog(true)}
-              disabled={isDeleting}
+              onClick={() => setShowSelectDeviseDialog(true)}
+              variant={deviseNoteDetail ? "outline" : "default"}
               size="sm"
+              disabled={isDeleting}
             >
               <FileText className="w-4 h-4" />
-              {notes.length > 0 ? "Régénérer" : "Générer"}
+              {deviseNoteDetail ? "Changer devise" : "Sélectionner devise"}
             </Button>
+
+            {/* Étape 2 : générer (visible seulement si devise configurée) */}
+            {deviseNoteDetail && (
+              <Button
+                onClick={() => setShowGenererDialog(true)}
+                size="sm"
+                disabled={isDeleting}
+              >
+                <FileText className="w-4 h-4" />
+                {notes.length > 0 ? "Régénérer" : "Générer"}
+              </Button>
+            )}
           </div>
         </div>
 
