@@ -59,20 +59,38 @@ export const ConversionsView = ({ conversions }: Props) => {
     };
 
     return (
-        <div className="flex-1 pb-4 px-4 md:px-8 flex flex-col gap-y-4">
-            {/* Header avec filtre */}
-            <div className="flex items-center justify-between">
-                <DateFilter onFilter={handleDateFilter} />
+        <div className="flex-1 pb-4 px-4 md:px-8 flex flex-col gap-y-6">
+            {/* Header avec titre et filtre */}
+            <div className="flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h2 className="text-2xl font-bold tracking-tight">Conversions</h2>
+                        <p className="text-sm text-muted-foreground mt-1">
+                            Gérez les taux de change pour vos conversions de devises
+                        </p>
+                    </div>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                    <DateFilter onFilter={handleDateFilter} />
+                    {(startDate || endDate) && (
+                        <span className="text-sm text-muted-foreground">
+                            {filteredConversions.length} résultat{filteredConversions.length > 1 ? 's' : ''}
+                        </span>
+                    )}
+                </div>
             </div>
 
             {filteredConversions && filteredConversions.length > 0 && (
-                <DataTable
-                    data={filteredConversions}
-                    columns={columns}
-                    onRowClick={(row: any) => {
-                        router.push(`/conversion/${row.ID_Convertion}`);
-                    }}
-                />
+                <div className="rounded-lg border bg-card">
+                    <DataTable
+                        data={filteredConversions}
+                        columns={columns}
+                        onRowClick={(row: any) => {
+                            router.push(`/conversion/${row.ID_Convertion}`);
+                        }}
+                    />
+                </div>
             )}
 
             {conversions && conversions.length > 0 && filteredConversions.length === 0 && (

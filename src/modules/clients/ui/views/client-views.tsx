@@ -58,13 +58,30 @@ export const ClientView = ({ client, total = 0, currentPage = DEFAULT_PAGE }: Pr
   };
 
   return (
-    <div className="flex-1 pb-4 px-4 md:px-8 flex flex-col gap-y-4">
+    <div className="flex-1 pb-4 px-4 md:px-8 flex flex-col gap-y-6">
+      {/* Header */}
+      <div className="flex flex-col gap-2">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Clients</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Gérez vos clients et leurs informations
+          </p>
+        </div>
+        {search && (
+          <div className="text-sm text-muted-foreground">
+            {filteredClients.length} résultat{filteredClients.length > 1 ? 's' : ''} pour "{search}"
+          </div>
+        )}
+      </div>
+
       {paginatedClients && paginatedClients.length > 0 && (
-        <DataTable
-          data={paginatedClients}
-          columns={columns as any}
-          onRowClick={(row) => router.push(`/client/${(row as any).ID_Client}`)}
-        />
+        <div className="rounded-lg border bg-card">
+          <DataTable
+            data={paginatedClients}
+            columns={columns as any}
+            onRowClick={(row) => router.push(`/client/${(row as any).ID_Client}`)}
+          />
+        </div>
       )}
 
       <DataPagination
@@ -72,10 +89,11 @@ export const ClientView = ({ client, total = 0, currentPage = DEFAULT_PAGE }: Pr
         totalPages={totalPages}
         onPageChange={handlePageChange}
       />
+      
       {filteredClients?.length === 0 && (
         <EmptyState
-          title={search ? "Aucun client trouvé" : "Creer votre premier Client"}
-          description={search ? `Aucun résultat pour "${search}"` : "Il n'y a pas encore de Clients dans votre compte."}
+          title={search ? "Aucun client trouvé" : "Créer votre premier client"}
+          description={search ? `Aucun résultat pour "${search}"` : "Il n'y a pas encore de clients dans votre compte."}
         />
       )}
     </div>
