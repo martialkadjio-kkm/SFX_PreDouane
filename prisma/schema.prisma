@@ -901,7 +901,7 @@ view VNotesDetail {
 }
 /// Complete packing details with all related information
 view VColisageDossiers {
-    idColisageDossier        Int      @map("ID_Colisage_Dossier")
+    idColisageDossier        Int      @id @map("ID_Colisage_Dossier")
     idDossier                Int      @map("ID_Dossier")
     hsCode                   String?  @map("HS_Code") @db.NVarChar(50)
     descriptionColis         String   @map("Description_Colis") @db.NVarChar(1000)

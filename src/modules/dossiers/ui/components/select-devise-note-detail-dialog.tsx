@@ -37,16 +37,20 @@ export const SelectDeviseNoteDetailDialog = ({
     const [selectedDeviseId, setSelectedDeviseId] = useState<number | null>(null);
     const [dateDeclaration, setDateDeclaration] = useState<Date>();
     const [conversionExists, setConversionExists] = useState<boolean | null>(null);
+    const [deviseCibleHasTaux, setDeviseCibleHasTaux] = useState<boolean | null>(null);
     const [isChecking, setIsChecking] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [taux, setTaux] = useState<{ [deviseId: number]: string }>({});
+    const [tauxDeviceCible, setTauxDeviceCible] = useState<string>("");
 
     useEffect(() => {
         if (open) {
             setSelectedDeviseId(null);
             setDateDeclaration(undefined);
             setConversionExists(null);
+            setDeviseCibleHasTaux(null);
             setTaux({});
+            setTauxDeviceCible("");
             getDevisesColisageDossier(dossierId).then((res) => {
                 if (res.success && res.data) setDevises(res.data);
             });
@@ -55,17 +59,35 @@ export const SelectDeviseNoteDetailDialog = ({
 
     const autresDevises = devises.filter((d) => d.id !== selectedDeviseId);
 
-    const handleDateSelect = async (date: Date | undefined) => {
-        setDateDeclaration(date);
+    const checkConversion = async (date: Date | undefined, deviseId: number | null) => {
         setConversionExists(null);
+        setDeviseCibleHasTaux(null);
         if (!date) return;
         setIsChecking(true);
         try {
-            const result = await checkConversionExists(date, entiteId);
+            const result = await checkConversionExists(date, entiteId, deviseId ?? undefined);
             setConversionExists(result.exists ?? false);
-            if (!result.exists) toast.error("Aucune conversion trouvée pour cette date");
+            if (!result.exists) {
+                toast.error("Aucune conversion trouvée pour cette date");
+            } else if (deviseId != null) {
+                setDeviseCibleHasTaux(result.deviseCibleHasTaux ?? null);
+            }
         } finally {
             setIsChecking(false);
+        }
+    };
+
+    const handleDateSelect = async (date: Date | undefined) => {
+        setDateDeclaration(date);
+        setTauxDeviceCible("");
+        await checkConversion(date, selectedDeviseId);
+    };
+
+    const handleDeviseSelect = async (deviseId: number) => {
+        setSelectedDeviseId(deviseId);
+        setTauxDeviceCible("");
+        if (dateDeclaration) {
+            await checkConversion(dateDeclaration, deviseId);
         }
     };
 
@@ -77,6 +99,14 @@ export const SelectDeviseNoteDetailDialog = ({
         if (!conversionExists) {
             toast.error("Aucune conversion disponible pour cette date");
             return;
+        }
+        // Si la devise cible n'a pas de taux, l'utilisateur doit le saisir
+        if (deviseCibleHasTaux === false) {
+            const val = parseFloat(tauxDeviceCible);
+            if (isNaN(val) || val <= 0) {
+                toast.error(`Veuillez saisir le taux de la devise cible en devise locale`);
+                return;
+            }
         }
         for (const d of autresDevises) {
             const val = parseFloat(taux[d.id] || "");
@@ -93,7 +123,9 @@ export const SelectDeviseNoteDetailDialog = ({
                 tauxChange: parseFloat(taux[d.id]),
             }));
 
-            const result = await setDeviseNoteDetail(dossierId, selectedDeviseId, dateDeclaration, tauxArray);
+            const tauxCibleVal = deviseCibleHasTaux === false ? parseFloat(tauxDeviceCible) : undefined;
+
+            const result = await setDeviseNoteDetail(dossierId, selectedDeviseId, dateDeclaration, tauxArray, tauxCibleVal);
             if (!result.success) {
                 toast.error(result.error || "Erreur lors de la sauvegarde");
                 return;
@@ -126,7 +158,7 @@ export const SelectDeviseNoteDetailDialog = ({
                                 <button
                                     key={d.id}
                                     type="button"
-                                    onClick={() => setSelectedDeviseId(d.id)}
+                                    onClick={() => handleDeviseSelect(d.id)}
                                     className={cn(
                                         "flex items-center justify-between px-3 py-2 rounded-md border text-sm transition-colors",
                                         selectedDeviseId === d.id
@@ -153,6 +185,26 @@ export const SelectDeviseNoteDetailDialog = ({
                             </p>
                         )}
                     </div>
+
+                    {/* Taux de la devise cible si absent de TTauxChange */}
+                    {selectedDeviseId && deviseCibleHasTaux === false && (
+                        <div className="space-y-2">
+                            <Label>
+                                Taux de {devises.find(d => d.id === selectedDeviseId)?.code} en devise locale
+                            </Label>
+                            <p className="text-xs text-muted-foreground">
+                                Cette devise n&apos;a pas de taux défini pour cette date. Saisissez son taux en devise locale.
+                            </p>
+                            <Input
+                                type="number"
+                                step="0.000001"
+                                min="0"
+                                placeholder={`Taux ${devises.find(d => d.id === selectedDeviseId)?.code} en devise locale`}
+                                value={tauxDeviceCible}
+                                onChange={(e) => setTauxDeviceCible(e.target.value)}
+                            />
+                        </div>
+                    )}
 
                     {autresDevises.length > 0 && selectedDeviseId && (
                         <div className="space-y-2">
@@ -224,7 +276,13 @@ export const SelectDeviseNoteDetailDialog = ({
                     </Button>
                     <Button
                         onClick={handleSave}
-                        disabled={!selectedDeviseId || !dateDeclaration || conversionExists !== true || isSaving}
+                        disabled={
+                            !selectedDeviseId ||
+                            !dateDeclaration ||
+                            conversionExists !== true ||
+                            (deviseCibleHasTaux === false && (parseFloat(tauxDeviceCible) <= 0 || isNaN(parseFloat(tauxDeviceCible)))) ||
+                            isSaving
+                        }
                     >
                         {isSaving ? "Enregistrement..." : "Confirmer"}
                     </Button>

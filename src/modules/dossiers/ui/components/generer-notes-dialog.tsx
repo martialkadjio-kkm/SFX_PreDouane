@@ -20,8 +20,7 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { checkConversionExists, genererNotesDetail, createMissingExchangeRates } from "../../server/note-detail-actions";
-import { MissingExchangeRatesDialog } from "./missing-exchange-rates-dialog";
+import { checkConversionExists, genererNotesDetail } from "../../server/note-detail-actions";
 
 interface GenererNotesDialogProps {
     open: boolean;
@@ -40,8 +39,6 @@ export const GenererNotesDialog = ({
     const [isChecking, setIsChecking] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
     const [conversionExists, setConversionExists] = useState<boolean | null>(null);
-    const [showMissingRatesDialog, setShowMissingRatesDialog] = useState(false);
-    const [missingRatesData, setMissingRatesData] = useState<any>(null);
     const router = useRouter();
 
     const handleDateSelect = async (date: Date | undefined) => {
@@ -83,14 +80,6 @@ export const GenererNotesDialog = ({
             const result = await genererNotesDetail(dossierId, dateDeclaration);
 
             if (!result.success) {
-                // Vérifier si c'est une erreur de taux manquants
-                if (result.error === "MISSING_EXCHANGE_RATES" && result.missingRates) {
-                    setMissingRatesData(result);
-                    setShowMissingRatesDialog(true);
-                    setIsGenerating(false);
-                    return;
-                }
-
                 toast.error(result.error || "Erreur lors de la génération");
                 return;
             }
@@ -106,35 +95,8 @@ export const GenererNotesDialog = ({
         }
     };
 
-    const handleCreateMissingRates = async (rates: Array<{ deviseId: number; tauxChange: number }>) => {
-        try {
-            const result = await createMissingExchangeRates(missingRatesData.conversionId, rates);
-
-            if (!result.success) {
-                toast.error("Erreur lors de la création des taux");
-                return;
-            }
-
-            toast.success("Taux de change créés avec succès");
-            setShowMissingRatesDialog(false);
-
-            // Réessayer la génération
-            handleGenerer();
-        } catch (error) {
-            toast.error("Erreur lors de la création des taux");
-            console.error(error);
-        }
-    };
-
     return (
         <>
-            <MissingExchangeRatesDialog
-                open={showMissingRatesDialog}
-                onOpenChange={setShowMissingRatesDialog}
-                missingRates={missingRatesData?.missingRates || []}
-                dateConvertion={missingRatesData?.dateConvertion || new Date()}
-                onConfirm={handleCreateMissingRates}
-            />
             <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>

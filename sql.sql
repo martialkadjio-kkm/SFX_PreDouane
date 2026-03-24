@@ -2262,7 +2262,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE   PROCEDURE [dbo].[pSP_CreerNoteDetail]
+CREATE PROCEDURE [dbo].[pSP_CreerNoteDetail]
                 @Id_Dossier int
                 ,@DateDeclaration datetime2(7)
                 ,@RoundDigit int=2
@@ -2456,8 +2456,8 @@ BEGIN
                                                                -- Cas TR
                                                                UNION ALL 
                                                                SELECT A.[ID Colisage Dossier]
-                                                                               ,A.[Qte Colis]*(1-B.[Taux Regime])
                                                                                ,FORMAT(1-B.[Taux Regime],'P')  + N'TR'
+                                                                               ,A.[Qte Colis]*(1-B.[Taux Regime])
                                                                                ,B.[Valeur Globale]-B.[Valeur DC]                        -- La valeur doit integrer l'ajustement
                                                                                ,@NbrePaquetagePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])*(1-B.[Taux Regime])/@ValeurTotaleColisage
                                                                                ,@PoidsBrutPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])*(1-B.[Taux Regime])/@ValeurTotaleColisage
@@ -2477,22 +2477,22 @@ BEGIN
                                                                ,[Base Volume])
                                                SELECT [Colisage Dossier]
                                                                ,[Regime]
-                                                               ,LEAST([Qte Colis],0.1)
-                                                               ,LEAST([Valeur],0.1)
-                                                               ,LEAST([Nbre Paquetage],0.1)
-                                                               ,LEAST([Base Poids Brut],0.1)
-                                                               ,LEAST([Base Poids Net],0.1)
-                                                               ,LEAST([Base Volume],0.1)
+                                                               ,LEAST([Qte Colis],0.01)
+                                                               ,LEAST([Valeur],0.01)
+                                                               ,LEAST([Nbre Paquetage],0.01)
+                                                               ,LEAST([Base Poids Brut],0.01)
+                                                               ,LEAST([Base Poids Net],0.01)
+                                                               ,LEAST([Base Volume],0.01)
                                                FROM TMP_NOTES_DETAIL_100
                                                UNION ALL 
                                                SELECT [Colisage Dossier]
                                                                ,[Regime]
-                                                               ,LEAST([Qte Colis],0.1)
-                                                               ,LEAST([Valeur],0.1)
-                                                               ,LEAST([Nbre Paquetage],0.1)
-                                                               ,LEAST([Base Poids Brut],0.1)
-                                                               ,LEAST([Base Poids Net],0.1)
-                                                               ,LEAST([Base Volume],0.1)
+                                                               ,LEAST([Qte Colis],0.01)
+                                                               ,LEAST([Valeur],0.01)
+                                                               ,LEAST([Nbre Paquetage],0.01)
+                                                               ,LEAST([Base Poids Brut],0.01)
+                                                               ,LEAST([Base Poids Net],0.01)
+                                                               ,LEAST([Base Volume],0.01)
                                                FROM TMP_NOTES_DETAIL_RATIO
 
 

@@ -58,7 +58,7 @@ export async function getColisageReportData(dossierId: number) {
             Nom_Fournisseur: c.nomFournisseur,
             No_Facture: c.noFacture,
             Item_No: c.itemNo,
-            Code_Devise: c.codeDevise,
+            Code_Devise: c.codeDeviseColis,
             Qte_Colis: c.qteColisage,
             Prix_Unitaire_Colis: c.prixUnitaireColis,
             Poids_Brut: c.poidsBrut,

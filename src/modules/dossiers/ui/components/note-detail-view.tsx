@@ -177,6 +177,7 @@ export const NoteDetailView = ({
         "Volume (m³)": Number(note.Volume),
         "Poids Brut (kg)": Number(note.Poids_Brut || 0),
         "Poids Net (kg)": Number(note.Poids_Net || 0),
+        "Qté Colis": Number(note.Qte_Colis || 0),
       }));
 
       const worksheet = XLSX.utils.json_to_sheet(exportData);
@@ -194,6 +195,7 @@ export const NoteDetailView = ({
         { wch: 12 }, // Volume
         { wch: 12 }, // Poids Brut
         { wch: 12 }, // Poids Net
+        { wch: 12 }, // Qté Colis
       ];
 
       XLSX.writeFile(workbook, `note-details-dossier-${dossierId}.xlsx`);
@@ -217,6 +219,7 @@ export const NoteDetailView = ({
         "Volume (m³)",
         "Poids Brut (kg)",
         "Poids Net (kg)",
+        "Qté Colis",
       ];
 
       // Appliquer le regroupement par régime pour l'export
@@ -232,6 +235,7 @@ export const NoteDetailView = ({
         Number(note.Volume),
         Number(note.Poids_Brut || 0),
         Number(note.Poids_Net || 0),
+        Number(note.Qte_Colis || 0),
       ]);
 
       const csvContent = [
@@ -288,6 +292,7 @@ export const NoteDetailView = ({
           volumeCol: "Volume",
           grossWeightCol: "Poids Brut",
           netWeightCol: "Poids Net",
+          qteColis: "Qté Colis",
           copyright: "©Copyright Softronic Innoving",
           page: "Page",
         },
@@ -314,6 +319,7 @@ export const NoteDetailView = ({
           volumeCol: "Volume",
           grossWeightCol: "Gross Weight",
           netWeightCol: "Net Weight",
+          qteColis: "Qty Packages",
           copyright: "©Copyright Softronic Innoving",
           page: "Page",
         },
@@ -800,6 +806,7 @@ export const NoteDetailView = ({
         Number(note.Volume).toFixed(1),
         Number(note.Poids_Brut || 0).toFixed(1),
         Number(note.Poids_Net || 0).toFixed(1),
+        Number(note.Qte_Colis || 0).toFixed(0),
       ]);
 
       // === BARRE DE TITRE "DETAILS" ===
@@ -829,6 +836,7 @@ export const NoteDetailView = ({
             t.volumeCol,
             t.grossWeightCol,
             t.netWeightCol,
+            t.qteColis,
           ],
         ],
         body: tableData,
@@ -858,6 +866,7 @@ export const NoteDetailView = ({
           7: { halign: "right" }, // Volume
           8: { halign: "right" }, // Poids Brut
           9: { halign: "right" }, // Poids Net
+          10: { halign: "right" }, // Qté Colis
         },
       });
 
@@ -1000,6 +1009,15 @@ export const NoteDetailView = ({
       cell: ({ row }) => {
         const poids = row.getValue("Poids_Net") as number;
         return `${Number(poids || 0).toFixed(2)} kg`;
+      },
+    },
+    // 10. Qté Colis
+    {
+      accessorKey: "Qte_Colis",
+      header: "Qté Colis",
+      cell: ({ row }) => {
+        const qte = row.getValue("Qte_Colis") as number;
+        return Number(qte || 0).toFixed(0);
       },
     },
   ];

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/modules/auth/server/actions";
 
-export async function checkConversionExists(dateDeclaration: Date, entiteId: number) {
+export async function checkConversionExists(dateDeclaration: Date, entiteId: number, deviseId?: number) {
     try {
         const dateStr = dateDeclaration.toISOString().split("T")[0];
         const conversions = await prisma.$queryRaw<any[]>`
@@ -14,10 +14,21 @@ export async function checkConversionExists(dateDeclaration: Date, entiteId: num
                 AND [Entite] = ${entiteId}
         `;
         const conversion = conversions.length > 0 ? conversions[0] : null;
+
+        let deviseCibleHasTaux: boolean | undefined = undefined;
+        if (conversion && deviseId != null) {
+            const tauxRows = await prisma.$queryRaw<any[]>`
+                SELECT 1 FROM TTauxChange
+                WHERE [Convertion] = ${conversion["ID Convertion"]} AND [Devise] = ${deviseId}
+            `;
+            deviseCibleHasTaux = tauxRows.length > 0;
+        }
+
         return {
             success: true,
             exists: !!conversion,
             conversion: conversion ? { id: conversion["ID Convertion"], dateConvertion: conversion["Date Convertion"] } : undefined,
+            deviseCibleHasTaux,
         };
     } catch (error) {
         return { success: false, exists: false, error: error instanceof Error ? error.message : "Erreur" };
@@ -49,7 +60,8 @@ export async function setDeviseNoteDetail(
     dossierId: number,
     deviseId: number,
     dateDeclaration: Date,
-    taux: Array<{ deviseId: number; tauxChange: number }>
+    taux: Array<{ deviseId: number; tauxChange: number }>,
+    tauxDeviceCible?: number  // taux en devise locale de la devise cible, si absent de TTauxChange
 ) {
     try {
         const session = await getSession();
@@ -78,7 +90,40 @@ export async function setDeviseNoteDetail(
 
         const conversionId = conversions[0]["ID Convertion"];
 
+        // Vérifier que la devise cible a un taux dans TTauxChange pour cette conversion
+        // (nécessaire pour fx_EvalTauxChangeDossier qui calcule taux_devise / taux_devise_cible)
+        const tauxDeviceCibleRows = await prisma.$queryRaw<any[]>`
+            SELECT [ID Taux Change], [Taux Change] FROM TTauxChange
+            WHERE [Convertion] = ${conversionId} AND [Devise] = ${deviseId}
+        `;
+
+        let tauxCibleEnDeviseLocale: number;
+
+        if (tauxDeviceCibleRows.length === 0) {
+            // L'utilisateur doit avoir fourni le taux
+            if (tauxDeviceCible == null || tauxDeviceCible <= 0) {
+                return { success: false, error: `La devise cible n'a pas de taux de change pour cette date. Veuillez le saisir.` };
+            }
+            await prisma.tTauxChange.create({
+                data: {
+                    convertion: conversionId,
+                    devise: deviseId,
+                    tauxChange: tauxDeviceCible,
+                    session: session.user.id,
+                    dateCreation: new Date(),
+                },
+            });
+            tauxCibleEnDeviseLocale = tauxDeviceCible;
+        } else {
+            tauxCibleEnDeviseLocale = Number(tauxDeviceCibleRows[0]["Taux Change"]);
+        }
+
         for (const t of taux) {
+            // L'utilisateur saisit : 1 autreDevise = X devises_cible (taux relatif)
+            // TTauxChange stocke les taux par rapport à la devise locale
+            // Donc : taux_autreDevise_en_locale = tauxRelatif * taux_cible_en_locale
+            const tauxEnDeviseLocale = t.tauxChange * tauxCibleEnDeviseLocale;
+
             const existing = await prisma.$queryRaw<any[]>`
                 SELECT [ID Taux Change] FROM TTauxChange
                 WHERE [Convertion] = ${conversionId} AND [Devise] = ${t.deviseId}
@@ -88,17 +133,21 @@ export async function setDeviseNoteDetail(
                     data: {
                         convertion: conversionId,
                         devise: t.deviseId,
-                        tauxChange: t.tauxChange,
+                        tauxChange: tauxEnDeviseLocale,
                         session: session.user.id,
                         dateCreation: new Date(),
                     },
                 });
+            } else {
+                // Mettre à jour si le taux a changé
+                await prisma.$executeRaw`
+                    UPDATE TTauxChange SET [Taux Change] = ${tauxEnDeviseLocale}
+                    WHERE [Convertion] = ${conversionId} AND [Devise] = ${t.deviseId}
+                `;
             }
         }
 
-        await prisma.$executeRawUnsafe(
-            `UPDATE TDossiers SET [Devise Note Detail] = ${deviseId} WHERE [ID Dossier] = ${dossierId}`
-        );
+        await prisma.$executeRaw`UPDATE TDossiers SET [Devise Note Detail] = ${deviseId} WHERE [ID Dossier] = ${dossierId}`;
 
         revalidatePath(`/dossiers/${dossierId}`);
         return { success: true, data: { conversionId } };
@@ -135,14 +184,22 @@ export async function genererNotesDetail(dossierId: number, dateDeclaration: Dat
         if (conversions.length === 0) return { success: false, error: "Aucune conversion trouvée pour cette date" };
 
         const dateConversionExacte = conversions[0]["Date Convertion"];
+        const dateConversionDate = dateConversionExacte instanceof Date
+            ? dateConversionExacte
+            : new Date(dateConversionExacte);
+
+        // Passer la date via une variable T-SQL déclarée pour forcer le type datetime2
+        const dateISO = dateConversionDate.toISOString().replace("T", " ").slice(0, 23); // "YYYY-MM-DD HH:mm:ss.mmm"
 
         try {
-            await prisma.$executeRaw`EXEC [dbo].[pSP_CreerNoteDetail] @Id_Dossier = ${dossierId}, @DateDeclaration = ${dateConversionExacte}`;
+            await prisma.$executeRawUnsafe(
+                `DECLARE @d datetime2 = '${dateISO}'; EXEC [dbo].[pSP_CreerNoteDetail] @Id_Dossier = ${dossierId}, @DateDeclaration = @d`
+            );
         } catch (procError: any) {
             let errorMsg = procError.message || "Erreur inconnue";
             if (errorMsg.includes("FILE IS NOT IN PROGRESS")) errorMsg = "Le dossier doit être en cours (statut = 0)";
             else if (errorMsg.includes("NO EXCHANGE RATE")) errorMsg = "Aucun taux de change à cette date pour cette entité";
-            else if (errorMsg.includes("MISSING EXCHANGE RATE")) errorMsg = "Taux de change manquant pour certaines devises";
+            else if (errorMsg.includes("MISSING EXCHANGE RATE FOR CURRENCIES")) errorMsg = "Taux de change manquant pour certaines devises";
             else if (errorMsg.includes("MISSING PACKING LIST")) errorMsg = "Aucun colisage trouvé";
             else if (errorMsg.includes("MISSING HS CODE OR REGIME")) errorMsg = "HS Code ou régime manquant sur certains colisages";
             else if (errorMsg.includes("MISSING Gross Weight")) errorMsg = "Poids brut ou nombre de paquetages manquant sur l'en-tête";
@@ -163,9 +220,7 @@ export async function supprimerNotesDetail(dossierId: number) {
 
         await prisma.$executeRaw`EXEC [dbo].[pSP_SupprimerNoteDetail] @Id_Dossier = ${dossierId}`;
 
-        await prisma.$executeRawUnsafe(
-            `UPDATE TDossiers SET [Devise Note Detail] = NULL WHERE [ID Dossier] = ${dossierId}`
-        );
+        await prisma.$executeRaw`UPDATE TDossiers SET [Devise Note Detail] = NULL WHERE [ID Dossier] = ${dossierId}`;
 
         revalidatePath(`/dossiers/${dossierId}`);
         return { success: true };
@@ -210,9 +265,10 @@ export async function getNotesDetail(dossierId: number) {
             Qte_Colis: n.Qte_Colis,
             Valeur: n.Valeur,
             Code_Devise: n.Code_Devise_Note_Detail,
-            Poids_Brut: n.Base_Poids_Brut,
-            Poids_Net: n.Base_Poids_Net,
-            Volume: n.Base_Volume,
+            // Compatibilité : la vue peut retourner Base_Poids_Brut ou Poids_Brut selon la version déployée
+            Poids_Brut: n.Base_Poids_Brut ?? n.Poids_Brut,
+            Poids_Net: n.Base_Poids_Net ?? n.Poids_Net,
+            Volume: n.Base_Volume ?? n.Volume,
         }));
         return { success: true, data: mappedNotes };
     } catch (error) {
@@ -222,13 +278,31 @@ export async function getNotesDetail(dossierId: number) {
 
 export async function getTauxChangeDossier(dossierId: number) {
     try {
-        const tauxChange = await prisma.$queryRaw<any[]>`
-            SELECT [ID_Devise], [Code_Devise], [Taux_Change]
-            FROM [dbo].[fx_TauxChangeDossier](${dossierId})
+        // Récupérer la date de déclaration depuis la conversion liée au dossier
+        const dossierConv = await prisma.$queryRaw<any[]>`
+            SELECT c.[Date Convertion] as dateConvertion
+            FROM TDossiers d
+            INNER JOIN TConvertions c ON d.[Convertion] = c.[ID Convertion]
+            WHERE d.[ID Dossier] = ${dossierId}
         `;
+
+        if (!dossierConv || dossierConv.length === 0) {
+            return { success: true, data: [], dateDeclaration: null };
+        }
+
+        const dateConvertion = dossierConv[0].dateConvertion;
+        const dateConvertionDate = dateConvertion instanceof Date
+            ? dateConvertion
+            : new Date(dateConvertion);
+        const dateISO = dateConvertionDate.toISOString().replace("T", " ").slice(0, 23);
+
+        const tauxChange = await prisma.$queryRawUnsafe<any[]>(
+            `DECLARE @d datetime2 = '${dateISO}'; SELECT [ID_Devise], [Code_Devise], [Taux_Change] FROM [dbo].[fx_EvalTauxChangeDossier](${dossierId}, @d)`
+        );
         return {
             success: true,
             data: JSON.parse(JSON.stringify(tauxChange)),
+            dateDeclaration: dateConvertion,
         };
     } catch (error) {
         return { success: false, error: error instanceof Error ? error.message : "Erreur lors de la récupération des taux" };
