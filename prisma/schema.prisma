@@ -23,13 +23,14 @@ datasource db {
 model TTypesDossiers {
     id            Int      @id @default(autoincrement()) @map("ID Type Dossier")
     libelle       String   @unique @map("Libelle Type Dossier") @db.NVarChar(200)
-    sensTrafic    Int      @map("Sens Trafic")
-    modeTransport Int      @map("Mode Transport")
+    sensTrafic    String   @map("Sens Trafic") @db.NVarChar(1)
+    modeTransport String   @map("Mode Transport") @db.NVarChar(1)
+    entite        Int      @map("Entite")
     session       Int      @map("Session")
     dateCreation  DateTime @map("Date Creation")
     rowVer        Bytes?   @map("RowVer")
 
-    // tSensTrafic     TSensTrafic     @relation(fields: [sensTrafic], references: [id], onDelete: NoAction, onUpdate: NoAction)
+    tSensTrafic     TSensTrafic     @relation(fields: [sensTrafic], references: [id], onDelete: NoAction, onUpdate: NoAction)
     tModesTransport TModesTransport @relation(fields: [modeTransport], references: [id])
     tDossiers       TDossiers[]
 
@@ -60,8 +61,6 @@ model TUtilisateurs {
     tStatutsDossier      TStatutsDossier[]
     tRoles               TRoles[]
     tPermissionsBase     TPermissionsBase[]
-    tModesTransport      TModesTransport[]
-    tSensTrafic          TSensTrafic[]
     tDevises             TDevises[]
     tGroupesEntites      TGroupesEntites[]
     tEntites             TEntites[]
@@ -88,26 +87,25 @@ model TSessions {
 }
 
 model TSensTrafic {
-    id           Int      @id @default(autoincrement()) @map("ID Sens Trafic")
+    id           String   @id @map("ID Sens Trafic") @db.NVarChar(1)
     libelle      String   @unique @map("Libelle Sens Trafic") @db.NVarChar(200)
     session      Int      @map("Session")
     dateCreation DateTime @map("Date Creation")
     rowVer       Bytes?   @map("RowVer")
 
-    user TUtilisateurs @relation(fields: [id], references: [id], onUpdate: Cascade)
+    tTypesDossiers TTypesDossiers[]
 
     @@map("TSensTrafic")
 }
 
 model TModesTransport {
-    id           Int      @id @default(autoincrement()) @map("ID Mode Transport")
+    id           String   @id @map("ID Mode Transport") @db.NVarChar(1)
     libelle      String   @unique @map("Libelle Mode Transport") @db.NVarChar(200)
     session      Int      @map("Session")
     dateCreation DateTime @map("Date Creation")
     rowVer       Bytes?   @map("RowVer")
 
     tTypesDossiers TTypesDossiers[]
-    tUtilisateurs  TUtilisateurs    @relation(fields: [session], references: [id])
 
     @@map("TModesTransport")
 }
@@ -161,6 +159,7 @@ model TDossiers {
     volumePesee          Decimal  @default(0) @map("Volume Pesee") @db.Decimal(24, 6)
     responsableDossier   Int      @map("Responsable Dossier")
     convertion           Int?     @map("Convertion")
+    deviseNoteDetail     Int?     @map("Devise Note Detail")
     derniereEtapeDossier Int?     @map("Derniere Etape Dossier")
     observationDossier   String?  @map("Observation Dossier") @db.NVarChar(1000)
     statutDossier        Int      @map("Statut Dossier")
@@ -337,6 +336,7 @@ model TCodesEtapes {
     delaiEtape   Int      @default(0) @map("Delai Etape")
     circuitEtape String   @default("-") @map("Circuit Etape") @db.NVarChar(200)
     indexEtape   Int      @unique @map("Index Etape")
+    entite       Int      @default(0) @map("Entite")
     session      Int      @map("Session")
     dateCreation DateTime @map("Date Creation")
     rowVer       Bytes?   @map("RowVer")
@@ -381,12 +381,13 @@ model THSCodes {
 model TNotesDetail {
     id              Int      @id @default(autoincrement()) @map("ID Note Detail")
     colisageDossier Int      @map("Colisage Dossier")
-    regime          String   @map("Regime") @db.NVarChar(2)
-    nbrePaquetage   Decimal  @map("Nbre Paquetage") @db.Decimal(24, 6)
-    valeur          Decimal  @map("Valeur") @db.Decimal(24, 6)
-    basePoidsBrut   Decimal  @map("Base Poids Brut") @db.Decimal(24, 6)
-    basePoidsNet    Decimal  @map("Base Poids Net") @db.Decimal(24, 6)
-    baseVolume      Decimal  @map("Base Volume") @db.Decimal(24, 6)
+    regime          String   @map("Regime") @db.NVarChar(10)
+    nbrePaquetage   Decimal  @map("Nbre Paquetage") @db.Decimal(24, 2)
+    qteColis        Decimal  @default(0) @map("Qte Colis") @db.Decimal(24, 2)
+    valeur          Decimal  @map("Valeur") @db.Decimal(24, 2)
+    basePoidsBrut   Decimal  @map("Base Poids Brut") @db.Decimal(24, 2)
+    basePoidsNet    Decimal  @map("Base Poids Net") @db.Decimal(24, 2)
+    baseVolume      Decimal  @map("Base Volume") @db.Decimal(24, 2)
     session         Int      @map("Session")
     dateCreation    DateTime @map("Date Creation")
     rowVer          Bytes?   @map("RowVer")
@@ -545,10 +546,11 @@ view VSessions {
 view VTypesDossiers {
     idTypeDossier        Int      @map("ID_Type_Dossier")
     libelleTypeDossier   String   @map("Libelle_Type_Dossier") @db.NVarChar(200)
-    idSensTrafic         Int      @map("ID_Sens_Trafic")
+    idSensTrafic         String   @map("ID_Sens_Trafic") @db.NVarChar(1)
     libelleSensTrafic    String   @map("Libelle_Sens_Trafic") @db.NVarChar(200)
-    idModeTransport      Int      @map("ID_Mode_Transport")
+    idModeTransport      String   @map("ID_Mode_Transport") @db.NVarChar(1)
     libelleModeTransport String   @map("Libelle_Mode_Transport") @db.NVarChar(200)
+    idEntite             Int      @map("ID_Entite")
     dateCreation         DateTime @map("Date_Creation")
     nomCreation          String?  @map("Nom_Creation") @db.NVarChar(200)
 
@@ -618,6 +620,7 @@ view VDossiers {
     idPays                 Int       @map("ID_Pays")
     libellePays            String    @map("Libelle_Pays") @db.NVarChar(200)
     deviseLocale           String    @map("Devise_Locale") @db.NVarChar(5)
+    deviseNoteDetail       String?   @map("Devise_Note_Detail") @db.NVarChar(5)
     idTypeDossier          Int       @map("ID_Type_Dossier")
     libelleTypeDossier     String    @map("Libelle_Type_Dossier") @db.NVarChar(200)
     idSensTrafic           Int       @map("ID_Sens_Trafic")
@@ -695,7 +698,7 @@ view VRolesUtilisateurs {
 
 /// Transport modes with creation information
 view VModesTransport {
-    idModeTransport      Int      @map("ID_Mode_Transport")
+    idModeTransport      String   @map("ID_Mode_Transport") @db.NVarChar(1)
     libelleModeTransport String   @map("Libelle_Mode_Transport") @db.NVarChar(200)
     dateCreation         DateTime @map("Date_Creation")
     nomCreation          String?  @map("Nom_Creation") @db.NVarChar(200)
@@ -727,7 +730,7 @@ view VRegimesDouaniers {
 
 /// Traffic directions with creation information
 view VSensTrafic {
-    idSensTrafic      Int      @map("ID_Sens_Trafic")
+    idSensTrafic      String   @map("ID_Sens_Trafic") @db.NVarChar(1)
     libelleSensTrafic String   @map("Libelle_Sens_Trafic") @db.NVarChar(200)
     dateCreation      DateTime @map("Date_Creation")
     nomCreation       String?  @map("Nom_Creation") @db.NVarChar(200)
@@ -879,16 +882,17 @@ view VNotesDetail {
     idDossier                Int      @map("ID_Dossier")
     hsCode                   String?  @map("HS_Code") @db.NVarChar(50)
     paysOrigine              String   @map("Pays_Origine") @db.NVarChar(200)
+    idColisageDossier        Int      @map("ID_Colisage_Dossier")
     idRegimeDeclaration      Int?     @map("ID_Regime_Declaration")
     idRegimeDouanier         Int?     @map("ID_Regime_Douanier")
     libelleRegimeDouanier    String?  @map("Libelle_Regime_Douanier") @db.NVarChar(200)
     libelleRegimeDeclaration String?  @map("Libelle_Regime_Declaration") @db.NVarChar(200)
-    regime                   String   @map("Regime") @db.NVarChar(2)
     regroupementClient       String   @map("Regroupement_Client") @db.NVarChar(200)
+    regime                   String   @map("Regime") @db.NVarChar(10)
+    codeDeviseNoteDetail     String?  @map("Code_Devise_Note_Detail") @db.NVarChar(5)
     nbrePaquetage            Decimal  @map("Nbre_Paquetage") @db.Decimal(24, 6)
-    prixUnitaire             Decimal  @map("Prix_Unitaire") @db.Decimal(24, 6)
+    qteColis                 Decimal  @map("Qte_Colis") @db.Decimal(24, 6)
     valeur                   Decimal  @map("Valeur") @db.Decimal(24, 6)
-    ajustementValeur          Decimal  @map("Ajustement_Valeur") @db.Decimal(24, 6)
     basePoidsBrut            Decimal  @map("Base_Poids_Brut") @db.Decimal(24, 6)
     basePoidsNet             Decimal  @map("Base_Poids_Net") @db.Decimal(24, 6)
     baseVolume               Decimal  @map("Base_Volume") @db.Decimal(24, 6)
@@ -897,31 +901,34 @@ view VNotesDetail {
 }
 /// Complete packing details with all related information
 view VColisageDossiers {
-    idColisageDossier       Int      @map("ID_Colisage_Dossier")
-    idDossier               Int      @map("ID_Dossier")
-    hsCode                  String?  @map("HS_Code") @db.NVarChar(50)
-    descriptionColis        String   @map("Description_Colis") @db.NVarChar(1000)
-    noCommande              String?  @map("No_Commande") @db.NVarChar(50)
-    nomFournisseur          String?  @map("Nom_Fournisseur") @db.NVarChar(200)
-    noFacture               String?  @map("No_Facture") @db.NVarChar(50)
-    itemNo                  String   @map("Item_No") @db.NVarChar(50)
-    codeDevise              String   @map("Code_Devise") @db.NVarChar(5)
-    qteColisage             Decimal  @map("Qte_Colis") @db.Decimal(24, 6)
-    prixUnitaireColis       Decimal  @map("Prix_Unitaire_Colis") @db.Decimal(24, 6)
-    valeurColis             Decimal  @map("Valeur_Colis") @db.Decimal(24, 6)
-    poidsBrut               Decimal  @map("Poids_Brut") @db.Decimal(24, 6)
-    poidsNet                Decimal  @map("Poids_Net") @db.Decimal(24, 6)
-    volume                  Decimal  @map("Volume") @db.Decimal(24, 6)
-    paysOrigine             String   @map("Pays_Origine") @db.NVarChar(200)
-    idRegimeDeclaration     Int?     @map("ID_Regime_Declaration")
-    idRegimeDouanier        Int?     @map("ID_Regime_Douanier")
-    libelleRegimeDouanier   String?  @map("Libelle_Regime_Douanier") @db.NVarChar(200)
-    libelleRegimeDeclaration String? @map("Libelle_Regime_Declaration") @db.NVarChar(200)
-    ratioDC                 Decimal? @map("Ratio_DC") @db.Decimal(24, 3)
-    ratioTR                 Decimal? @map("Ratio_TR") @db.Decimal(25, 3)
-    regroupementClient      String   @map("Regroupement_Client") @db.NVarChar(200)
-    dateCreation            DateTime @map("Date_Creation")
-    nomCreation             String?  @map("Nom_Creation") @db.NVarChar(200)
+    idColisageDossier        Int      @map("ID_Colisage_Dossier")
+    idDossier                Int      @map("ID_Dossier")
+    hsCode                   String?  @map("HS_Code") @db.NVarChar(50)
+    descriptionColis         String   @map("Description_Colis") @db.NVarChar(1000)
+    noCommande               String?  @map("No_Commande") @db.NVarChar(50)
+    nomFournisseur           String?  @map("Nom_Fournisseur") @db.NVarChar(200)
+    noFacture                String?  @map("No_Facture") @db.NVarChar(50)
+    itemNo                   String   @map("Item_No") @db.NVarChar(50)
+    codeDeviseColis          String   @map("Code_Devise_Colis") @db.NVarChar(5)
+    codeDeviseNoteDetail     String?  @map("Code_Devise_Note_Detail") @db.NVarChar(5)
+    qteColisage              Decimal  @map("Qte_Colis") @db.Decimal(24, 6)
+    prixUnitaireColis        Decimal  @map("Prix_Unitaire_Colis") @db.Decimal(24, 6)
+    valeurColis              Decimal  @map("Valeur_Colis") @db.Decimal(24, 6)
+    ajustementValeur         Decimal  @map("Ajustement_Valeur") @db.Decimal(24, 6)
+    poidsBrut                Decimal  @map("Poids_Brut") @db.Decimal(24, 6)
+    poidsNet                 Decimal  @map("Poids_Net") @db.Decimal(24, 6)
+    volume                   Decimal  @map("Volume") @db.Decimal(24, 6)
+    paysOrigine              String   @map("Pays_Origine") @db.NVarChar(200)
+    idRegimeDeclaration      Int?     @map("ID_Regime_Declaration")
+    idRegimeDouanier         Int?     @map("ID_Regime_Douanier")
+    libelleRegimeDouanier    String?  @map("Libelle_Regime_Douanier") @db.NVarChar(200)
+    libelleRegimeDeclaration String?  @map("Libelle_Regime_Declaration") @db.NVarChar(200)
+    regimeCode               String?  @map("Regime_Code") @db.NVarChar(50)
+    ratioDC                  Decimal? @map("Ratio_DC") @db.Decimal(24, 3)
+    ratioTR                  Decimal? @map("Ratio_TR") @db.Decimal(24, 3)
+    regroupementClient       String   @map("Regroupement_Client") @db.NVarChar(200)
+    dateCreation             DateTime @map("Date_Creation")
+    nomCreation              String?  @map("Nom_Creation") @db.NVarChar(200)
 
     @@map("VColisageDossiers")
 }

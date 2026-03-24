@@ -1,6 +1,48 @@
 USE [SFX_PreDouane]
 GO
-/****** Object:  Table [dbo].[TUtilisateurs]    Script Date: 13/02/2026 19:58:55 ******/
+
+-- PARTIE I ==> Creation des objets sans contraintes dans le but de faciliter le transfert de donnees d'une ancienne base vers la nouvelle structure de base de donnees
+
+/****** Object:  Table [dbo].[TPermissonsRoles]    Script Date: 23/03/2026 16:28:43 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TPermissonsRoles](
+                [ID Permission Role] [int] IDENTITY(1,1) NOT NULL,
+                [Role] [int] NOT NULL,
+                [Permission] [int] NOT NULL,
+                [Session] [int] NOT NULL,
+                [Date Creation] [datetime2](7) NOT NULL,
+                [RowVer] [timestamp] NOT NULL,
+CONSTRAINT [TPermissonsRoles$PrimaryKey] PRIMARY KEY CLUSTERED 
+(
+                [ID Permission Role] ASC
+)
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TPermissionsBase]    Script Date: 23/03/2026 16:28:43 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TPermissionsBase](
+                [ID Permission Base] [int] NOT NULL,
+                [Libelle Permission] [nvarchar](200) NOT NULL,
+                [Permission Active] [bit] NOT NULL,
+                [Date Activation] [datetime2](7) NULL,
+                [RowVer] [timestamp] NOT NULL,
+CONSTRAINT [TPermissionsBase$PrimaryKey] PRIMARY KEY CLUSTERED 
+(
+                [ID Permission Base] ASC
+),
+CONSTRAINT [UQ_TPermissionsBase$Libelle Permission] UNIQUE NONCLUSTERED 
+(
+                [Libelle Permission] ASC
+)
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TUtilisateurs]    Script Date: 23/03/2026 16:28:43 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -16,18 +58,18 @@ CREATE TABLE [dbo].[TUtilisateurs](
 CONSTRAINT [TUtilisateurs$PrimaryKey] PRIMARY KEY CLUSTERED 
 (
                 [ID Utilisateur] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+),
 CONSTRAINT [UQ_TUtilisateurs$Code Utilisateur] UNIQUE NONCLUSTERED 
 (
                 [Code Utilisateur] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+),
 CONSTRAINT [UQ_TUtilisateurs$Nom Utilisateur] UNIQUE NONCLUSTERED 
 (
                 [Nom Utilisateur] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+)
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[TSessions]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  Table [dbo].[TSessions]    Script Date: 23/03/2026 16:28:43 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -41,10 +83,10 @@ CREATE TABLE [dbo].[TSessions](
 CONSTRAINT [TSessions$PrimaryKey] PRIMARY KEY CLUSTERED 
 (
                 [ID Session] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+)
 ) ON [PRIMARY]
 GO
-/****** Object:  View [dbo].[VSessions]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  View [dbo].[VSessions]    Script Date: 23/03/2026 16:28:43 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -59,21 +101,470 @@ AS
                 FROM dbo.TSessions A INNER JOIN dbo.TUtilisateurs B ON A.[Utilisateur]=B.[ID Utilisateur]
 
 GO
-/****** Object:  View [dbo].[VUtilisateurs]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  Table [dbo].[TRoles]    Script Date: 23/03/2026 16:28:43 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE   VIEW [dbo].[VUtilisateurs]
+CREATE TABLE [dbo].[TRoles](
+                [ID Role] [int] IDENTITY(1,1) NOT NULL,
+                [Libelle Role] [nvarchar](200) NOT NULL,
+                [Session] [int] NOT NULL,
+                [Date Creation] [datetime2](7) NOT NULL,
+                [RowVer] [timestamp] NOT NULL,
+CONSTRAINT [TRoles$PrimaryKey] PRIMARY KEY CLUSTERED 
+(
+                [ID Role] ASC
+),
+CONSTRAINT [UQ_TRoles$Libelle Role] UNIQUE NONCLUSTERED 
+(
+                [Libelle Role] ASC
+)
+) ON [PRIMARY]
+GO
+/****** Object:  View [dbo].[VPermissonsRoles]    Script Date: 23/03/2026 16:28:43 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   VIEW [dbo].[VPermissonsRoles]
 AS
-                SELECT A.[ID Utilisateur] AS [ID_Utilisateur] 
-                ,A.[Nom Utilisateur] AS [Nom_Utilisateur]
+                SELECT A.[ID Permission Role] AS [ID_Permission_Role]
+                               ,B.[ID Role] AS [ID_Role]
+                               ,B.[Libelle Role] AS [Libelle_Role]
+                               ,C.[ID Permission Base] AS [ID_Permission]
+                               ,C.[Libelle Permission] AS [Libelle_Permission]
                 ,A.[Date Creation] AS [Date_Creation]
                 ,Z.Nom_Utilisateur AS [Nom_Creation]
-                FROM dbo.TUtilisateurs A LEFT JOIN dbo.[VSessions] Z ON A.[Session]=Z.[ID_Session]
-                WHERE [ID Utilisateur]>0
+                FROM [dbo].[TPermissonsRoles] A 
+                               INNER JOIN [dbo].[TRoles] B ON A.[Role]=B.[ID Role]
+                               INNER JOIN [dbo].[TPermissionsBase] C ON A.[Permission]=C.[ID Permission Base]
+                               LEFT JOIN dbo.[VSessions] Z ON A.[Session]=Z.[ID_Session]
+                WHERE C.[Permission Active]=1
 GO
-/****** Object:  Table [dbo].[TClients]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  Table [dbo].[THSCodes]    Script Date: 23/03/2026 16:28:43 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[THSCodes](
+                [ID HS Code] [int] IDENTITY(1,1) NOT NULL,
+                [HS Code] [nvarchar](50) NOT NULL,
+                [Libelle HS Code] [nvarchar](200) NOT NULL,
+                [Entite] [int] NOT NULL,
+                [Session] [int] NOT NULL,
+                [Date Creation] [datetime2](7) NOT NULL,
+                [RowVer] [timestamp] NOT NULL,
+CONSTRAINT [THSCodes$PrimaryKey] PRIMARY KEY CLUSTERED 
+(
+                [ID HS Code] ASC
+),
+CONSTRAINT [UQ_THSCodes$HS Code] UNIQUE NONCLUSTERED 
+(
+                [HS Code] ASC,
+                [Entite] ASC
+)
+) ON [PRIMARY]
+GO
+/****** Object:  View [dbo].[VHSCodes]    Script Date: 23/03/2026 16:28:43 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   VIEW [dbo].[VHSCodes]
+AS
+                SELECT A.[ID HS Code] AS [ID_HS_Code]
+                ,A.[HS Code] AS [HS_Code]
+                ,A.[Libelle HS Code] AS [Libelle_HS_Code]
+                ,A.[Entite] AS [ID_Entite] 
+                ,A.[Date Creation] AS [Date_Creation]
+                ,Z.Nom_Utilisateur AS [Nom_Creation]
+                FROM dbo.THSCodes A LEFT JOIN dbo.[VSessions] Z ON A.[Session]=Z.[ID_Session]
+GO
+/****** Object:  Table [dbo].[TColisageDossiers]    Script Date: 23/03/2026 16:28:43 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TColisageDossiers](
+                [ID Colisage Dossier] [int] IDENTITY(1,1) NOT NULL,
+                [Dossier] [int] NOT NULL,
+                [HS Code] [int] NULL,
+                [Description Colis] [nvarchar](1000) NOT NULL,
+                [No Commande] [nvarchar](50) NOT NULL,
+                [Nom Fournisseur] [nvarchar](200) NOT NULL,
+                [No Facture] [nvarchar](50) NOT NULL,
+                [Item No] [nvarchar](50) NOT NULL,
+                [Devise] [int] NOT NULL,
+                [Qte Colis] [numeric](24, 6) NOT NULL,
+                [Prix Unitaire Colis] [numeric](24, 6) NOT NULL,
+                [Poids Brut] [numeric](24, 3) NOT NULL,
+                [Poids Net] [numeric](24, 3) NOT NULL,
+                [Volume] [numeric](24, 3) NOT NULL,
+                [Ajustement Valeur] [numeric](24, 6) NOT NULL,
+                [Pays Origine] [int] NOT NULL,
+                [Regime Declaration] [int] NULL,
+                [Regroupement Client] [nvarchar](200) NOT NULL,
+                [UploadKey] [nvarchar](50) NOT NULL,
+                [Session] [int] NOT NULL,
+                [Date Creation] [datetime2](7) NOT NULL,
+                [RowVer] [timestamp] NOT NULL,
+CONSTRAINT [TColisageDossiers$PrimaryKey] PRIMARY KEY CLUSTERED 
+(
+                [ID Colisage Dossier] ASC
+)
+) ON [PRIMARY]
+GO
+/****** Object:  UserDefinedFunction [dbo].[fx_CleColisageDossier]    Script Date: 23/03/2026 16:28:43 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE FUNCTION [dbo].[fx_CleColisageDossier](@Id_Dossier INT)
+RETURNS TABLE
+AS
+RETURN
+(
+                SELECT [UploadKey] AS [Row_Key]
+                FROM dbo.TColisageDossiers
+                WHERE ([Dossier]=@Id_Dossier) AND (ISNULL([UploadKey],'')<>'')
+)
+GO
+/****** Object:  Table [dbo].[TRolesUtilisateurs]    Script Date: 23/03/2026 16:28:43 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TRolesUtilisateurs](
+                [ID Role Utilisateur] [int] IDENTITY(1,1) NOT NULL,
+                [Role] [int] NOT NULL,
+                [Utilisateur] [int] NOT NULL,
+                [Session] [int] NOT NULL,
+                [Date Creation] [datetime2](7) NOT NULL,
+                [RowVer] [timestamp] NOT NULL,
+CONSTRAINT [TRolesUtilisateurs$PrimaryKey] PRIMARY KEY CLUSTERED 
+(
+                [ID Role Utilisateur] ASC
+)
+) ON [PRIMARY]
+GO
+/****** Object:  View [dbo].[VRolesUtilisateurs]    Script Date: 23/03/2026 16:28:43 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   VIEW [dbo].[VRolesUtilisateurs]
+AS
+                SELECT A.[ID Role Utilisateur] AS [ID_Role_Utilisateur]
+                               ,B.[ID Role] AS [ID_Role]
+                               ,B.[Libelle Role] AS [Libelle_Role]
+                               ,C.[ID Utilisateur] AS [ID_Utilisateur]
+                               ,C.[Nom Utilisateur] AS [Nom_Utilisateur]
+                ,A.[Date Creation] AS [Date_Creation]
+                ,Z.Nom_Utilisateur AS [Nom_Creation]
+                FROM [dbo].[TRolesUtilisateurs] A 
+                               INNER JOIN [dbo].[TRoles] B ON A.[Role]=B.[ID Role]
+                               INNER JOIN [dbo].[TUtilisateurs] C ON A.[Utilisateur]=C.[ID Utilisateur]
+                               LEFT JOIN dbo.[VSessions] Z ON A.[Session]=Z.[ID_Session]
+GO
+/****** Object:  Table [dbo].[TModesTransport]    Script Date: 23/03/2026 16:28:43 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TModesTransport](
+                [ID Mode Transport] [nvarchar](1) NOT NULL,
+                [Libelle Mode Transport] [nvarchar](200) NOT NULL,
+                [Session] [int] NOT NULL,
+                [Date Creation] [datetime2](7) NOT NULL,
+                [RowVer] [timestamp] NOT NULL,
+CONSTRAINT [TMoyensTransport$PrimaryKey] PRIMARY KEY CLUSTERED 
+(
+                [ID Mode Transport] ASC
+),
+CONSTRAINT [UQ_TModesTransport$Libelle Mode Transport] UNIQUE NONCLUSTERED 
+(
+                [Libelle Mode Transport] ASC
+)
+) ON [PRIMARY]
+GO
+/****** Object:  View [dbo].[VModesTransport]    Script Date: 23/03/2026 16:28:43 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE   VIEW [dbo].[VModesTransport]
+AS
+                SELECT A.[ID Mode Transport] AS [ID_Mode_Transport]
+                ,A.[Libelle Mode Transport] AS [Libelle_Mode_Transport]
+                ,A.[Date Creation] AS [Date_Creation]
+                ,Z.Nom_Utilisateur AS [Nom_Creation]
+                FROM dbo.TModesTransport A LEFT JOIN dbo.[VSessions] Z ON A.[Session]=Z.[ID_Session]
+GO
+/****** Object:  Table [dbo].[TDevises]    Script Date: 23/03/2026 16:28:43 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TDevises](
+                [ID Devise] [int] IDENTITY(1,1) NOT NULL,
+                [Code Devise] [nvarchar](5) NOT NULL,
+                [Libelle Devise] [nvarchar](200) NOT NULL,
+                [Decimales] [int] NOT NULL,
+                [Devise Inactive] [bit] NOT NULL,
+                [Session] [int] NOT NULL,
+                [Date Creation] [datetime2](7) NOT NULL,
+                [RowVer] [timestamp] NOT NULL,
+CONSTRAINT [TDevises$PrimaryKey] PRIMARY KEY CLUSTERED 
+(
+                [ID Devise] ASC
+),
+CONSTRAINT [UQ_TDevises$Code Devise] UNIQUE NONCLUSTERED 
+(
+                [Code Devise] ASC
+),
+CONSTRAINT [UQ_TDevises$Libelle Devise] UNIQUE NONCLUSTERED 
+(
+                [Libelle Devise] ASC
+)
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TPays]    Script Date: 23/03/2026 16:28:43 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TPays](
+                [ID Pays] [int] IDENTITY(1,1) NOT NULL,
+                [Code Pays] [nvarchar](5) NOT NULL,
+                [Libelle Pays] [nvarchar](200) NOT NULL,
+                [Devise Locale] [int] NOT NULL,
+                [Session] [int] NOT NULL,
+                [Date Creation] [datetime2](7) NOT NULL,
+                [RowVer] [timestamp] NOT NULL,
+CONSTRAINT [TPays$PrimaryKey] PRIMARY KEY CLUSTERED 
+(
+                [ID Pays] ASC
+),
+CONSTRAINT [UQ_TPays$Code Pays] UNIQUE NONCLUSTERED 
+(
+                [Code Pays] ASC
+),
+CONSTRAINT [UQ_TPays$Libelle Pays] UNIQUE NONCLUSTERED 
+(
+                [Libelle Pays] ASC
+)
+) ON [PRIMARY]
+GO
+/****** Object:  View [dbo].[VPays]    Script Date: 23/03/2026 16:28:43 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   VIEW [dbo].[VPays]
+AS
+                SELECT A.[ID Pays] AS [ID_Pays]
+                ,A.[Code Pays] AS [Code_Pays]
+                ,A.[Libelle Pays] AS [Libelle_Pays]
+                ,B.[Code Devise] AS [Devise_Locale]
+                ,A.[Date Creation] AS [Date_Creation]
+                ,Z.Nom_Utilisateur AS [Nom_Creation]
+                FROM dbo.TPays A 
+                               INNER JOIN dbo.TDevises B ON A.[Devise Locale]=B.[ID Devise]
+                               LEFT JOIN dbo.[VSessions] Z ON A.[Session]=Z.[ID_Session]
+GO
+/****** Object:  Table [dbo].[TRegimesDouaniers]    Script Date: 23/03/2026 16:28:43 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TRegimesDouaniers](
+                [ID Regime Douanier] [int] IDENTITY(1,1) NOT NULL,
+                [Code Regime Douanier] [nvarchar](10) NOT NULL,
+                [Libelle Regime Douanier] [nvarchar](200) NOT NULL,
+                [Session] [int] NOT NULL,
+                [Date Creation] [datetime2](7) NOT NULL,
+                [RowVer] [timestamp] NOT NULL,
+CONSTRAINT [TRegimesDouaniers$PrimaryKey] PRIMARY KEY CLUSTERED 
+(
+                [ID Regime Douanier] ASC
+),
+CONSTRAINT [UQ_TRegimesDouaniers$Code Regime Douanier] UNIQUE NONCLUSTERED 
+(
+                [Code Regime Douanier] ASC
+),
+CONSTRAINT [UQ_TRegimesDouaniers$Libelle Regime Douanier] UNIQUE NONCLUSTERED 
+(
+                [Libelle Regime Douanier] ASC
+)
+) ON [PRIMARY]
+GO
+/****** Object:  View [dbo].[VRegimesDouaniers]    Script Date: 23/03/2026 16:28:43 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE   VIEW [dbo].[VRegimesDouaniers]
+AS
+                SELECT A.[ID Regime Douanier] AS [ID_Regime_Douanier]
+                ,A.[Libelle Regime Douanier] AS [Libelle_Regime_Douanier]
+                ,A.[Date Creation] AS [Date_Creation]
+                ,Z.Nom_Utilisateur AS [Nom_Creation]
+                FROM dbo.TRegimesDouaniers A LEFT JOIN dbo.[VSessions] Z ON A.[Session]=Z.[ID_Session]
+GO
+/****** Object:  Table [dbo].[TSensTrafic]    Script Date: 23/03/2026 16:28:43 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TSensTrafic](
+                [ID Sens Trafic] [nvarchar](1) NOT NULL,
+                [Libelle Sens Trafic] [nvarchar](200) NOT NULL,
+                [Session] [int] NOT NULL,
+                [Date Creation] [datetime2](7) NOT NULL,
+                [RowVer] [timestamp] NOT NULL,
+CONSTRAINT [TSensTrafic$PrimaryKey] PRIMARY KEY CLUSTERED 
+(
+                [ID Sens Trafic] ASC
+),
+CONSTRAINT [UQ_TSensTrafic$Libelle Sens Trafic] UNIQUE NONCLUSTERED 
+(
+                [Libelle Sens Trafic] ASC
+)
+) ON [PRIMARY]
+GO
+/****** Object:  View [dbo].[VSensTrafic]    Script Date: 23/03/2026 16:28:43 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE   VIEW [dbo].[VSensTrafic]
+AS
+                SELECT A.[ID Sens Trafic] AS [ID_Sens_Trafic]
+                ,A.[Libelle Sens Trafic] AS [Libelle_Sens_Trafic]
+                ,A.[Date Creation] AS [Date_Creation]
+                ,Z.Nom_Utilisateur AS [Nom_Creation]
+                FROM dbo.TSensTrafic A LEFT JOIN dbo.[VSessions] Z ON A.[Session]=Z.[ID_Session]
+GO
+/****** Object:  View [dbo].[VRoles]    Script Date: 23/03/2026 16:28:43 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   VIEW [dbo].[VRoles]
+AS
+                SELECT A.[ID Role] AS [ID_Role]
+                               ,A.[Libelle Role] AS [Libelle_Role]
+                               ,A.[Date Creation] AS [Date_Creation]
+                  ,Z.Nom_Utilisateur AS [Nom_Creation]
+                FROM [dbo].[TRoles] A LEFT JOIN dbo.[VSessions] Z ON A.[Session]=Z.[ID_Session]
+GO
+/****** Object:  Table [dbo].[TStatutsDossier]    Script Date: 23/03/2026 16:28:43 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TStatutsDossier](
+                [ID Statut Dossier] [int] NOT NULL,
+                [Libelle Statut Dossier] [nvarchar](200) NOT NULL,
+                [Session] [int] NOT NULL,
+                [Date Creation] [datetime2](7) NOT NULL,
+                [RowVer] [timestamp] NOT NULL,
+CONSTRAINT [TStatutsDossier$PrimaryKey] PRIMARY KEY CLUSTERED 
+(
+                [ID Statut Dossier] ASC
+),
+CONSTRAINT [UQ_TStatutsDossier$Libelle Statut Dossier] UNIQUE NONCLUSTERED 
+(
+                [Libelle Statut Dossier] ASC
+)
+) ON [PRIMARY]
+GO
+/****** Object:  View [dbo].[VStatutsDossier]    Script Date: 23/03/2026 16:28:43 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   VIEW [dbo].[VStatutsDossier]
+AS
+                SELECT [ID Statut Dossier] AS [ID_Statut_Dossier]
+                ,[Libelle Statut Dossier] AS [Libelle_Statut_Dossier]
+                FROM [dbo].[TStatutsDossier]
+GO
+/****** Object:  Table [dbo].[TRegimesDeclarations]    Script Date: 23/03/2026 16:28:43 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TRegimesDeclarations](
+                [ID Regime Declaration] [int] IDENTITY(1,1) NOT NULL,
+                [Regime Douanier] [int] NOT NULL,
+                [Libelle Regime Declaration] [nvarchar](200) NOT NULL,
+                [Taux Regime] [numeric](24, 3) NOT NULL,
+                [Entite] [int] NOT NULL,
+                [Session] [int] NOT NULL,
+                [Date Creation] [datetime2](7) NOT NULL,
+                [RowVer] [timestamp] NOT NULL,
+CONSTRAINT [TRegimesDeclarations$PrimaryKey] PRIMARY KEY CLUSTERED 
+(
+                [ID Regime Declaration] ASC
+),
+CONSTRAINT [UQ_TRegimesDeclarations$Libelle Regime Declaration] UNIQUE NONCLUSTERED 
+(
+                [Libelle Regime Declaration] ASC
+),
+CONSTRAINT [UQ_TRegimesDeclarations$Taux Regime] UNIQUE NONCLUSTERED 
+(
+                [Taux Regime] ASC,
+                [Regime Douanier] ASC
+)
+) ON [PRIMARY]
+GO
+/****** Object:  View [dbo].[VRegimesDeclarations]    Script Date: 23/03/2026 16:28:43 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   VIEW [dbo].[VRegimesDeclarations]
+AS
+                SELECT A.[ID Regime Declaration] AS [ID_Regime_Declaration]
+                ,B.[ID Regime Douanier] AS [ID_Regime_Douanier]
+                ,B.[Libelle Regime Douanier] AS [Libelle_Regime_Douanier]
+                ,A.[Libelle Regime Declaration] AS [Libelle_Regime_Declaration]
+                ,CASE 
+                               WHEN A.[Taux Regime]=-2 THEN 'TTC' 
+                               WHEN A.[Taux Regime]=-1 THEN '100% TR'
+                               WHEN A.[Taux Regime]=0 THEN 'EX0'
+                               WHEN A.[Taux Regime]=1 THEN '100% DC'
+                               ELSE FORMAT([Taux Regime], 'P')+ ' DC & ' + FORMAT(1-[Taux Regime], 'P') + ' TR'
+                END AS [Regime_Code]
+                ,CASE 
+                               WHEN A.[Taux Regime]=-2 THEN 0 
+                               WHEN A.[Taux Regime]=-1 THEN 0
+                               WHEN A.[Taux Regime]=0 THEN 0
+                               WHEN A.[Taux Regime]=1 THEN 1
+                               ELSE[Taux Regime]
+                END AS [Ratio_DC]
+                
+                ,CASE 
+                               WHEN A.[Taux Regime]=-2 THEN 0 
+                               WHEN A.[Taux Regime]=-1 THEN 1
+                               WHEN A.[Taux Regime]=0 THEN 0
+                               WHEN A.[Taux Regime]=1 THEN 0
+                               ELSE 1-[Taux Regime]
+                END AS [Ratio_TR]
+
+                ,A.[Entite] AS [ID_Entite] 
+                ,A.[Date Creation] AS [Date_Creation]
+                ,Z.Nom_Utilisateur AS [Nom_Creation]
+                FROM dbo.TRegimesDeclarations A 
+                               INNER JOIN TRegimesDouaniers B On A.[Regime Douanier]=B.[ID Regime Douanier]
+                               LEFT JOIN dbo.[VSessions] Z ON A.[Session]=Z.[ID_Session]
+GO
+/****** Object:  Table [dbo].[TClients]    Script Date: 23/03/2026 16:28:43 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -88,15 +579,399 @@ CREATE TABLE [dbo].[TClients](
 CONSTRAINT [TClients$PrimaryKey] PRIMARY KEY CLUSTERED 
 (
                 [ID Client] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+),
 CONSTRAINT [UQ_TClients$Nom Client] UNIQUE NONCLUSTERED 
 (
                 [Nom Client] ASC,
                 [Entite] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+)
 ) ON [PRIMARY]
 GO
-/****** Object:  View [dbo].[VClients]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  Table [dbo].[TRegimesClients]    Script Date: 23/03/2026 16:28:43 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TRegimesClients](
+                [ID Regime Client] [int] IDENTITY(1,1) NOT NULL,
+                [Client] [int] NOT NULL,
+                [Regime Declaration] [int] NOT NULL,
+                [Session] [int] NOT NULL,
+                [Date Creation] [datetime2](7) NOT NULL,
+                [RowVer] [timestamp] NOT NULL,
+CONSTRAINT [TRegimesClients$PrimaryKey] PRIMARY KEY CLUSTERED 
+(
+                [ID Regime Client] ASC
+)
+) ON [PRIMARY]
+GO
+/****** Object:  View [dbo].[VRegimesClients]    Script Date: 23/03/2026 16:28:43 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   VIEW [dbo].[VRegimesClients]
+AS
+                SELECT A.[ID Regime Client] AS [ID_Regime_Client]
+                ,B.[ID Client] AS [ID_Client]
+                ,B.[Nom Client] AS [Nom_Client]
+                ,C.ID_Regime_Declaration
+                ,C.[ID_Regime_Douanier]
+                ,C.[Libelle_Regime_Douanier]
+                ,C.[Libelle_Regime_Declaration]
+                ,C.[Regime_Code]
+                ,C.[Ratio_DC]
+                ,C.[Ratio_TR]
+                ,A.[Date Creation] AS [Date_Creation]
+                ,Z.Nom_Utilisateur AS [Nom_Creation]
+                FROM dbo.TRegimesClients A 
+                               INNER JOIN dbo.TClients B On A.[Client]=B.[ID Client]
+                               INNER JOIN dbo.VRegimesDeclarations C ON A.[Regime Declaration]=C.ID_Regime_Declaration
+                               LEFT JOIN dbo.[VSessions] Z ON A.[Session]=Z.[ID_Session]
+GO
+/****** Object:  Table [dbo].[TTauxChange]    Script Date: 23/03/2026 16:28:43 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TTauxChange](
+                [ID Taux Change] [int] IDENTITY(1,1) NOT NULL,
+                [Convertion] [int] NOT NULL,
+                [Devise] [int] NOT NULL,
+                [Taux Change] [numeric](24, 6) NOT NULL,
+                [Session] [int] NOT NULL,
+                [Date Creation] [datetime2](7) NOT NULL,
+                [RowVer] [timestamp] NOT NULL,
+CONSTRAINT [TTauxChange$PrimaryKey] PRIMARY KEY CLUSTERED 
+(
+                [ID Taux Change] ASC
+),
+CONSTRAINT [UQ_TTauxChange$Convertion$Devise] UNIQUE NONCLUSTERED 
+(
+                [Convertion] ASC,
+                [Devise] ASC
+)
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TDossiers]    Script Date: 23/03/2026 16:28:43 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TDossiers](
+                [ID Dossier] [int] IDENTITY(1,1) NOT NULL,
+                [Branche] [int] NOT NULL,
+                [Type Dossier] [int] NOT NULL,
+                [Client] [int] NOT NULL,
+                [Description Dossier] [nvarchar](1000) NOT NULL,
+                [No OT] [nvarchar](100) NOT NULL,
+                [No Dossier] [nvarchar](50) NOT NULL,
+                [Nbre Paquetage Pesee] [int] NOT NULL,
+                [Poids Brut Pesee] [numeric](24, 2) NOT NULL,
+                [Poids Net Pesee] [numeric](24, 2) NOT NULL,
+                [Volume Pesee] [numeric](24, 2) NOT NULL,
+                [Responsable Dossier] [int] NOT NULL,
+                [Convertion] [int] NULL,
+                [Derniere Etape Dossier] [int] NULL,
+                [Devise Note Detail] [int] NULL,
+                [Observation Dossier] [nvarchar](1000) NULL,
+                [Statut Dossier] [int] NOT NULL,
+                [Session] [int] NOT NULL,
+                [Date Creation] [datetime2](7) NOT NULL,
+                [RowVer] [timestamp] NOT NULL,
+CONSTRAINT [TDossiers$PrimaryKey] PRIMARY KEY CLUSTERED 
+(
+                [ID Dossier] ASC
+)
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TConvertions]    Script Date: 23/03/2026 16:28:43 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TConvertions](
+                [ID Convertion] [int] IDENTITY(1,1) NOT NULL,
+                [Date Convertion] [datetime2](7) NOT NULL,
+                [Entite] [int] NOT NULL,
+                [Session] [int] NOT NULL,
+                [Date Creation] [datetime2](7) NOT NULL,
+                [RowVer] [timestamp] NOT NULL,
+CONSTRAINT [TConvertions$PrimaryKey] PRIMARY KEY CLUSTERED 
+(
+                [ID Convertion] ASC
+),
+CONSTRAINT [UQ_TConvertions$Date Convertion] UNIQUE NONCLUSTERED 
+(
+                [Date Convertion] ASC,
+                [Entite] ASC
+)
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TBranches]    Script Date: 23/03/2026 16:28:43 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TBranches](
+                [ID Branche] [int] IDENTITY(1,1) NOT NULL,
+                [Code Branche] [nvarchar](20) NOT NULL,
+                [Nom Branche] [nvarchar](200) NOT NULL,
+                [Entite] [int] NOT NULL,
+                [Session] [int] NOT NULL,
+                [Date Creation] [datetime2](7) NOT NULL,
+                [RowVer] [timestamp] NOT NULL,
+CONSTRAINT [TBranches$PrimaryKey] PRIMARY KEY CLUSTERED 
+(
+                [ID Branche] ASC
+),
+CONSTRAINT [UQ__TBranche__0EF7E91810AAA27A] UNIQUE NONCLUSTERED 
+(
+                [Code Branche] ASC
+),
+CONSTRAINT [UQ_TBranches$Nom Branche] UNIQUE NONCLUSTERED 
+(
+                [Nom Branche] ASC
+)
+) ON [PRIMARY]
+GO
+/****** Object:  UserDefinedFunction [dbo].[fx_TauxChangeDossier]    Script Date: 23/03/2026 16:28:43 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE     FUNCTION [dbo].[fx_TauxChangeDossier](@Id_Dossier INT)
+RETURNS TABLE
+AS
+RETURN
+(
+
+                               -- Recuperer les devises distinctes du dossier 
+                WITH DEVISES_DOSSIER ([ID Devise]) AS
+                (
+                               SELECT DISTINCT cd.[Devise]
+                               FROM [dbo].[TColisageDossiers] cd INNER JOIN dbo.TDossiers d ON cd.Dossier=d.[ID Dossier]
+                               WHERE cd.[Dossier]=@Id_Dossier
+                ),
+                               -- Recuperer l'ID de l'entite et la devise de la note de detail 
+                ENTITE_DOSSIER([ID Entite],[ID Devise note detail]) AS 
+                (
+                               SELECT b.[Entite], d.[Devise Note Detail]
+                               FROM dbo.TDossiers d
+                                               INNER JOIN dbo.TBranches b On d.[Branche]=b.[ID Branche]
+                               WHERE d.[ID Dossier]=@Id_Dossier
+                ),                             
+                               -- Recuperer les taux des devises a la date de convertion du dossier
+                TAUX_CHANGE_DOSSIER ([ID Convertion],[ID Devise], [Taux Change]) AS
+                (
+                               SELECT c.[ID Convertion], tc.[Devise] ,tc.[Taux Change]
+                               FROM dbo.TTauxChange tc 
+                                               INNER JOIN dbo.TConvertions c ON tc.[Convertion]=c.[ID Convertion], ENTITE_DOSSIER ed
+                               WHERE c.[Entite]=ed.[ID Entite]
+                ),
+                               -- Recuperer le coef du taux de change de la devise de la note de detail
+                TAUX_DEVISE_NOTE_DETAIL([Taux Change0]) AS 
+                (
+                               SELECT tcd.[Taux Change]
+                               FROM TAUX_CHANGE_DOSSIER tcd INNER JOIN ENTITE_DOSSIER ed ON tcd.[ID Devise]=ed.[ID Devise note detail]
+                )
+                
+
+                SELECT d.[ID Devise] AS [ID_Devise]
+                               ,d.[Code Devise] AS [Code_Devise]
+                               ,CAST( CASE
+                                                               WHEN dd.[ID Devise]= ed.[ID Devise note detail] THEN 1
+                                                               WHEN ISNULL(tcd.[Taux Change],0)=0 OR ISNULL(tdnd.[Taux Change0],0)=0 THEN NULL
+                                                               ELSE tcd.[Taux Change]/tdnd.[Taux Change0]
+                                               END 
+                                               AS numeric(24,6)) AS [Taux_Change]
+                FROM DEVISES_DOSSIER dd 
+                               INNER JOIN dbo.TDevises d ON dd.[ID Devise]=d.[ID Devise]
+                               LEFT JOIN TAUX_CHANGE_DOSSIER tcd ON dd.[ID Devise]=tcd.[ID Devise], ENTITE_DOSSIER ed, TAUX_DEVISE_NOTE_DETAIL tdnd
+)
+
+GO
+/****** Object:  UserDefinedFunction [dbo].[fx_PermissionsUtilisateur]    Script Date: 23/03/2026 16:28:43 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE FUNCTION [dbo].[fx_PermissionsUtilisateur](@Id_Utilisateur INT)
+RETURNS TABLE
+AS
+RETURN
+(
+                WITH ROLES_UTILISATEUR ([ID Role]) AS
+                (
+                               SELECT DISTINCT [Role]
+                               FROM [dbo].[TRolesUtilisateurs]
+                               WHERE [Utilisateur]=@Id_Utilisateur
+                )
+                
+                SELECT DISTINCT B.[Permission] AS [ID_Permission]
+                FROM ROLES_UTILISATEUR A INNER JOIN dbo.TPermissonsRoles B ON A.[ID Role]=B.[Role]
+)
+GO
+/****** Object:  View [dbo].[VTauxChange]    Script Date: 23/03/2026 16:28:43 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE   VIEW [dbo].[VTauxChange]
+AS
+                SELECT A.[ID Taux Change] AS [ID_Taux_Change]
+                ,A.[Convertion] AS [ID_Convertion]
+                ,B.[Code Devise] AS [Devise]
+                ,A.[Taux Change] AS [Taux_Change]
+                ,A.[Date Creation] AS [Date_Creation]
+                ,Z.Nom_Utilisateur AS [Nom_Creation]
+                FROM dbo.TTauxChange A 
+                               INNER JOIN dbo.TDevises B On A.Devise=B.[ID Devise]
+                               LEFT JOIN dbo.[VSessions] Z ON A.[Session]=Z.[ID_Session]
+GO
+/****** Object:  View [dbo].[VPermissionsBase]    Script Date: 23/03/2026 16:28:43 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
+CREATE   VIEW [dbo].[VPermissionsBase]
+AS
+                SELECT [ID Permission Base] AS [ID_Permission_Base]
+                ,[Libelle Permission] AS [Libelle_Permission]
+                ,[Permission Active] AS [Permission_Active]
+                ,[Date Activation] AS [Date_Activation]
+                FROM dbo.TPermissionsBase 
+GO
+/****** Object:  View [dbo].[VColisageDossiers]    Script Date: 23/03/2026 16:28:43 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE       VIEW [dbo].[VColisageDossiers]
+AS
+SELECT cd.[ID Colisage Dossier] AS [ID_Colisage_Dossier]
+      ,cd.[Dossier] AS [ID_Dossier]
+      ,h.[HS Code] AS [HS_Code]
+      ,cd.[Description Colis] AS [Description_Colis]
+      ,cd.[No Commande] AS [No_Commande]
+      ,cd.[Nom Fournisseur] AS [Nom_Fournisseur]
+      ,cd.[No Facture] AS [No_Facture]
+                  ,cd.[Item No] AS [Item_No]
+      ,dvc.[Code Devise] AS [Code_Devise_Colis]
+                  ,dvnd.[Code Devise] AS [Code_Devise_Note_Detail]
+      ,cd.[Qte Colis] AS [Qte_Colis] 
+      ,cd.[Prix Unitaire Colis] AS [Prix_Unitaire_Colis]
+                  ,cd.[Qte Colis]*cd.[Prix Unitaire Colis] AS [Valeur_Colis]
+                  ,cd.[Ajustement Valeur] AS [Ajustement_Valeur]
+      ,cd.[Poids Brut] AS [Poids_Brut]
+      ,cd.[Poids Net] AS [Poids_Net]
+      ,cd.[Volume] AS [Volume]
+      ,p.[Libelle Pays] AS [Pays_Origine]
+
+                ,rd.ID_Regime_Declaration
+                ,rd.[ID_Regime_Douanier]
+                ,rd.[Libelle_Regime_Douanier]
+                ,rd.[Libelle_Regime_Declaration]
+                ,rd.[Regime_Code]
+                ,rd.[Ratio_DC]
+                ,rd.[Ratio_TR]
+
+      ,cd.[Regroupement Client] AS [Regroupement_Client]
+                  ,cd.[Date Creation] AS [Date_Creation]
+                  ,s.Nom_Utilisateur AS [Nom_Creation]
+  FROM [dbo].[TColisageDossiers] cd
+                INNER JOIN [dbo].TDevises dvc ON cd.[Devise]=dvc.[ID Devise]
+                INNER JOIN [dbo].TPays p ON cd.[Pays Origine]=p.[ID Pays]
+                INNER JOIN TDossiers dr ON cd.Dossier=dr.[ID Dossier]
+                LEFT JOIN TDevises dvnd ON dr.[Devise Note Detail] = dvnd.[ID Devise]
+                LEFT JOIN [dbo].THSCodes h ON cd.[HS Code]=h.[ID HS Code]
+                LEFT JOIN [dbo].VRegimesDeclarations rd ON cd.[Regime Declaration]=rd.[ID_Regime_Declaration]
+                LEFT JOIN dbo.[VSessions] s ON cd.[Session]=s.[ID_Session]
+GO
+/****** Object:  Table [dbo].[TNotesDetail]    Script Date: 23/03/2026 16:28:43 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TNotesDetail](
+                [ID Note Detail] [int] IDENTITY(1,1) NOT NULL,
+                [Colisage Dossier] [int] NOT NULL,
+                [Regime] [nvarchar](10) NOT NULL,
+                [Nbre Paquetage] [numeric](24, 2) NOT NULL,
+                [Qte Colis] [numeric](24, 2) NOT NULL,
+                [Valeur] [numeric](24, 2) NOT NULL,
+                [Base Poids Brut] [numeric](24, 2) NOT NULL,
+                [Base Poids Net] [numeric](24, 2) NOT NULL,
+                [Base Volume] [numeric](24, 2) NOT NULL,
+                [Session] [int] NOT NULL,
+                [Date Creation] [datetime2](7) NOT NULL,
+                [RowVer] [timestamp] NOT NULL,
+CONSTRAINT [TNotesDetail$PrimaryKey] PRIMARY KEY CLUSTERED 
+(
+                [ID Note Detail] ASC
+)
+) ON [PRIMARY]
+GO
+/****** Object:  View [dbo].[VNotesDetail]    Script Date: 23/03/2026 16:28:43 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE     VIEW [dbo].[VNotesDetail]
+AS
+                SELECT B.[ID_Dossier]
+      ,B.[HS_Code]
+      ,B.[Pays_Origine]
+
+                ,B.ID_Colisage_Dossier
+                ,B.ID_Regime_Declaration
+                ,B.[ID_Regime_Douanier]
+                ,B.[Libelle_Regime_Douanier]
+                ,B.[Libelle_Regime_Declaration]
+      ,B.[Regroupement_Client]
+      ,A.[Regime] AS [Regime]
+                  ,B.[Code_Devise_Note_Detail]
+                  ,SUM(A.[Nbre Paquetage]) AS [Nbre_Paquetage]
+                  ,SUM (A.[Qte Colis]) AS  [Qte_Colis]
+      ,SUM(A.[Valeur]) AS [Valeur]
+      ,SUM(A.[Base Poids Brut]) AS [Base_Poids_Brut]
+      ,SUM(A.[Base Poids Net]) AS [Base_Poids_Net]
+      ,SUM(A.[Base Volume]) AS [Base_Volume]
+  FROM [dbo].[TNotesDetail] A 
+                INNER JOIN [dbo].[VColisageDossiers] B On A.[Colisage Dossier]=B.ID_Colisage_Dossier
+                GROUP BY B.[ID_Dossier]
+      ,B.[HS_Code]
+      ,B.[Pays_Origine]
+                
+                ,B.ID_Colisage_Dossier
+                ,B.ID_Regime_Declaration
+                ,B.[ID_Regime_Douanier]
+                ,B.[Libelle_Regime_Douanier]
+                ,B.[Libelle_Regime_Declaration]
+    ,B.[Regroupement_Client]
+     ,A.[Regime]
+                  ,B.[Code_Devise_Note_Detail]
+GO
+/****** Object:  View [dbo].[VUtilisateurs]    Script Date: 23/03/2026 16:28:43 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE   VIEW [dbo].[VUtilisateurs]
+AS
+                SELECT A.[ID Utilisateur] AS [ID_Utilisateur] 
+                ,A.[Nom Utilisateur] AS [Nom_Utilisateur]
+                ,A.[Date Creation] AS [Date_Creation]
+                ,Z.Nom_Utilisateur AS [Nom_Creation]
+                FROM dbo.TUtilisateurs A LEFT JOIN dbo.[VSessions] Z ON A.[Session]=Z.[ID_Session]
+                WHERE [ID Utilisateur]>0
+GO
+/****** Object:  View [dbo].[VClients]    Script Date: 23/03/2026 16:28:43 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -110,7 +985,7 @@ AS
                 ,Z.Nom_Utilisateur AS [Nom_Creation]
                 FROM dbo.TClients A LEFT JOIN dbo.[VSessions] Z ON A.[Session]=Z.[ID_Session]
 GO
-/****** Object:  Table [dbo].[TCodesEtapes]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  Table [dbo].[TCodesEtapes]    Script Date: 23/03/2026 16:28:43 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -129,19 +1004,19 @@ CREATE TABLE [dbo].[TCodesEtapes](
 CONSTRAINT [TCodesEtapes$PrimaryKey] PRIMARY KEY CLUSTERED 
 (
                 [ID Code Etape] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+),
 CONSTRAINT [UQ_TCodesEtapes$Index Etape] UNIQUE NONCLUSTERED 
 (
                 [Index Etape] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+),
 CONSTRAINT [UQ_TCodesEtapes$Libelle Etape] UNIQUE NONCLUSTERED 
 (
                 [Libelle Etape] ASC,
                 [Entite] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+)
 ) ON [PRIMARY]
 GO
-/****** Object:  View [dbo].[VCodesEtapes]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  View [dbo].[VCodesEtapes]    Script Date: 23/03/2026 16:28:43 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -159,30 +1034,7 @@ AS
                 FROM [dbo].TCodesEtapes A LEFT JOIN dbo.[VSessions] Z ON A.[Session]=Z.[ID_Session]
                 WHERE A.[ID Code Etape] NOT IN (0,1000000)
 GO
-/****** Object:  Table [dbo].[TConvertions]    Script Date: 13/02/2026 19:58:55 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[TConvertions](
-                [ID Convertion] [int] IDENTITY(1,1) NOT NULL,
-                [Date Convertion] [datetime2](7) NOT NULL,
-                [Entite] [int] NOT NULL,
-                [Session] [int] NOT NULL,
-                [Date Creation] [datetime2](7) NOT NULL,
-                [RowVer] [timestamp] NOT NULL,
-CONSTRAINT [TConvertions$PrimaryKey] PRIMARY KEY CLUSTERED 
-(
-                [ID Convertion] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
-CONSTRAINT [UQ_TConvertions$Date Convertion] UNIQUE NONCLUSTERED 
-(
-                [Date Convertion] ASC,
-                [Entite] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
-/****** Object:  View [dbo].[VConvertions]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  View [dbo].[VConvertions]    Script Date: 23/03/2026 16:28:43 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -196,7 +1048,7 @@ AS
                   ,Z.Nom_Utilisateur AS [Nom_Creation]
 FROM [dbo].TConvertions A LEFT JOIN dbo.[VSessions] Z ON A.[Session]=Z.[ID_Session]
 GO
-/****** Object:  Table [dbo].[TGroupesEntites]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  Table [dbo].[TGroupesEntites]    Script Date: 23/03/2026 16:28:43 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -210,14 +1062,14 @@ CREATE TABLE [dbo].[TGroupesEntites](
 CONSTRAINT [TGroupesEntites$PrimaryKey] PRIMARY KEY CLUSTERED 
 (
                 [ID Groupe Entite] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+),
 CONSTRAINT [UQ_TGroupesEntites$Nom Groupe Entite] UNIQUE NONCLUSTERED 
 (
                 [Nom Groupe Entite] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+)
 ) ON [PRIMARY]
 GO
-/****** Object:  View [dbo].[VGroupesEntites]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  View [dbo].[VGroupesEntites]    Script Date: 23/03/2026 16:28:43 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -230,35 +1082,7 @@ AS
                   ,Z.Nom_Utilisateur AS [Nom_Creation]
 FROM [dbo].TGroupesEntites A LEFT JOIN dbo.[VSessions] Z ON A.[Session]=Z.[ID_Session]
 GO
-/****** Object:  Table [dbo].[TDevises]    Script Date: 13/02/2026 19:58:55 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[TDevises](
-                [ID Devise] [int] IDENTITY(1,1) NOT NULL,
-                [Code Devise] [nvarchar](5) NOT NULL,
-                [Libelle Devise] [nvarchar](200) NOT NULL,
-                [Decimales] [int] NOT NULL,
-                [Devise Inactive] [bit] NOT NULL,
-                [Session] [int] NOT NULL,
-                [Date Creation] [datetime2](7) NOT NULL,
-                [RowVer] [timestamp] NOT NULL,
-CONSTRAINT [TDevises$PrimaryKey] PRIMARY KEY CLUSTERED 
-(
-                [ID Devise] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
-CONSTRAINT [UQ_TDevises$Code Devise] UNIQUE NONCLUSTERED 
-(
-                [Code Devise] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
-CONSTRAINT [UQ_TDevises$Libelle Devise] UNIQUE NONCLUSTERED 
-(
-                [Libelle Devise] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
-/****** Object:  View [dbo].[VDevises]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  View [dbo].[VDevises]    Script Date: 23/03/2026 16:28:43 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -274,31 +1098,7 @@ AS
 FROM [dbo].TDevises A LEFT JOIN dbo.[VSessions] Z ON A.[Session]=Z.[ID_Session]
 WHERE [Devise Inactive]=0
 GO
-/****** Object:  Table [dbo].[THSCodes]    Script Date: 13/02/2026 19:58:55 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[THSCodes](
-                [ID HS Code] [int] IDENTITY(1,1) NOT NULL,
-                [HS Code] [nvarchar](50) NOT NULL,
-                [Libelle HS Code] [nvarchar](200) NOT NULL,
-                [Entite] [int] NOT NULL,
-                [Session] [int] NOT NULL,
-                [Date Creation] [datetime2](7) NOT NULL,
-                [RowVer] [timestamp] NOT NULL,
-CONSTRAINT [THSCodes$PrimaryKey] PRIMARY KEY CLUSTERED 
-(
-                [ID HS Code] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
-CONSTRAINT [UQ_THSCodes$HS Code] UNIQUE NONCLUSTERED 
-(
-                [HS Code] ASC,
-                [Entite] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
-/****** Object:  UserDefinedFunction [dbo].[fx_IDs_HSCode]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  UserDefinedFunction [dbo].[fx_IDs_HSCode]    Script Date: 23/03/2026 16:28:43 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -320,7 +1120,7 @@ RETURN
                 FROM DISTINCT_LIST A LEFT JOIN dbo.THSCodes B ON A.[Value]=B.[HS Code]
 )
 GO
-/****** Object:  UserDefinedFunction [dbo].[fx_IDs_Devises]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  UserDefinedFunction [dbo].[fx_IDs_Devises]    Script Date: 23/03/2026 16:28:43 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -341,34 +1141,127 @@ RETURN
                 FROM DISTINCT_LIST A LEFT JOIN dbo.TDevises B ON A.[Value]=B.[Code Devise]
 )
 GO
-/****** Object:  Table [dbo].[TPays]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  UserDefinedFunction [dbo].[fx_EvalTauxChangeDossier]    Script Date: 23/03/2026 16:28:43 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE TABLE [dbo].[TPays](
-                [ID Pays] [int] IDENTITY(1,1) NOT NULL,
-                [Code Pays] [nvarchar](5) NOT NULL,
-                [Libelle Pays] [nvarchar](200) NOT NULL,
-                [Devise Locale] [int] NOT NULL,
-                [Session] [int] NOT NULL,
-                [Date Creation] [datetime2](7) NOT NULL,
-                [RowVer] [timestamp] NOT NULL,
-CONSTRAINT [TPays$PrimaryKey] PRIMARY KEY CLUSTERED 
+CREATE     FUNCTION [dbo].[fx_EvalTauxChangeDossier](@Id_Dossier INT, @DateDeclaration datetime2(7))
+RETURNS TABLE
+AS
+RETURN
 (
-                [ID Pays] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
-CONSTRAINT [UQ_TPays$Code Pays] UNIQUE NONCLUSTERED 
-(
-                [Code Pays] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
-CONSTRAINT [UQ_TPays$Libelle Pays] UNIQUE NONCLUSTERED 
-(
-                [Libelle Pays] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
+
+                               -- Recuperer les devises distinctes du dossier 
+                WITH DEVISES_DOSSIER ([ID Devise]) AS
+                (
+                               SELECT DISTINCT cd.[Devise]
+                               FROM [dbo].[TColisageDossiers] cd INNER JOIN dbo.TDossiers d ON cd.Dossier=d.[ID Dossier]
+                               WHERE cd.[Dossier]=@Id_Dossier
+                ),
+                               -- Recuperer l'ID de l'entite et la devise de la note de detail 
+                ENTITE_DOSSIER([ID Entite],[ID Devise note detail]) AS 
+                (
+                               SELECT b.[Entite], d.[Devise Note Detail]
+                               FROM dbo.TDossiers d
+                                               INNER JOIN dbo.TBranches b On d.[Branche]=b.[ID Branche]
+                               WHERE d.[ID Dossier]=@Id_Dossier
+                ),                             
+                               -- Recuperer les taux des devises a la date de la declaration de l'entite
+                TAUX_CHANGE_DOSSIER ([ID Convertion],[ID Devise], [Taux Change]) AS
+                (
+                               SELECT c.[ID Convertion], tc.[Devise] ,tc.[Taux Change]
+                               FROM dbo.TTauxChange tc 
+                                               INNER JOIN dbo.TConvertions c ON tc.[Convertion]=c.[ID Convertion], ENTITE_DOSSIER ed
+                               WHERE (c.[Date Convertion]=@DateDeclaration) AND (c.[Entite]=ed.[ID Entite])
+                ),
+                               -- Recuperer le coef du taux de change de la devise de la note de detail
+                TAUX_DEVISE_NOTE_DETAIL([Taux Change0]) AS 
+                (
+                               SELECT tcd.[Taux Change]
+                               FROM TAUX_CHANGE_DOSSIER tcd INNER JOIN ENTITE_DOSSIER ed ON tcd.[ID Devise]=ed.[ID Devise note detail]
+                )
+                
+
+                SELECT d.[ID Devise] AS [ID_Devise]
+                               ,d.[Code Devise] AS [Code_Devise]
+                               ,CAST( CASE
+                                                               WHEN dd.[ID Devise]= ed.[ID Devise note detail] THEN 1
+                                                               WHEN ISNULL(tcd.[Taux Change],0)=0 OR ISNULL(tdnd.[Taux Change0],0)=0 THEN NULL
+                                                               ELSE tcd.[Taux Change]/tdnd.[Taux Change0]
+                                               END 
+                                               AS numeric(24,6)) AS [Taux_Change]
+                FROM DEVISES_DOSSIER dd 
+                               INNER JOIN dbo.TDevises d ON dd.[ID Devise]=d.[ID Devise]
+                               LEFT JOIN TAUX_CHANGE_DOSSIER tcd ON dd.[ID Devise]=tcd.[ID Devise], ENTITE_DOSSIER ed, TAUX_DEVISE_NOTE_DETAIL tdnd
+)
+
 GO
-/****** Object:  UserDefinedFunction [dbo].[fx_IDs_Pays]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  UserDefinedFunction [dbo].[fx_ColisageDossier]    Script Date: 23/03/2026 16:28:43 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE     FUNCTION [dbo].[fx_ColisageDossier](@Id_Dossier INT)
+RETURNS TABLE
+AS
+RETURN
+(
+
+                WITH TAUX_CHANGE([ID Devise], [Taux Change])  AS
+                (
+                                               SELECT t.ID_Devise, t.Taux_Change
+                                               FROM dbo.fx_TauxChangeDossier(@Id_Dossier) t
+                )
+
+                SELECT cd.[ID Colisage Dossier] AS [ID_Colisage_Dossier]
+      ,cd.[Dossier] AS [ID_Dossier]
+      ,h.[HS Code] AS [HS_Code]
+      ,cd.[Description Colis] AS [Description_Colis]
+      ,cd.[No Commande] AS [No_Commande]
+      ,cd.[Nom Fournisseur] AS [Nom_Fournisseur]
+      ,cd.[No Facture] AS [No_Facture]
+                  ,cd.[Item No] AS [Item_No]
+      ,dvc.[Code Devise] AS [Code_Devise_Colis]
+                  ,dvnd.[Code Devise] AS [Code_Devise_Note_Detail]
+                  ,tc.[Taux Change] AS [Taux_Change_Note_Detail]
+      ,cd.[Qte Colis] AS [Qte_Colis] 
+      ,cd.[Prix Unitaire Colis] AS [Prix_Unitaire_Colis]
+                  --,cd.[Qte Colis]*cd.[Prix Unitaire Colis] AS [Valeur_Colis]
+                  ,cd.[Ajustement Valeur] AS [Ajustement_Valeur_Colis]
+                  --,(cd.[Qte Colis]*cd.[Prix Unitaire Colis] +cd.[Ajustement Valeur])*tc.[Taux Change] AS [Valeur_Note_Detail]
+      ,cd.[Poids Brut] AS [Poids_Brut_Colis]
+      ,cd.[Poids Net] AS [Poids_Net_Colis]
+      ,cd.[Volume] AS [Volume_Colis]
+      ,p.[Libelle Pays] AS [Pays_Origine]
+
+                ,rd.ID_Regime_Declaration
+                ,rd.[ID_Regime_Douanier]
+                ,rd.[Libelle_Regime_Douanier]
+                ,rd.[Libelle_Regime_Declaration]
+                ,rd.[Regime_Code]
+                ,rd.[Ratio_DC]
+                ,rd.[Ratio_TR]
+
+      ,cd.[Regroupement Client] AS [Regroupement_Client]
+                  ,cd.[Date Creation] AS [Date_Creation]
+                  ,s.Nom_Utilisateur AS [Nom_Creation]
+  FROM [dbo].[TColisageDossiers] cd
+                INNER JOIN [dbo].TDevises dvc ON cd.[Devise]=dvc.[ID Devise]
+                INNER JOIN [dbo].TPays p ON cd.[Pays Origine]=p.[ID Pays]
+                INNER JOIN TDossiers dr ON cd.Dossier=dr.[ID Dossier]
+                LEFT JOIN TDevises dvnd ON dr.[Devise Note Detail] = dvnd.[ID Devise]
+                LEFT JOIN [dbo].THSCodes h ON cd.[HS Code]=h.[ID HS Code]
+                LEFT JOIN [dbo].VRegimesDeclarations rd ON cd.[Regime Declaration]=rd.[ID_Regime_Declaration]
+                LEFT JOIN dbo.[VSessions] s ON cd.[Session]=s.[ID_Session]
+                LEFT JOIN TAUX_CHANGE tc ON dr.[Devise Note Detail]=tc.[ID Devise]
+
+
+
+)
+
+GO
+/****** Object:  UserDefinedFunction [dbo].[fx_IDs_Pays]    Script Date: 23/03/2026 16:28:43 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -389,59 +1282,7 @@ RETURN
                 FROM DISTINCT_LIST A LEFT JOIN dbo.TPays B ON A.[Value]=B.[Code Pays]
 )
 GO
-/****** Object:  Table [dbo].[TRegimesDeclarations]    Script Date: 13/02/2026 19:58:55 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[TRegimesDeclarations](
-                [ID Regime Declaration] [int] IDENTITY(1,1) NOT NULL,
-                [Regime Douanier] [int] NOT NULL,
-                [Libelle Regime Declaration] [nvarchar](200) NOT NULL,
-                [Taux Regime] [numeric](24, 3) NOT NULL,
-                [Entite] [int] NOT NULL,
-                [Session] [int] NOT NULL,
-                [Date Creation] [datetime2](7) NOT NULL,
-                [RowVer] [timestamp] NOT NULL,
-CONSTRAINT [TRegimesDeclarations$PrimaryKey] PRIMARY KEY CLUSTERED 
-(
-                [ID Regime Declaration] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
-CONSTRAINT [UQ_TRegimesDeclarations$Libelle Regime Declaration] UNIQUE NONCLUSTERED 
-(
-                [Libelle Regime Declaration] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
-CONSTRAINT [UQ_TRegimesDeclarations$Taux Regime] UNIQUE NONCLUSTERED 
-(
-                [Taux Regime] ASC,
-                [Regime Douanier] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
-CONSTRAINT [UQ_TRegimesDeclarations$Taux Regime] UNIQUE NONCLUSTERED 
-(
-                [Taux Regime] ASC,
-                [Regime Douanier] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
-/****** Object:  Table [dbo].[TRegimesClients]    Script Date: 13/02/2026 19:58:55 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[TRegimesClients](
-                [ID Regime Client] [int] IDENTITY(1,1) NOT NULL,
-                [Client] [int] NOT NULL,
-                [Regime Declaration] [int] NOT NULL,
-                [Session] [int] NOT NULL,
-                [Date Creation] [datetime2](7) NOT NULL,
-                [RowVer] [timestamp] NOT NULL,
-CONSTRAINT [TRegimesClients$PrimaryKey] PRIMARY KEY CLUSTERED 
-(
-                [ID Regime Client] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
-/****** Object:  UserDefinedFunction [dbo].[fx_IDs_RegimesDeclarations]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  UserDefinedFunction [dbo].[fx_IDs_RegimesDeclarations]    Script Date: 23/03/2026 16:28:43 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -470,28 +1311,7 @@ RETURN
                 FROM DISTINCT_LIST A LEFT JOIN LIST_WITH_ID B ON A.[Value]=B.[Taux Regime]
 )
 GO
-/****** Object:  Table [dbo].[TModesTransport]    Script Date: 13/02/2026 19:58:55 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[TModesTransport](
-                [ID Mode Transport] [nvarchar](1) NOT NULL,
-                [Libelle Mode Transport] [nvarchar](200) NOT NULL,
-                [Session] [int] NOT NULL,
-                [Date Creation] [datetime2](7) NOT NULL,
-                [RowVer] [timestamp] NOT NULL,
-CONSTRAINT [TMoyensTransport$PrimaryKey] PRIMARY KEY CLUSTERED 
-(
-                [ID Mode Transport] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
-CONSTRAINT [UQ_TModesTransport$Libelle Mode Transport] UNIQUE NONCLUSTERED 
-(
-                [Libelle Mode Transport] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
-/****** Object:  Table [dbo].[TTypesDossiers]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  Table [dbo].[TTypesDossiers]    Script Date: 23/03/2026 16:28:43 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -508,35 +1328,14 @@ CREATE TABLE [dbo].[TTypesDossiers](
 CONSTRAINT [TTypesDossiers$PrimaryKey] PRIMARY KEY CLUSTERED 
 (
                 [ID Type Dossier] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+),
 CONSTRAINT [UQ_TTypes_Dossiers$Libelle Type Dossier] UNIQUE NONCLUSTERED 
 (
                 [Libelle Type Dossier] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+)
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[TSensTrafic]    Script Date: 13/02/2026 19:58:55 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[TSensTrafic](
-                [ID Sens Trafic] [nvarchar](1) NOT NULL,
-                [Libelle Sens Trafic] [nvarchar](200) NOT NULL,
-                [Session] [int] NOT NULL,
-                [Date Creation] [datetime2](7) NOT NULL,
-                [RowVer] [timestamp] NOT NULL,
-CONSTRAINT [TSensTrafic$PrimaryKey] PRIMARY KEY CLUSTERED 
-(
-                [ID Sens Trafic] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
-CONSTRAINT [UQ_TSensTrafic$Libelle Sens Trafic] UNIQUE NONCLUSTERED 
-(
-                [Libelle Sens Trafic] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
-/****** Object:  View [dbo].[VTypesDossiers]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  View [dbo].[VTypesDossiers]    Script Date: 23/03/2026 16:28:43 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -558,7 +1357,7 @@ SELECT A.[ID Type Dossier] AS [ID_Type_Dossier]
                 LEFT JOIN dbo.[VSessions] Z ON A.[Session]=Z.[ID_Session]
 
 GO
-/****** Object:  Table [dbo].[TEntites]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  Table [dbo].[TEntites]    Script Date: 23/03/2026 16:28:43 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -575,14 +1374,14 @@ CREATE TABLE [dbo].[TEntites](
 CONSTRAINT [TEntites$PrimaryKey] PRIMARY KEY CLUSTERED 
 (
                 [ID Entite] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+),
 CONSTRAINT [UQ_TEntites$Nom Entite] UNIQUE NONCLUSTERED 
 (
                 [Nom Entite] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+)
 ) ON [PRIMARY]
 GO
-/****** Object:  View [dbo].[VEntites]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  View [dbo].[VEntites]    Script Date: 23/03/2026 16:28:43 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -604,34 +1403,7 @@ FROM [dbo].TEntites A
                 INNER JOIN dbo.TDevises D ON C.[Devise Locale]=D.[ID Devise]
                 LEFT JOIN dbo.[VSessions] Z ON A.[Session]=Z.[ID_Session]
 GO
-/****** Object:  Table [dbo].[TBranches]    Script Date: 13/02/2026 19:58:55 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[TBranches](
-                [ID Branche] [int] IDENTITY(1,1) NOT NULL,
-                [Code Branche] [nvarchar](20) NOT NULL,
-                [Nom Branche] [nvarchar](200) NOT NULL,
-                [Entite] [int] NOT NULL,
-                [Session] [int] NOT NULL,
-                [Date Creation] [datetime2](7) NOT NULL,
-                [RowVer] [timestamp] NOT NULL,
-CONSTRAINT [TBranches$PrimaryKey] PRIMARY KEY CLUSTERED 
-(
-                [ID Branche] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
-CONSTRAINT [UQ__TBranche__0EF7E91810AAA27A] UNIQUE NONCLUSTERED 
-(
-                [Code Branche] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
-CONSTRAINT [UQ_TBranches$Nom Branche] UNIQUE NONCLUSTERED 
-(
-                [Nom Branche] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
-/****** Object:  View [dbo].[VBranches]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  View [dbo].[VBranches]    Script Date: 23/03/2026 16:28:43 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -653,7 +1425,7 @@ AS
                                INNER JOIN dbo.VEntites B ON A.[Entite]=B.[ID_Entite]
                                LEFT JOIN dbo.[VSessions] Z ON A.[Session]=Z.[ID_Session]
 GO
-/****** Object:  Table [dbo].[TEtapesDossiers]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  Table [dbo].[TEtapesDossiers]    Script Date: 23/03/2026 16:28:43 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -673,10 +1445,10 @@ CREATE TABLE [dbo].[TEtapesDossiers](
 CONSTRAINT [TEtapesDossiers$PrimaryKey] PRIMARY KEY CLUSTERED 
 (
                 [ID Etape Dossier] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+)
 ) ON [PRIMARY]
 GO
-/****** Object:  View [dbo].[VEtapesDossiers]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  View [dbo].[VEtapesDossiers]    Script Date: 23/03/2026 16:28:43 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -702,64 +1474,11 @@ AS
                                INNER JOIN dbo.TCodesEtapes B On A.[Etape Dossier]=B.[ID Code Etape]
                                LEFT JOIN dbo.[VSessions] Z ON A.[Session]=Z.[ID_Session]
 GO
-/****** Object:  Table [dbo].[TStatutsDossier]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  View [dbo].[VDossiers]    Script Date: 23/03/2026 16:28:43 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE TABLE [dbo].[TStatutsDossier](
-                [ID Statut Dossier] [int] NOT NULL,
-                [Libelle Statut Dossier] [nvarchar](200) NOT NULL,
-                [Session] [int] NOT NULL,
-                [Date Creation] [datetime2](7) NOT NULL,
-                [RowVer] [timestamp] NOT NULL,
-CONSTRAINT [TStatutsDossier$PrimaryKey] PRIMARY KEY CLUSTERED 
-(
-                [ID Statut Dossier] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
-CONSTRAINT [UQ_TStatutsDossier$Libelle Statut Dossier] UNIQUE NONCLUSTERED 
-(
-                [Libelle Statut Dossier] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
-/****** Object:  Table [dbo].[TDossiers]    Script Date: 13/02/2026 19:58:55 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[TDossiers](
-                [ID Dossier] [int] IDENTITY(1,1) NOT NULL,
-                [Branche] [int] NOT NULL,
-                [Type Dossier] [int] NOT NULL,
-                [Client] [int] NOT NULL,
-                [Description Dossier] [nvarchar](1000) NOT NULL,
-                [No OT] [nvarchar](100) NOT NULL,
-                [No Dossier] [nvarchar](50) NOT NULL,
-                [Nbre Paquetage Pesee] [int] NOT NULL,
-                [Poids Brut Pesee] [numeric](24, 2) NOT NULL,
-                [Poids Net Pesee] [numeric](24, 2) NOT NULL,
-                [Volume Pesee] [numeric](24, 2) NOT NULL,
-                [Responsable Dossier] [int] NOT NULL,
-                [Convertion] [int] NULL,
-                [Derniere Etape Dossier] [int] NULL,
-                [Observation Dossier] [nvarchar](1000) NULL,
-                [Statut Dossier] [int] NOT NULL,
-                [Session] [int] NOT NULL,
-                [Date Creation] [datetime2](7) NOT NULL,
-                [RowVer] [timestamp] NOT NULL,
-CONSTRAINT [TDossiers$PrimaryKey] PRIMARY KEY CLUSTERED 
-(
-                [ID Dossier] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
-/****** Object:  View [dbo].[VDossiers]    Script Date: 13/02/2026 19:58:55 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-
 CREATE   VIEW [dbo].[VDossiers]
 AS
 SELECT A.[ID Dossier] AS [ID_Dossier]
@@ -771,6 +1490,7 @@ SELECT A.[ID Dossier] AS [ID_Dossier]
                 ,I.[ID_Pays]
                 ,I.[Libelle_Pays]
                 ,I.[Devise_Locale]
+                ,M.[Code Devise] AS [Devise_Note_Detail]
       ,C.[ID_Type_Dossier]
                   ,C.[Libelle_Type_Dossier]
                   ,C.[ID_Sens_Trafic]
@@ -812,608 +1532,16 @@ SELECT A.[ID Dossier] AS [ID_Dossier]
                 INNER JOIN dbo.TUtilisateurs G ON A.[Responsable Dossier]=G.[ID Utilisateur]
                 INNER JOIN dbo.TStatutsDossier H ON A.[Statut Dossier]=H.[ID Statut Dossier]
                 INNER JOIN dbo.VBranches I On A.[Branche]=I.[ID_Branche]
+                LEFT JOIN TDevises M ON A.[Devise Note Detail] = M.[ID Devise]
                 LEFT JOIN dbo.[VEtapesDossiers] N ON A.[Derniere Etape Dossier]=N.[ID_Etape_Dossier]
                 LEFT JOIN dbo.TConvertions P ON A.Convertion=P.[ID Convertion]
                 LEFT JOIN dbo.[VSessions] Z ON A.[Session]=Z.[ID_Session]
                 LEFT JOIN (SELECT [Dossier], [Date Debut] FROM dbo.TEtapesDossiers WHERE [Etape Dossier]=0) X ON A.[ID Dossier]=X.Dossier
                 LEFT JOIN (SELECT [Dossier], [Date Debut] FROM dbo.TEtapesDossiers WHERE [Etape Dossier]=1000000) Y ON A.[ID Dossier]=Y.Dossier
 GO
-/****** Object:  Table [dbo].[TRoles]    Script Date: 13/02/2026 19:58:55 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[TRoles](
-                [ID Role] [int] IDENTITY(1,1) NOT NULL,
-                [Libelle Role] [nvarchar](200) NOT NULL,
-                [Session] [int] NOT NULL,
-                [Date Creation] [datetime2](7) NOT NULL,
-                [RowVer] [timestamp] NOT NULL,
-CONSTRAINT [TRoles$PrimaryKey] PRIMARY KEY CLUSTERED 
-(
-                [ID Role] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
-CONSTRAINT [UQ_TRoles$Libelle Role] UNIQUE NONCLUSTERED 
-(
-                [Libelle Role] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
-/****** Object:  Table [dbo].[TPermissonsRoles]    Script Date: 13/02/2026 19:58:55 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[TPermissonsRoles](
-                [ID Permission Role] [int] IDENTITY(1,1) NOT NULL,
-                [Role] [int] NOT NULL,
-                [Permission] [int] NOT NULL,
-                [Session] [int] NOT NULL,
-                [Date Creation] [datetime2](7) NOT NULL,
-                [RowVer] [timestamp] NOT NULL,
-CONSTRAINT [TPermissonsRoles$PrimaryKey] PRIMARY KEY CLUSTERED 
-(
-                [ID Permission Role] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
-/****** Object:  Table [dbo].[TPermissionsBase]    Script Date: 13/02/2026 19:58:55 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[TPermissionsBase](
-                [ID Permission Base] [int] NOT NULL,
-                [Libelle Permission] [nvarchar](200) NOT NULL,
-                [Permission Active] [bit] NOT NULL,
-                [Date Activation] [datetime2](7) NULL,
-                [RowVer] [timestamp] NOT NULL,
-CONSTRAINT [TPermissionsBase$PrimaryKey] PRIMARY KEY CLUSTERED 
-(
-                [ID Permission Base] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
-CONSTRAINT [UQ_TPermissionsBase$Libelle Permission] UNIQUE NONCLUSTERED 
-(
-                [Libelle Permission] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
-/****** Object:  View [dbo].[VPermissonsRoles]    Script Date: 13/02/2026 19:58:55 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE   VIEW [dbo].[VPermissonsRoles]
-AS
-                SELECT A.[ID Permission Role] AS [ID_Permission_Role]
-                               ,B.[ID Role] AS [ID_Role]
-                               ,B.[Libelle Role] AS [Libelle_Role]
-                               ,C.[ID Permission Base] AS [ID_Permission]
-                               ,C.[Libelle Permission] AS [Libelle_Permission]
-                ,A.[Date Creation] AS [Date_Creation]
-                ,Z.Nom_Utilisateur AS [Nom_Creation]
-                FROM [dbo].[TPermissonsRoles] A 
-                               INNER JOIN [dbo].[TRoles] B ON A.[Role]=B.[ID Role]
-                               INNER JOIN [dbo].[TPermissionsBase] C ON A.[Permission]=C.[ID Permission Base]
-                               LEFT JOIN dbo.[VSessions] Z ON A.[Session]=Z.[ID_Session]
-                WHERE C.[Permission Active]=1
-GO
-/****** Object:  View [dbo].[VHSCodes]    Script Date: 13/02/2026 19:58:55 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE   VIEW [dbo].[VHSCodes]
-AS
-                SELECT A.[ID HS Code] AS [ID_HS_Code]
-                ,A.[HS Code] AS [HS_Code]
-                ,A.[Libelle HS Code] AS [Libelle_HS_Code]
-                ,A.[Entite] AS [ID_Entite] 
-                ,A.[Date Creation] AS [Date_Creation]
-                ,Z.Nom_Utilisateur AS [Nom_Creation]
-                FROM dbo.THSCodes A LEFT JOIN dbo.[VSessions] Z ON A.[Session]=Z.[ID_Session]
-GO
-/****** Object:  Table [dbo].[TColisageDossiers]    Script Date: 13/02/2026 19:58:55 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[TColisageDossiers](
-                [ID Colisage Dossier] [int] IDENTITY(1,1) NOT NULL,
-                [Dossier] [int] NOT NULL,
-                [HS Code] [int] NULL,
-                [Description Colis] [nvarchar](1000) NOT NULL,
-                [No Commande] [nvarchar](50) NOT NULL,
-                [Nom Fournisseur] [nvarchar](200) NOT NULL,
-                [No Facture] [nvarchar](50) NOT NULL,
-                [Item No] [nvarchar](50) NOT NULL,
-                [Devise] [int] NOT NULL,
-                [Qte Colis] [numeric](24, 6) NOT NULL,
-                [Prix Unitaire Colis] [numeric](24, 6) NOT NULL,
-                [Poids Brut] [numeric](24, 6) NOT NULL,
-                [Poids Net] [numeric](24, 6) NOT NULL,
-                [Volume] [numeric](24, 6) NOT NULL,
-                [Ajustement Valeur] [numeric](24, 6) NOT NULL,
-                [Pays Origine] [int] NOT NULL,
-                [Regime Declaration] [int] NULL,
-                [Regroupement Client] [nvarchar](200) NOT NULL,
-                [UploadKey] [nvarchar](50) NOT NULL,
-                [Session] [int] NOT NULL,
-                [Date Creation] [datetime2](7) NOT NULL,
-                [RowVer] [timestamp] NOT NULL,
-CONSTRAINT [TColisageDossiers$PrimaryKey] PRIMARY KEY CLUSTERED 
-(
-                [ID Colisage Dossier] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
-/****** Object:  UserDefinedFunction [dbo].[fx_CleColisageDossier]    Script Date: 13/02/2026 19:58:55 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE FUNCTION [dbo].[fx_CleColisageDossier](@Id_Dossier INT)
-RETURNS TABLE
-AS
-RETURN
-(
-                SELECT [UploadKey] AS [Row_Key]
-                FROM dbo.TColisageDossiers
-                WHERE ([Dossier]=@Id_Dossier) AND (ISNULL([UploadKey],'')<>'')
-)
-GO
-/****** Object:  Table [dbo].[TRolesUtilisateurs]    Script Date: 13/02/2026 19:58:55 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[TRolesUtilisateurs](
-                [ID Role Utilisateur] [int] IDENTITY(1,1) NOT NULL,
-                [Role] [int] NOT NULL,
-                [Utilisateur] [int] NOT NULL,
-                [Session] [int] NOT NULL,
-                [Date Creation] [datetime2](7) NOT NULL,
-                [RowVer] [timestamp] NOT NULL,
-CONSTRAINT [TRolesUtilisateurs$PrimaryKey] PRIMARY KEY CLUSTERED 
-(
-                [ID Role Utilisateur] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
-/****** Object:  View [dbo].[VRolesUtilisateurs]    Script Date: 13/02/2026 19:58:55 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE   VIEW [dbo].[VRolesUtilisateurs]
-AS
-                SELECT A.[ID Role Utilisateur] AS [ID_Role_Utilisateur]
-                               ,B.[ID Role] AS [ID_Role]
-                               ,B.[Libelle Role] AS [Libelle_Role]
-                               ,C.[ID Utilisateur] AS [ID_Utilisateur]
-                               ,C.[Nom Utilisateur] AS [Nom_Utilisateur]
-                ,A.[Date Creation] AS [Date_Creation]
-                ,Z.Nom_Utilisateur AS [Nom_Creation]
-                FROM [dbo].[TRolesUtilisateurs] A 
-                               INNER JOIN [dbo].[TRoles] B ON A.[Role]=B.[ID Role]
-                               INNER JOIN [dbo].[TUtilisateurs] C ON A.[Utilisateur]=C.[ID Utilisateur]
-                               LEFT JOIN dbo.[VSessions] Z ON A.[Session]=Z.[ID_Session]
-GO
-/****** Object:  View [dbo].[VModesTransport]    Script Date: 13/02/2026 19:58:55 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-
-CREATE   VIEW [dbo].[VModesTransport]
-AS
-                SELECT A.[ID Mode Transport] AS [ID_Mode_Transport]
-                ,A.[Libelle Mode Transport] AS [Libelle_Mode_Transport]
-                ,A.[Date Creation] AS [Date_Creation]
-                ,Z.Nom_Utilisateur AS [Nom_Creation]
-                FROM dbo.TModesTransport A LEFT JOIN dbo.[VSessions] Z ON A.[Session]=Z.[ID_Session]
-GO
-/****** Object:  View [dbo].[VPays]    Script Date: 13/02/2026 19:58:55 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE   VIEW [dbo].[VPays]
-AS
-                SELECT A.[ID Pays] AS [ID_Pays]
-                ,A.[Code Pays] AS [Code_Pays]
-                ,A.[Libelle Pays] AS [Libelle_Pays]
-                ,B.[Code Devise] AS [Devise_Locale]
-                ,A.[Date Creation] AS [Date_Creation]
-                ,Z.Nom_Utilisateur AS [Nom_Creation]
-                FROM dbo.TPays A 
-                               INNER JOIN dbo.TDevises B ON A.[Devise Locale]=B.[ID Devise]
-                               LEFT JOIN dbo.[VSessions] Z ON A.[Session]=Z.[ID_Session]
-GO
-/****** Object:  Table [dbo].[TRegimesDouaniers]    Script Date: 13/02/2026 19:58:55 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[TRegimesDouaniers](
-                [ID Regime Douanier] [int] IDENTITY(1,1) NOT NULL,
-                [Code Regime Douanier] [nvarchar](10) NOT NULL,
-                [Libelle Regime Douanier] [nvarchar](200) NOT NULL,
-                [Session] [int] NOT NULL,
-                [Date Creation] [datetime2](7) NOT NULL,
-                [RowVer] [timestamp] NOT NULL,
-CONSTRAINT [TRegimesDouaniers$PrimaryKey] PRIMARY KEY CLUSTERED 
-(
-                [ID Regime Douanier] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
-CONSTRAINT [UQ_TRegimesDouaniers$Code Regime Douanier] UNIQUE NONCLUSTERED 
-(
-                [Code Regime Douanier] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
-CONSTRAINT [UQ_TRegimesDouaniers$Libelle Regime Douanier] UNIQUE NONCLUSTERED 
-(
-                [Libelle Regime Douanier] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
-/****** Object:  View [dbo].[VRegimesDouaniers]    Script Date: 13/02/2026 19:58:55 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-
-CREATE   VIEW [dbo].[VRegimesDouaniers]
-AS
-                SELECT A.[ID Regime Douanier] AS [ID_Regime_Douanier]
-                ,A.[Libelle Regime Douanier] AS [Libelle_Regime_Douanier]
-                ,A.[Date Creation] AS [Date_Creation]
-                ,Z.Nom_Utilisateur AS [Nom_Creation]
-                FROM dbo.TRegimesDouaniers A LEFT JOIN dbo.[VSessions] Z ON A.[Session]=Z.[ID_Session]
-GO
-/****** Object:  View [dbo].[VSensTrafic]    Script Date: 13/02/2026 19:58:55 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-
-CREATE   VIEW [dbo].[VSensTrafic]
-AS
-                SELECT A.[ID Sens Trafic] AS [ID_Sens_Trafic]
-                ,A.[Libelle Sens Trafic] AS [Libelle_Sens_Trafic]
-                ,A.[Date Creation] AS [Date_Creation]
-                ,Z.Nom_Utilisateur AS [Nom_Creation]
-                FROM dbo.TSensTrafic A LEFT JOIN dbo.[VSessions] Z ON A.[Session]=Z.[ID_Session]
-GO
-/****** Object:  View [dbo].[VRoles]    Script Date: 13/02/2026 19:58:55 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE   VIEW [dbo].[VRoles]
-AS
-                SELECT A.[ID Role] AS [ID_Role]
-                               ,A.[Libelle Role] AS [Libelle_Role]
-                               ,A.[Date Creation] AS [Date_Creation]
-                  ,Z.Nom_Utilisateur AS [Nom_Creation]
-                FROM [dbo].[TRoles] A LEFT JOIN dbo.[VSessions] Z ON A.[Session]=Z.[ID_Session]
-GO
-/****** Object:  View [dbo].[VStatutsDossier]    Script Date: 13/02/2026 19:58:55 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE   VIEW [dbo].[VStatutsDossier]
-AS
-                SELECT [ID Statut Dossier] AS [ID_Statut_Dossier]
-                ,[Libelle Statut Dossier] AS [Libelle_Statut_Dossier]
-                FROM [dbo].[TStatutsDossier]
-GO
-/****** Object:  View [dbo].[VRegimesDeclarations]    Script Date: 13/02/2026 19:58:55 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE   VIEW [dbo].[VRegimesDeclarations]
-AS
-                SELECT A.[ID Regime Declaration] AS [ID_Regime_Declaration]
-                ,B.[ID Regime Douanier] AS [ID_Regime_Douanier]
-                ,B.[Libelle Regime Douanier] AS [Libelle_Regime_Douanier]
-                ,A.[Libelle Regime Declaration] AS [Libelle_Regime_Declaration]
-                ,CASE 
-                               WHEN A.[Taux Regime]=-2 THEN 'TTC' 
-                               WHEN A.[Taux Regime]=-1 THEN '100% TR'
-                               WHEN A.[Taux Regime]=0 THEN 'EX0'
-                               WHEN A.[Taux Regime]=1 THEN '100% DC'
-                               ELSE FORMAT([Taux Regime], 'P')+ ' DC & ' + FORMAT(1-[Taux Regime], 'P') + ' TR'
-                END AS [Regime_Code]
-                ,CASE 
-                               WHEN A.[Taux Regime]=-2 THEN 0 
-                               WHEN A.[Taux Regime]=-1 THEN 0
-                               WHEN A.[Taux Regime]=0 THEN 0
-                               WHEN A.[Taux Regime]=1 THEN 1
-                               ELSE[Taux Regime]
-                END AS [Ratio_DC]
-                
-                ,CASE 
-                               WHEN A.[Taux Regime]=-2 THEN 0 
-                               WHEN A.[Taux Regime]=-1 THEN 1
-                               WHEN A.[Taux Regime]=0 THEN 0
-                               WHEN A.[Taux Regime]=1 THEN 0
-                               ELSE 1-[Taux Regime]
-                END AS [Ratio_TR]
-
-                ,A.[Entite] AS [ID_Entite] 
-                ,A.[Date Creation] AS [Date_Creation]
-                ,Z.Nom_Utilisateur AS [Nom_Creation]
-                FROM dbo.TRegimesDeclarations A 
-                               INNER JOIN TRegimesDouaniers B On A.[Regime Douanier]=B.[ID Regime Douanier]
-                               LEFT JOIN dbo.[VSessions] Z ON A.[Session]=Z.[ID_Session]
-GO
-/****** Object:  View [dbo].[VRegimesClients]    Script Date: 13/02/2026 19:58:55 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE   VIEW [dbo].[VRegimesClients]
-AS
-                SELECT A.[ID Regime Client] AS [ID_Regime_Client]
-                ,B.[ID Client] AS [ID_Client]
-                ,B.[Nom Client] AS [Nom_Client]
-                ,C.ID_Regime_Declaration
-                ,C.[ID_Regime_Douanier]
-                ,C.[Libelle_Regime_Douanier]
-                ,C.[Libelle_Regime_Declaration]
-                ,C.[Regime_Code]
-                ,C.[Ratio_DC]
-                ,C.[Ratio_TR]
-                ,A.[Date Creation] AS [Date_Creation]
-                ,Z.Nom_Utilisateur AS [Nom_Creation]
-                FROM dbo.TRegimesClients A 
-                               INNER JOIN dbo.TClients B On A.[Client]=B.[ID Client]
-                               INNER JOIN dbo.VRegimesDeclarations C ON A.[Regime Declaration]=C.ID_Regime_Declaration
-                               LEFT JOIN dbo.[VSessions] Z ON A.[Session]=Z.[ID_Session]
-GO
-/****** Object:  Table [dbo].[TTauxChange]    Script Date: 13/02/2026 19:58:55 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[TTauxChange](
-                [ID Taux Change] [int] IDENTITY(1,1) NOT NULL,
-                [Convertion] [int] NOT NULL,
-                [Devise] [int] NOT NULL,
-                [Taux Change] [numeric](24, 6) NOT NULL,
-                [Session] [int] NOT NULL,
-                [Date Creation] [datetime2](7) NOT NULL,
-                [RowVer] [timestamp] NOT NULL,
-CONSTRAINT [TTauxChange$PrimaryKey] PRIMARY KEY CLUSTERED 
-(
-                [ID Taux Change] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
-CONSTRAINT [UQ_TTauxChange$Convertion$Devise] UNIQUE NONCLUSTERED 
-(
-                [Convertion] ASC,
-                [Devise] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
-/****** Object:  UserDefinedFunction [dbo].[fx_TauxChangeDossier]    Script Date: 13/02/2026 19:58:55 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE FUNCTION [dbo].[fx_TauxChangeDossier](@Id_Dossier INT, @DateDeclaration datetime)
-RETURNS TABLE
-AS
-RETURN
-(
-                               -- Recuperer les devises distinctes du dossier 
-                WITH DEVISES_DOSSIER ([ID Devise]) AS
-                (
-                               SELECT DISTINCT [Devise]
-                               FROM [dbo].[TColisageDossiers]
-                               WHERE [Dossier]=@Id_Dossier
-                ),
-                               -- Recuperer l'ID de l'entite et la devise locale 
-                ENTITE_DOSSIER([ID Entite],[ID Devise0]) AS 
-                (
-                               SELECT C.[ID Entite], D.[Devise Locale]
-                               FROM dbo.TDossiers A
-                                               INNER JOIN dbo.TBranches B On A.[Branche]=B.[ID Branche]
-                                               INNER JOIN dbo.TEntites C ON B.[Entite]=C.[ID Entite]
-                                               INNER JOIN dbo.TPays D ON C.[Pays]=D.[ID Pays]
-                               WHERE A.[ID Dossier]=@Id_Dossier
-                ),                             
-                               -- Recuperer les taux des devises a la date de la declaration de l'entite
-                TAUXCHANGE_DOSSIER ([ID Convertion],[ID Devise], [Taux Change]) AS
-                (
-                               SELECT B.[ID Convertion], A.[Devise] ,A.[Taux Change]
-                               FROM dbo.TTauxChange A 
-                                               INNER JOIN dbo.TConvertions B ON A.[Convertion]=B.[ID Convertion], ENTITE_DOSSIER C
-                               WHERE (B.[Date Convertion]=@DateDeclaration) AND (B.[Entite]=C.[ID Entite])
-                ),
-                               -- Recuperer le coef du taux de change de la devise locale
-                TAUX_DEVISE_LOCALE([Taux Change0]) AS 
-                (
-                               SELECT A.[Taux Change]
-                               FROM TAUXCHANGE_DOSSIER A INNER JOIN ENTITE_DOSSIER B ON A.[ID Devise]=B.[ID Devise0]
-                )
-                
-
-                SELECT B.[ID Devise] AS [ID_Devise]
-                               ,B.[Code Devise] AS [Code_Devise]
-                               ,CAST( CASE
-                                               WHEN A.[ID Devise]= X.[ID Devise0] THEN 1
-                                               WHEN ISNULL(C.[Taux Change],0)=0 THEN NULL
-                                               ELSE IIF (ISNULL(Y.[Taux Change0],0)=0,C.[Taux Change],  C.[Taux Change]/Y.[Taux Change0]) 
-                                               END AS numeric(24,6)) AS [Taux_Change],
-                               C.[ID Convertion] AS [ID_Convertion]
-                FROM DEVISES_DOSSIER A 
-                               INNER JOIN dbo.TDevises B ON A.[ID Devise]=B.[ID Devise]
-                               LEFT JOIN TAUXCHANGE_DOSSIER C ON A.[ID Devise]=C.[ID Devise], ENTITE_DOSSIER X, TAUX_DEVISE_LOCALE Y
-)
-GO
-/****** Object:  UserDefinedFunction [dbo].[fx_PermissionsUtilisateur]    Script Date: 13/02/2026 19:58:55 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE FUNCTION [dbo].[fx_PermissionsUtilisateur](@Id_Utilisateur INT)
-RETURNS TABLE
-AS
-RETURN
-(
-                WITH ROLES_UTILISATEUR ([ID Role]) AS
-                (
-                               SELECT DISTINCT [Role]
-                               FROM [dbo].[TRolesUtilisateurs]
-                               WHERE [Utilisateur]=@Id_Utilisateur
-                )
-                
-                SELECT DISTINCT B.[Permission] AS [ID_Permission]
-                FROM ROLES_UTILISATEUR A INNER JOIN dbo.TPermissonsRoles B ON A.[ID Role]=B.[Role]
-)
-GO
-/****** Object:  View [dbo].[VTauxChange]    Script Date: 13/02/2026 19:58:55 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-
-CREATE   VIEW [dbo].[VTauxChange]
-AS
-                SELECT A.[ID Taux Change] AS [ID_Taux_Change]
-                ,A.[Convertion] AS [ID_Convertion]
-                ,B.[Code Devise] AS [Devise]
-                ,A.[Taux Change] AS [Taux_Change]
-                ,A.[Date Creation] AS [Date_Creation]
-                ,Z.Nom_Utilisateur AS [Nom_Creation]
-                FROM dbo.TTauxChange A 
-                               INNER JOIN dbo.TDevises B On A.Devise=B.[ID Devise]
-                               LEFT JOIN dbo.[VSessions] Z ON A.[Session]=Z.[ID_Session]
-GO
-/****** Object:  View [dbo].[VPermissionsBase]    Script Date: 13/02/2026 19:58:55 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-
-
-
-CREATE   VIEW [dbo].[VPermissionsBase]
-AS
-                SELECT [ID Permission Base] AS [ID_Permission_Base]
-                ,[Libelle Permission] AS [Libelle_Permission]
-                ,[Permission Active] AS [Permission_Active]
-                ,[Date Activation] AS [Date_Activation]
-                FROM dbo.TPermissionsBase 
-GO
-/****** Object:  View [dbo].[VColisageDossiers]    Script Date: 13/02/2026 19:58:55 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE     VIEW [dbo].[VColisageDossiers]
-AS
-SELECT A.[ID Colisage Dossier] AS [ID_Colisage_Dossier]
-      ,A.[Dossier] AS [ID_Dossier]
-      ,M.[HS Code] AS [HS_Code]
-      ,A.[Description Colis] AS [Description_Colis]
-      ,A.[No Commande] AS [No_Commande]
-      ,A.[Nom Fournisseur] AS [Nom_Fournisseur]
-      ,A.[No Facture] AS [No_Facture]
-                  ,A.[Item No] AS [Item_No]
-      ,B.[Code Devise] AS [Code_Devise]
-      ,A.[Qte Colis] AS [Qte_Colis] 
-      ,A.[Prix Unitaire Colis] AS [Prix_Unitaire_Colis]
-                  ,A.[Qte Colis]*A.[Prix Unitaire Colis] AS [Valeur_Colis]
-                  ,A.[Ajustement Valeur] AS [Ajustement_Valeur]
-      ,A.[Poids Brut] AS [Poids_Brut]
-      ,A.[Poids Net] AS [Poids_Net]
-      ,A.[Volume] AS [Volume]
-      ,C.[Libelle Pays] AS [Pays_Origine]
-
-                ,N.ID_Regime_Declaration
-                ,N.[ID_Regime_Douanier]
-                ,N.[Libelle_Regime_Douanier]
-                ,N.[Libelle_Regime_Declaration]
-                ,N.[Regime_Code]
-                ,N.[Ratio_DC]
-                ,N.[Ratio_TR]
-
-      ,A.[Regroupement Client] AS [Regroupement_Client]
-                  ,A.[Date Creation] AS [Date_Creation]
-                  ,Z.Nom_Utilisateur AS [Nom_Creation]
-  FROM [dbo].[TColisageDossiers] A
-                INNER JOIN [dbo].TDevises B ON A.[Devise]=B.[ID Devise]
-                INNER JOIN [dbo].TPays C ON A.[Pays Origine]=C.[ID Pays]
-                LEFT JOIN [dbo].THSCodes M ON A.[HS Code]=M.[ID HS Code]
-                LEFT JOIN [dbo].VRegimesDeclarations N ON A.[Regime Declaration]=N.[ID_Regime_Declaration]
-                LEFT JOIN dbo.[VSessions] Z ON A.[Session]=Z.[ID_Session]
-GO
-/****** Object:  Table [dbo].[TNotesDetail]    Script Date: 13/02/2026 19:58:55 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[TNotesDetail](
-                [ID Note Detail] [int] IDENTITY(1,1) NOT NULL,
-                [Colisage Dossier] [int] NOT NULL,
-                [Regime] [nvarchar](2) NOT NULL,
-                [Nbre Paquetage] [numeric](24, 2) NOT NULL,
-                [Valeur] [numeric](24, 2) NOT NULL,
-                [Base Poids Brut] [numeric](24, 2) NOT NULL,
-                [Base Poids Net] [numeric](24, 2) NOT NULL,
-                [Base Volume] [numeric](24, 2) NOT NULL,
-                [Session] [int] NOT NULL,
-                [Date Creation] [datetime2](7) NOT NULL,
-                [RowVer] [timestamp] NOT NULL,
-CONSTRAINT [TNotesDetail$PrimaryKey] PRIMARY KEY CLUSTERED 
-(
-                [ID Note Detail] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
-/****** Object:  View [dbo].[VNotesDetail]    Script Date: 13/02/2026 19:58:55 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE   VIEW [dbo].[VNotesDetail]
-AS
-                SELECT B.[ID_Dossier]
-      ,B.[HS_Code]
-      ,B.[Pays_Origine]
-
-                ,B.ID_Regime_Declaration
-                ,B.[ID_Regime_Douanier]
-                ,B.[Libelle_Regime_Douanier]
-                ,B.[Libelle_Regime_Declaration]
-      ,B.[Regroupement_Client]
-      ,A.[Regime] AS [Regime]
-                  ,B.Code_Devise
-                  ,SUM(A.[Nbre Paquetage]) AS [Nbre_Paquetage]
-      ,SUM(A.[Valeur]) AS [Valeur]
-      ,SUM(A.[Base Poids Brut]) AS [Base_Poids_Brut]
-      ,SUM(A.[Base Poids Net]) AS [Base_Poids_Net]
-      ,SUM(A.[Base Volume]) AS [Base_Volume]
-  FROM [dbo].[TNotesDetail] A 
-                INNER JOIN [dbo].[VColisageDossiers] B On A.[Colisage Dossier]=B.ID_Colisage_Dossier
-                GROUP BY B.[ID_Dossier]
-      ,B.[HS_Code]
-      ,B.[Pays_Origine]
-
-                ,B.ID_Regime_Declaration
-                ,B.[ID_Regime_Douanier]
-                ,B.[Libelle_Regime_Douanier]
-                ,B.[Libelle_Regime_Declaration]
-    ,B.[Regroupement_Client]
-     ,A.[Regime]
-                  ,B.Code_Devise
-GO
 SET ANSI_PADDING ON
 GO
-/****** Object:  Index [UN_TColisageDossiers]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  Index [UN_TColisageDossiers]    Script Date: 23/03/2026 16:28:43 ******/
 CREATE UNIQUE NONCLUSTERED INDEX [UN_TColisageDossiers] ON [dbo].[TColisageDossiers]
 (
                 [No Facture] ASC,
@@ -1424,7 +1552,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [UN_TColisageDossiers] ON [dbo].[TColisageDossi
 GO
 SET ANSI_PADDING ON
 GO
-/****** Object:  Index [UQ_TColisageDossiers$UploadKey]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  Index [UQ_TColisageDossiers$UploadKey]    Script Date: 23/03/2026 16:28:43 ******/
 CREATE UNIQUE NONCLUSTERED INDEX [UQ_TColisageDossiers$UploadKey] ON [dbo].[TColisageDossiers]
 (
                 [Dossier] ASC,
@@ -1435,7 +1563,7 @@ WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNOR
 GO
 SET ANSI_PADDING ON
 GO
-/****** Object:  Index [UQ_TDossiers$No Dossier]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  Index [UQ_TDossiers$No Dossier]    Script Date: 23/03/2026 16:28:43 ******/
 CREATE UNIQUE NONCLUSTERED INDEX [UQ_TDossiers$No Dossier] ON [dbo].[TDossiers]
 (
                 [No Dossier] ASC,
@@ -1446,7 +1574,7 @@ WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNOR
 GO
 SET ANSI_PADDING ON
 GO
-/****** Object:  Index [UQ_TDossiers$No OT]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  Index [UQ_TDossiers$No OT]    Script Date: 23/03/2026 16:28:43 ******/
 CREATE UNIQUE NONCLUSTERED INDEX [UQ_TDossiers$No OT] ON [dbo].[TDossiers]
 (
                 [No OT] ASC,
@@ -1583,6 +1711,8 @@ ALTER TABLE [dbo].[TNotesDetail] ADD  CONSTRAINT [DF_TNotesDetail_Regime]  DEFAU
 GO
 ALTER TABLE [dbo].[TNotesDetail] ADD  CONSTRAINT [DF_TNotesDetail_Nbre Paquetage]  DEFAULT ((0)) FOR [Nbre Paquetage]
 GO
+ALTER TABLE [dbo].[TNotesDetail] ADD  CONSTRAINT [DF_TNotesDetail_Qte Colis]  DEFAULT ((0)) FOR [Qte Colis]
+GO
 ALTER TABLE [dbo].[TNotesDetail] ADD  CONSTRAINT [DF__TNotesDet__Base __1DB06A4F]  DEFAULT ((0)) FOR [Valeur]
 GO
 ALTER TABLE [dbo].[TNotesDetail] ADD  CONSTRAINT [DF__TNotesDet__Base __1EA48E88]  DEFAULT ((0)) FOR [Base Poids Brut]
@@ -1659,6 +1789,9 @@ ALTER TABLE [dbo].[TUtilisateurs] ADD  CONSTRAINT [DF__TUtilisat__Sessi__3F46684
 GO
 ALTER TABLE [dbo].[TUtilisateurs] ADD  CONSTRAINT [DF__TUtilisat__Date __403A8C7D]  DEFAULT (getdate()) FOR [Date Creation]
 GO
+
+-- PARTIE II ==> A EXECUTER APRES AVOIR FAIT LE TRANSFERT DES TABLES DE L'ANCIENNE BD VERS LA NOUVELLE STRUCTURE
+
 ALTER TABLE [dbo].[TBranches]  WITH CHECK ADD  CONSTRAINT [FK_TBranches_TEntites] FOREIGN KEY([Entite])
 REFERENCES [dbo].[TEntites] ([ID Entite])
 GO
@@ -1716,6 +1849,11 @@ REFERENCES [dbo].[TConvertions] ([ID Convertion])
 ON UPDATE CASCADE
 GO
 ALTER TABLE [dbo].[TDossiers] CHECK CONSTRAINT [FK_TDossiers_TConvertions]
+GO
+ALTER TABLE [dbo].[TDossiers]  WITH CHECK ADD  CONSTRAINT [FK_TDossiers_TDossiers] FOREIGN KEY([ID Dossier])
+REFERENCES [dbo].[TDossiers] ([ID Dossier])
+GO
+ALTER TABLE [dbo].[TDossiers] CHECK CONSTRAINT [FK_TDossiers_TDossiers]
 GO
 ALTER TABLE [dbo].[TDossiers]  WITH CHECK ADD  CONSTRAINT [FK_TDossiers_TStatutsDossier] FOREIGN KEY([Statut Dossier])
 REFERENCES [dbo].[TStatutsDossier] ([ID Statut Dossier])
@@ -1846,10 +1984,6 @@ ALTER TABLE [dbo].[TEtapesDossiers]  WITH CHECK ADD  CONSTRAINT [CK_TEtapesDossi
 GO
 ALTER TABLE [dbo].[TEtapesDossiers] CHECK CONSTRAINT [CK_TEtapesDossiers$Dates]
 GO
-ALTER TABLE [dbo].[TNotesDetail]  WITH CHECK ADD  CONSTRAINT [CK__TNotesDet__Regim__44CA3770] CHECK  (([Regime]='' OR [Regime]='DC' OR [Regime]='TR'))
-GO
-ALTER TABLE [dbo].[TNotesDetail] CHECK CONSTRAINT [CK__TNotesDet__Regim__44CA3770]
-GO
 ALTER TABLE [dbo].[TPermissionsBase]  WITH CHECK ADD  CONSTRAINT [CK__TPermissionsBas__ID Ro__38996AB5] CHECK  (([ID Permission Base]>=(0) AND [ID Permission Base]<=(62)))
 GO
 ALTER TABLE [dbo].[TPermissionsBase] CHECK CONSTRAINT [CK__TPermissionsBas__ID Ro__38996AB5]
@@ -1858,7 +1992,7 @@ ALTER TABLE [dbo].[TRegimesDeclarations]  WITH CHECK ADD  CONSTRAINT [CK_TRegime
 GO
 ALTER TABLE [dbo].[TRegimesDeclarations] CHECK CONSTRAINT [CK_TRegimesDeclaration$Taux Regime]
 GO
-/****** Object:  StoredProcedure [dbo].[pSP_AjouterColisageDossier]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  StoredProcedure [dbo].[pSP_AjouterColisageDossier]    Script Date: 23/03/2026 16:28:43 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2053,7 +2187,7 @@ BEGIN
 END
 
 GO
-/****** Object:  StoredProcedure [dbo].[pSP_AnnulerDossier]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  StoredProcedure [dbo].[pSP_AnnulerDossier]    Script Date: 23/03/2026 16:28:43 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2077,7 +2211,7 @@ BEGIN
 END
 
 GO
-/****** Object:  StoredProcedure [dbo].[pSP_CalculeAjustementValeurColisage]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  StoredProcedure [dbo].[pSP_CalculeAjustementValeurColisage]    Script Date: 23/03/2026 16:28:43 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2122,51 +2256,48 @@ BEGIN
 END
 
 GO
-/****** Object:  StoredProcedure [dbo].[pSP_CreerNoteDetail]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  StoredProcedure [dbo].[pSP_CreerNoteDetail]    Script Date: 23/03/2026 16:28:43 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[pSP_CreerNoteDetail]
+
+CREATE   PROCEDURE [dbo].[pSP_CreerNoteDetail]
                 @Id_Dossier int
-                ,@DateDeclaration datetime
+                ,@DateDeclaration datetime2(7)
+                ,@RoundDigit int=2
 AS
 BEGIN
                 SET NOCOUNT ON;
-                DECLARE @Values nvarchar(max), @Message nvarchar(max)
-                DECLARE @TAUX_DEVISES TABLE ([ID_Devise] int PRIMARY KEY NOT NULL,  [Code_Devise] nvarchar(5)  NOT NULL, [Taux_Change] numeric(24,6), [ID_Convertion] int NOT NULL)
-                DECLARE @ID_Convertion int
+                DECLARE @Message nvarchar(1000)
+                DECLARE @TAUX_DEVISES TABLE ([ID_Devise] int PRIMARY KEY NOT NULL,  [Code_Devise] nvarchar(5)  NOT NULL, [Taux_Change] numeric(24,6))
 
                 --Verifier que le dossier est en cours
-                IF NOT EXISTS(SELECT TOP 1 [ID Dossier] FROM TDossiers WHERE ([ID Dossier]=@Id_Dossier) AND ([Statut Dossier]=0))
+                IF NOT EXISTS(SELECT TOP (1) 1 FROM TDossiers WHERE ([ID Dossier]=@Id_Dossier) AND ([Statut Dossier]=0))
                 BEGIN
                                SET @Message='FILE IS NOT IN PROGRESS'
                                RAISERROR (@Message, 16, 1) WITH LOG; 
                                RETURN 
                 END
 
-                -- Verifier taux de change
-                INSERT INTO @TAUX_DEVISES([ID_Devise],[Code_Devise],[Taux_Change], [ID_Convertion])
-                SELECT [ID_Devise],[Code_Devise],[Taux_Change], [ID_Convertion]
-                FROM [dbo].[fx_TauxChangeDossier](@Id_Dossier,@DateDeclaration)
+                -- recuperer les taux de change des devises dans [dbo].[TColisageDossiers] par rapport a la devise de la note de detail
+                INSERT INTO @TAUX_DEVISES([ID_Devise],[Code_Devise],[Taux_Change])
+                SELECT [ID_Devise], [Code_Devise], [Taux_Change] 
+                FROM [dbo].[fx_EvalTauxChangeDossier](@Id_Dossier,@DateDeclaration)
+                -- verifier s'il existe une convertion a la date de la declaration et si toutes les devises du colisage ont un taux de change
+                declare @NbreDevises int=0, @DevisesSansTauxDeChange nvarchar(200)=N''
+                SELECT @NbreDevises=COUNT(*), @DevisesSansTauxDeChange=STRING_AGG(IIF([Taux_Change] IS NULL,[Code_Devise], NULL),N' / ')
+                FROM @TAUX_DEVISES
 
-                SELECT TOP 1 @ID_Convertion=[ID_Convertion] FROM @TAUX_DEVISES
-
-                IF (@ID_Convertion IS NULL)
+                IF (@NbreDevises=0)
                 BEGIN
-                               SET @Message='MISSING EXCHANGE RATE AT ' + FORMAT(@DateDeclaration,'dd-MMM-yy') + ' FOR THIS ENTITY'
+                               SET @Message='NO EXCHANGE RATE AT ' + FORMAT(@DateDeclaration,'dd-MMM-yy') + ' FOR THIS ENTITY'
                                RAISERROR (@Message, 16, 1) WITH LOG; 
                                RETURN 
                 END
-
-
-                IF EXISTS(SELECT TOP 1 [ID_Devise] FROM @TAUX_DEVISES WHERE ISNULL([Taux_Change],0)<=0)
+                IF (@DevisesSansTauxDeChange<>N'')
                 BEGIN
-                               SET @Values=STUFF((SELECT DISTINCT ' ¤ '+[Code_Devise] AS [text()]
-                               FROM @TAUX_DEVISES
-                               WHERE [Taux_Change] IS NULL
-                               FOR XML PATH('') ),1,3,'')
-                               SET @Message='MISSING OR WRONG EXCHANGE RATE FOR CURRENCIES {' + @Values +'}'
+                               SET @Message='MISSING EXCHANGE RATE FOR CURRENCIES ' + @DevisesSansTauxDeChange + ' AT ' + FORMAT(@DateDeclaration,'dd-MMM-yy') + ' FOR THIS ENTITY'
                                RAISERROR (@Message, 16, 1) WITH LOG; 
                                RETURN 
                 END
@@ -2196,13 +2327,18 @@ BEGIN
 
 
                 -- Verifier HS Code et regime obligatoire sur toutes les lignes
-                IF EXISTS(SELECT TOP 1 [ID Colisage Dossier] FROM TColisageDossiers WHERE ([Dossier]=@Id_Dossier) AND (([HS Code] IS NULL) OR ([Regime Declaration] IS NULL)))
+                Declare @DescriptionsAvecNull nvarchar(max)=N''
+                SELECT @DescriptionsAvecNull= STRING_AGG(CHAR(34) + [Description Colis] + CHAR(34),N' , ')
+                FROM 
+                               (
+                                               SELECT DISTINCT [Description Colis] AS [Description Colis]
+                                               FROM TColisageDossiers
+                                               WHERE ([Dossier]=@Id_Dossier) AND ([HS Code] IS NULL) OR ([Regime Declaration] IS NULL)
+                               )T
+
+                IF @DescriptionsAvecNull<>N''
                 BEGIN
-                               SET @Values=STUFF((SELECT DISTINCT ' ¤ '+[Description Colis] AS [text()]
-                               FROM TColisageDossiers
-                               WHERE ([Dossier]=@Id_Dossier) AND ([HS Code] IS NULL)
-                               FOR XML PATH('') ),1,3,'')
-                               SET @Message='MISSING HS CODE OR REGIME FOR LINES {' + @Values +'}'
+                               SET @Message='MISSING HS CODE OR REGIME FOR LINES {' + @DescriptionsAvecNull +'}'
                                RAISERROR (@Message, 16, 1) WITH LOG; 
                                RETURN 
                 END
@@ -2214,186 +2350,162 @@ BEGIN
                                EXEC [dbo].[pSP_CalculeAjustementValeurColisage] @Id_Dossier
                                                
                                                -- Ajout de lignes des notes de detail
-                                               --Traitement [Taux Regime]=-2 ==> TTC
-                               INSERT INTO [dbo].[TNotesDetail]
-                                                                               ([Colisage Dossier]
+                               ;WITH TMP_NOTES_DETAIL_100                           ([Colisage Dossier]
                                                                                ,[Regime]
+                                                                               ,[Qte Colis]
                                                                                ,[Valeur]
                                                                                ,[Nbre Paquetage]
                                                                                ,[Base Poids Brut]
                                                                                ,[Base Poids Net]
-                                                                               ,[Base Volume])
-                               SELECT A.[ID Colisage Dossier]
-                                               ,N'TTC'
-                                               ,(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])     
-                                               ,@NbrePaquetagePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
-                                               ,@PoidsBrutPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
-                                               ,@PoidsNetPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
-                                               ,@VolumePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
-                               FROM [dbo].[TColisageDossiers] A
-                                               INNER JOIN dbo.TRegimesDeclarations B ON A.[Regime Declaration]=B.[ID Regime Declaration]
-                               WHERE ([Dossier]=@Id_Dossier) AND (A.[HS Code]<>0) AND (B.[Taux Regime]=-2)
+                                                                               ,[Base Volume]) AS
+
+                               (
+                                               --Traitement [Taux Regime]=-2 ==> TTC
+                                               SELECT A.[ID Colisage Dossier]
+                                                               ,N'TTC'
+                                                               ,A.[Qte Colis]
+                                                               ,(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])     
+                                                               ,@NbrePaquetagePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
+                                                               ,@PoidsBrutPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
+                                                               ,@PoidsNetPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
+                                                               ,@VolumePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
+                                               FROM [dbo].[TColisageDossiers] A
+                                                               INNER JOIN dbo.TRegimesDeclarations B ON A.[Regime Declaration]=B.[ID Regime Declaration]
+                                               WHERE ([Dossier]=@Id_Dossier) AND (A.[HS Code]<>0) AND (B.[Taux Regime]=-2)
 
                                                --Traitement [Taux Regime]=-1 ==> 100% TR
-                               INSERT INTO [dbo].[TNotesDetail]
-                                                                               ([Colisage Dossier]
-                                                                               ,[Regime]
-                                                                               ,[Valeur]
-                                                                               ,[Nbre Paquetage]
-                                                                               ,[Base Poids Brut]
-                                                                               ,[Base Poids Net]
-                                                                               ,[Base Volume])
-                               SELECT A.[ID Colisage Dossier]
-                                               ,N'100% TR'
-                                               ,(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])     
-                                               ,@NbrePaquetagePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
-                                               ,@PoidsBrutPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
-                                               ,@PoidsNetPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
-                                               ,@VolumePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
-                               FROM [dbo].[TColisageDossiers] A
-                                               INNER JOIN dbo.TRegimesDeclarations B ON A.[Regime Declaration]=B.[ID Regime Declaration]
-                               WHERE ([Dossier]=@Id_Dossier) AND (A.[HS Code]<>0) AND (B.[Taux Regime]=-1)
+                                               UNION ALL 
+                                               SELECT A.[ID Colisage Dossier]
+                                                               ,N'100% TR'
+                                                               ,A.[Qte Colis]
+                                                               ,(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])     
+                                                               ,@NbrePaquetagePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
+                                                               ,@PoidsBrutPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
+                                                               ,@PoidsNetPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
+                                                               ,@VolumePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
+                                               FROM [dbo].[TColisageDossiers] A
+                                                               INNER JOIN dbo.TRegimesDeclarations B ON A.[Regime Declaration]=B.[ID Regime Declaration]
+                                               WHERE ([Dossier]=@Id_Dossier) AND (A.[HS Code]<>0) AND (B.[Taux Regime]=-1)
 
                                                --Traitement [Taux Regime]=0 ==> EXO
-                               INSERT INTO [dbo].[TNotesDetail]
-                                                                               ([Colisage Dossier]
-                                                                               ,[Regime]
-                                                                               ,[Valeur]
-                                                                               ,[Nbre Paquetage]
-                                                                               ,[Base Poids Brut]
-                                                                               ,[Base Poids Net]
-                                                                               ,[Base Volume])
-                               SELECT A.[ID Colisage Dossier]
-                                               ,N'EXO'
-                                               ,(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])     
-                                               ,@NbrePaquetagePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
-                                               ,@PoidsBrutPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
-                                               ,@PoidsNetPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
-                                               ,@VolumePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
-                               FROM [dbo].[TColisageDossiers] A
-                                               INNER JOIN dbo.TRegimesDeclarations B ON A.[Regime Declaration]=B.[ID Regime Declaration]
-                               WHERE ([Dossier]=@Id_Dossier) AND (A.[HS Code]<>0) AND (B.[Taux Regime]=0)
+                                               UNION ALL
+                                               SELECT A.[ID Colisage Dossier]
+                                                               ,N'EXO'
+                                                               ,A.[Qte Colis]
+                                                               ,(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])     
+                                                               ,@NbrePaquetagePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
+                                                               ,@PoidsBrutPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
+                                                               ,@PoidsNetPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
+                                                               ,@VolumePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
+                                               FROM [dbo].[TColisageDossiers] A
+                                                               INNER JOIN dbo.TRegimesDeclarations B ON A.[Regime Declaration]=B.[ID Regime Declaration]
+                                               WHERE ([Dossier]=@Id_Dossier) AND (A.[HS Code]<>0) AND (B.[Taux Regime]=0)
 
-                               --Traitement [Taux Regime]=1 ==> 100% DC
-                               INSERT INTO [dbo].[TNotesDetail]
-                                                                               ([Colisage Dossier]
-                                                                               ,[Regime]
-                                                                               ,[Valeur]
-                                                                               ,[Nbre Paquetage]
-                                                                               ,[Base Poids Brut]
-                                                                               ,[Base Poids Net]
-                                                                               ,[Base Volume])
-                               SELECT A.[ID Colisage Dossier]
-                                               ,N'100% DC'
-                                               ,(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])     
-                                               ,@NbrePaquetagePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
-                                               ,@PoidsBrutPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
-                                               ,@PoidsNetPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
-                                               ,@VolumePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
-                               FROM [dbo].[TColisageDossiers] A
-                                               INNER JOIN dbo.TRegimesDeclarations B ON A.[Regime Declaration]=B.[ID Regime Declaration]
-                               WHERE ([Dossier]=@Id_Dossier) AND (A.[HS Code]<>0) AND (B.[Taux Regime]=1)
-
+                                               --Traitement [Taux Regime]=1 ==> 100% DC
+                                               UNION ALL
+                                               SELECT A.[ID Colisage Dossier]
+                                                               ,N'100% DC'
+                                                               ,A.[Qte Colis]
+                                                               ,(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])     
+                                                               ,@NbrePaquetagePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
+                                                               ,@PoidsBrutPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
+                                                               ,@PoidsNetPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
+                                                               ,@VolumePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
+                                               FROM [dbo].[TColisageDossiers] A
+                                                               INNER JOIN dbo.TRegimesDeclarations B ON A.[Regime Declaration]=B.[ID Regime Declaration]
+                                               WHERE ([Dossier]=@Id_Dossier) AND (A.[HS Code]<>0) AND (B.[Taux Regime]=1)
+                               ),
 
                                                --Traitement DC=x% x in ]0%,100%[ ==> DC RATIO
-                              UNION ALL 
-                               SELECT A.[ID Colisage Dossier]
-                                               ,FORMAT(B.[Taux Regime],'P') + N' DC'
-                                               ,(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])*B.[Taux Regime]                         -- La valeur doit integrer l'ajustement
-                                               ,@NbrePaquetagePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])*B.[Taux Regime]/@ValeurTotaleColisage
-                                               ,@PoidsBrutPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])*B.[Taux Regime]/@ValeurTotaleColisage
-                                               ,@PoidsNetPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])*B.[Taux Regime]/@ValeurTotaleColisage
-                                               ,@VolumePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])*B.[Taux Regime]/@ValeurTotaleColisage
-                               FROM [dbo].[TColisageDossiers] A
-                                               INNER JOIN dbo.TRegimesDeclarations B ON A.[Regime Declaration]=B.[ID Regime Declaration]
-                               WHERE ([Dossier]=@Id_Dossier) AND (A.[HS Code]<>0) AND (B.[Taux Regime]>0 AND B.[Taux Regime]<1)
+                              CTE_VALEUR_GLOBALE  AS
+                               (
+                                               SELECT A.[ID Colisage Dossier] AS [Colisage Dossier]
+                                                               ,A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur] AS [Valeur Globale]
+                                                               ,B.[Taux Regime]
+                                               FROM [dbo].[TColisageDossiers] A
+                                                               INNER JOIN dbo.TRegimesDeclarations B ON A.[Regime Declaration]=B.[ID Regime Declaration]
+                                               WHERE ([Dossier]=@Id_Dossier) AND (A.[HS Code]<>0) AND (B.[Taux Regime]>0 AND B.[Taux Regime]<1)
+                               ),
+                               CTE_VALEUR_DC AS 
+                               (
+                                               SELECT [Colisage Dossier]
+                                               ,[Valeur Globale]
+                                               ,[Taux Regime]
+                                               ,ROUND([Valeur Globale]*[Taux Regime],@RoundDigit) AS [Valeur DC]
+                                               FROM CTE_VALEUR_GLOBALE
+                               ),
+                               TMP_NOTES_DETAIL_RATIO                   ([Colisage Dossier]
+                                                                               ,[Regime]
+                                                                               ,[Qte Colis]
+                                                                               ,[Valeur]
+                                                                               ,[Nbre Paquetage]
+                                                                               ,[Base Poids Brut]
+                                                                               ,[Base Poids Net]
+                                                                               ,[Base Volume]) AS
+                               (
+                                                               -- Cas DC
+                                                               SELECT A.[ID Colisage Dossier]
+                                                                               ,FORMAT(B.[Taux Regime],'P') + N' DC'
+                                                                               ,A.[Qte Colis]*B.[Taux Regime]
+                                                                               ,B.[Valeur DC]                 -- La valeur doit integrer l'ajustement
+                                                                               ,@NbrePaquetagePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])*B.[Taux Regime]/@ValeurTotaleColisage
+                                                                               ,@PoidsBrutPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])*B.[Taux Regime]/@ValeurTotaleColisage
+                                                                               ,@PoidsNetPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])*B.[Taux Regime]/@ValeurTotaleColisage
+                                                                               ,@VolumePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])*B.[Taux Regime]/@ValeurTotaleColisage
+                                                               FROM [dbo].[TColisageDossiers] A INNER JOIN CTE_VALEUR_DC B ON A.[ID Colisage Dossier]=B.[Colisage Dossier]
                                                                -- Cas TR
-                               UNION ALL 
-                               SELECT A.[ID Colisage Dossier]
-                                               ,FORMAT(1-B.[Taux Regime],'P')  + N'TR'
-                                               ,(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])*(1-B.[Taux Regime])                 -- La valeur doit integrer l'ajustement
-                                               ,@NbrePaquetagePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])*(1-B.[Taux Regime])/@ValeurTotaleColisage
-                                               ,@PoidsBrutPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])*(1-B.[Taux Regime])/@ValeurTotaleColisage
-                                               ,@PoidsNetPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])*(1-B.[Taux Regime])/@ValeurTotaleColisage
-                                               ,@VolumePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])*(1-B.[Taux Regime])/@ValeurTotaleColisage
-                               FROM [dbo].[TColisageDossiers] A
-                                               INNER JOIN dbo.TRegimesDeclarations B ON A.[Regime Declaration]=B.[ID Regime Declaration]
-                               WHERE ([Dossier]=@Id_Dossier) AND (A.[HS Code]<>0) AND (B.[Taux Regime]>0 AND B.[Taux Regime]<1)
+                                                               UNION ALL 
+                                                               SELECT A.[ID Colisage Dossier]
+                                                                               ,A.[Qte Colis]*(1-B.[Taux Regime])
+                                                                               ,FORMAT(1-B.[Taux Regime],'P')  + N'TR'
+                                                                               ,B.[Valeur Globale]-B.[Valeur DC]                        -- La valeur doit integrer l'ajustement
+                                                                               ,@NbrePaquetagePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])*(1-B.[Taux Regime])/@ValeurTotaleColisage
+                                                                               ,@PoidsBrutPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])*(1-B.[Taux Regime])/@ValeurTotaleColisage
+                                                                               ,@PoidsNetPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])*(1-B.[Taux Regime])/@ValeurTotaleColisage
+                                                                               ,@VolumePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])*(1-B.[Taux Regime])/@ValeurTotaleColisage
+                                                               FROM [dbo].[TColisageDossiers] A INNER JOIN CTE_VALEUR_DC B ON A.[ID Colisage Dossier]=B.[Colisage Dossier]
+                                               )
 
-                               -- AJUSTEMENT DES VALEURS SUR LES TOTAUX
-                               declare @TotalRowsPaquetage numeric(24,2),@TotalRowsPoidsBrut numeric(24,2),@TotalRowsPoidsNet numeric(24,2),@TotalRowsVolume numeric(24,2),@TotalRowsValeur numeric(24,2)
+                                               INSERT INTO [dbo].[TNotesDetail]
+                                                               ([Colisage Dossier]
+                                                               ,[Regime]
+                                                               ,[Qte Colis]
+                                                               ,[Valeur]
+                                                               ,[Nbre Paquetage]
+                                                               ,[Base Poids Brut]
+                                                               ,[Base Poids Net]
+                                                               ,[Base Volume])
+                                               SELECT [Colisage Dossier]
+                                                               ,[Regime]
+                                                               ,LEAST([Qte Colis],0.1)
+                                                               ,LEAST([Valeur],0.1)
+                                                               ,LEAST([Nbre Paquetage],0.1)
+                                                               ,LEAST([Base Poids Brut],0.1)
+                                                               ,LEAST([Base Poids Net],0.1)
+                                                               ,LEAST([Base Volume],0.1)
+                                               FROM TMP_NOTES_DETAIL_100
+                                               UNION ALL 
+                                               SELECT [Colisage Dossier]
+                                                               ,[Regime]
+                                                               ,LEAST([Qte Colis],0.1)
+                                                               ,LEAST([Valeur],0.1)
+                                                               ,LEAST([Nbre Paquetage],0.1)
+                                                               ,LEAST([Base Poids Brut],0.1)
+                                                               ,LEAST([Base Poids Net],0.1)
+                                                               ,LEAST([Base Volume],0.1)
+                                               FROM TMP_NOTES_DETAIL_RATIO
+
+
+
+                               -- AJUSTEMENT DES VALEURS DE COLISAGE SUR LES TOTAUX (LA VALEUR N'EST PAS INCLUSE DANS CET AJUSTEMENT CAR ON A PAS UNE VALEUR IMPOSEE AU TOTAL)
+                               declare @TotalRowsPaquetage numeric(24,2),@TotalRowsPoidsBrut numeric(24,2),@TotalRowsPoidsNet numeric(24,2),@TotalRowsVolume numeric(24,2)
                                declare @NoteDetailId int
                                SELECT  @TotalRowsPaquetage=SUM([Nbre Paquetage])
                                                ,@TotalRowsPoidsBrut=SUM([Base Poids Brut])
                                                ,@TotalRowsPoidsNet=SUM([Base Poids Net])
-                                               ,@TotalRowsVolume=SUM([Base Volume])
-                                               ,@TotalRowsValeur=SUM([Valeur])
+                                               ,@TotalRowsVolume=SUM([Base Volume]) 
                                FROM TNotesDetail A INNER JOIN TColisageDossiers B ON A.[Colisage Dossier]=B.[ID Colisage Dossier]
                                WHERE B.Dossier=@Id_Dossier
-                                               --Ajustement [Valeur] (methode du plus fort reste)
-                               if (@ValeurTotaleColisage<>@TotalRowsValeur)
-                               BEGIN
-                                               declare @DeltaCents int
-                                               declare @Sens int, @RowsCount int, @BaseStep int, @ExtraStep int
-                                               declare @AjustValeur TABLE ([ID Note Detail] int PRIMARY KEY, [Rang] int NOT NULL)
-
-                                               -- Conversion de l'ecart en centimes pour eviter les derives flottantes
-                                               SET @DeltaCents = CONVERT(int, ROUND((@ValeurTotaleColisage - @TotalRowsValeur)*100,0))
-
-                                               if (@DeltaCents<>0)
-                                               BEGIN
-                                                               SET @Sens = IIF(@DeltaCents>0,1,-1)
-
-                                                               ;WITH CTE_Residual AS (
-                                                                               SELECT ND.[ID Note Detail]
-                                                                                               ,(
-                                                                                                               CASE 
-                                                                                                                               WHEN RD.[Taux Regime] IN (-2,-1,0,1)
-                                                                                                                                               THEN (CD.[Qte Colis]*CD.[Prix Unitaire Colis] + CD.[Ajustement Valeur])
-                                                                                                                               WHEN RD.[Taux Regime]>0 AND RD.[Taux Regime]<1
-                                                                                                                                               AND ND.[Regime]=FORMAT(RD.[Taux Regime],'P') + N' DC'
-                                                                                                                                               THEN (CD.[Qte Colis]*CD.[Prix Unitaire Colis] + CD.[Ajustement Valeur])*RD.[Taux Regime]
-                                                                                                                               WHEN RD.[Taux Regime]>0 AND RD.[Taux Regime]<1
-                                                                                                                                               AND ND.[Regime]=FORMAT(1-RD.[Taux Regime],'P') + N'TR'
-                                                                                                                                               THEN (CD.[Qte Colis]*CD.[Prix Unitaire Colis] + CD.[Ajustement Valeur])*(1-RD.[Taux Regime])
-                                                                                                                               ELSE CAST(ND.[Valeur] AS numeric(24,6))
-                                                                                                               END
-                                                                                               ) - CAST(ND.[Valeur] AS numeric(24,6)) AS [Residual]
-                                                                               FROM TNotesDetail ND
-                                                                               INNER JOIN TColisageDossiers CD ON ND.[Colisage Dossier]=CD.[ID Colisage Dossier]
-                                                                               INNER JOIN TRegimesDeclarations RD ON CD.[Regime Declaration]=RD.[ID Regime Declaration]
-                                                                               WHERE CD.[Dossier]=@Id_Dossier
-                                                               )
-                                                               INSERT INTO @AjustValeur ([ID Note Detail],[Rang])
-                                                               SELECT R.[ID Note Detail]
-                                                                              ,ROW_NUMBER() OVER (
-                                                                                              ORDER BY
-                                                                                                              CASE WHEN @Sens=1 THEN R.[Residual] END DESC,
-                                                                                                              CASE WHEN @Sens=-1 THEN R.[Residual] END ASC,
-                                                                                                              R.[ID Note Detail] ASC
-                                                                              ) AS [Rang]
-                                                               FROM CTE_Residual R
-
-                                                               SELECT @RowsCount=COUNT(*) FROM @AjustValeur
-
-                                                               IF (@RowsCount>0)
-                                                               BEGIN
-                                                                               SET @BaseStep=ABS(@DeltaCents)/@RowsCount
-                                                                               SET @ExtraStep=ABS(@DeltaCents)%@RowsCount
-
-                                                                               UPDATE ND
-                                                                               SET [Valeur]=[Valeur] + (
-                                                                                               CAST(@Sens AS numeric(24,6))
-                                                                                               * CAST(
-                                                                                                               (@BaseStep + CASE WHEN AV.[Rang]<=@ExtraStep THEN 1 ELSE 0 END)
-                                                                                                               AS numeric(24,6)
-                                                                                               ) / 100
-                                                                               )
-                                                                               FROM TNotesDetail ND
-                                                                               INNER JOIN @AjustValeur AV ON ND.[ID Note Detail]=AV.[ID Note Detail]
-                                                               END
-                                               END
-                               END
                                                --Ajustement [Nbre Paquetage]
                                if (@NbrePaquetagePesee<>@TotalRowsPaquetage)
                                BEGIN
@@ -2447,7 +2559,13 @@ BEGIN
 
 
                                -- MISE A JOUR DU LIEN DE LA CONVERTION AVEC LE DOSSIER
-                               UPDATE dbo.TDossiers SET [Convertion]=@ID_Convertion WHERE [ID Dossier] =@Id_Dossier
+                               Declare @Id_Convertion int
+                               SELECT @Id_Convertion=co.[ID Convertion]
+                               FROM TConvertions co 
+                                               INNER JOIN TBranches br on co.Entite = br.[Entite]
+                                               INNER JOIN TDossiers dr ON br.[ID Branche]=dr.Branche
+                               WHERE (dr.[ID Dossier]=@Id_Dossier) AND (co.[Date Convertion]=@DateDeclaration)
+                               UPDATE dbo.TDossiers SET [Convertion]=@Id_Convertion WHERE [ID Dossier] =@Id_Dossier
 
                 COMMIT TRANSACTION;
                 END TRY
@@ -2461,8 +2579,7 @@ BEGIN
                 END CATCH;
 END
 
-GO
-/****** Object:  StoredProcedure [dbo].[pSP_RecalculeDerniereEtapeDossier]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  StoredProcedure [dbo].[pSP_RecalculeDerniereEtapeDossier]    Script Date: 23/03/2026 16:28:43 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2504,7 +2621,7 @@ BEGIN
 END
 
 GO
-/****** Object:  StoredProcedure [dbo].[pSP_SupprimerNoteDetail]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  StoredProcedure [dbo].[pSP_SupprimerNoteDetail]    Script Date: 23/03/2026 16:28:43 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2556,7 +2673,7 @@ BEGIN
                 END CATCH;
 END
 GO
-/****** Object:  Trigger [dbo].[INSERT_TClients]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  Trigger [dbo].[INSERT_TClients]    Script Date: 23/03/2026 16:28:43 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2578,12 +2695,12 @@ CREATE TRIGGER [dbo].[INSERT_TClients]
                                                (
                                                                SELECT [ID Regime Declaration]
                                                                FROM dbo.TRegimesDeclarations
-                                                               WHERE [ID Regime Declaration] IN (0,1)
+                                                               WHERE ([Regime Douanier]=0) AND ([Taux Regime] IN (0,1,-1,-2))
                                                ) B
 GO
 ALTER TABLE [dbo].[TClients] ENABLE TRIGGER [INSERT_TClients]
 GO
-/****** Object:  Trigger [dbo].[INSERT_TClients$Entite_IF_ON_TEntites$ID Entite]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  Trigger [dbo].[INSERT_TClients$Entite_IF_ON_TEntites$ID Entite]    Script Date: 23/03/2026 16:28:44 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2610,7 +2727,7 @@ CREATE TRIGGER [dbo].[INSERT_TClients$Entite_IF_ON_TEntites$ID Entite]
 GO
 ALTER TABLE [dbo].[TClients] ENABLE TRIGGER [INSERT_TClients$Entite_IF_ON_TEntites$ID Entite]
 GO
-/****** Object:  Trigger [dbo].[UPDATE_TClients$Entite_IF_ON_TEntites$ID Entite]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  Trigger [dbo].[UPDATE_TClients$Entite_IF_ON_TEntites$ID Entite]    Script Date: 23/03/2026 16:28:44 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2638,7 +2755,7 @@ CREATE TRIGGER [dbo].[UPDATE_TClients$Entite_IF_ON_TEntites$ID Entite]
 GO
 ALTER TABLE [dbo].[TClients] ENABLE TRIGGER [UPDATE_TClients$Entite_IF_ON_TEntites$ID Entite]
 GO
-/****** Object:  Trigger [dbo].[INSERT_TConvertions$Entite_IF_ON_TEntites$ID Entite]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  Trigger [dbo].[INSERT_TConvertions$Entite_IF_ON_TEntites$ID Entite]    Script Date: 23/03/2026 16:28:44 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2665,7 +2782,7 @@ CREATE TRIGGER [dbo].[INSERT_TConvertions$Entite_IF_ON_TEntites$ID Entite]
 GO
 ALTER TABLE [dbo].[TConvertions] ENABLE TRIGGER [INSERT_TConvertions$Entite_IF_ON_TEntites$ID Entite]
 GO
-/****** Object:  Trigger [dbo].[UPDATE_TConvertions$Entite_IF_ON_TEntites$ID Entite]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  Trigger [dbo].[UPDATE_TConvertions$Entite_IF_ON_TEntites$ID Entite]    Script Date: 23/03/2026 16:28:44 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2693,7 +2810,83 @@ CREATE TRIGGER [dbo].[UPDATE_TConvertions$Entite_IF_ON_TEntites$ID Entite]
 GO
 ALTER TABLE [dbo].[TConvertions] ENABLE TRIGGER [UPDATE_TConvertions$Entite_IF_ON_TEntites$ID Entite]
 GO
-/****** Object:  Trigger [dbo].[INSERT_TDossiers]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  Trigger [dbo].[DELETE_TDevises$ID Devise_IF_NOT_IN_TDossiers$Devise Note Detail]    Script Date: 23/03/2026 16:28:44 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+/*
+ALTER TABLE [dbo].[TDossiers]  WITH CHECK ADD  CONSTRAINT [TDossiers$Devise Note Detail@TDevises] FOREIGN KEY([Devise Note Detail])
+REFERENCES [dbo].[TDevises] ([ID Devise])
+ON UPDATE CASCADE
+GO
+
+*/
+
+CREATE TRIGGER [dbo].[DELETE_TDevises$ID Devise_IF_NOT_IN_TDossiers$Devise Note Detail]
+                ON [dbo].[TDevises] FOR DELETE
+                AS
+                               SET NOCOUNT ON;
+                               DECLARE @Values nvarchar(max), @Message nvarchar(max)
+                               IF EXISTS(SELECT TOP 1 T.[Devise Note Detail] 
+                                               FROM DELETED D INNER JOIN [TDossiers] T
+                                                               ON D.[ID Devise]=T.[Devise Note Detail]
+                                               WHERE D.[ID Devise] IS NOT NULL)
+                               BEGIN
+                                               SET @Values=STUFF((SELECT DISTINCT ' ¤ '+[ID Devise] AS [text()]
+                                                               FROM DELETED 
+                                                               FOR XML PATH('') ),1,3,'')
+                                                               SET @Message='ERROR ON TRIGGER [DELETE_TDevises$ID Devise_IF_NOT_IN_TDossiers$Devise Note Detail] Values:{' + @Values +'}'
+                                                               RAISERROR (@Message, 16, 1) WITH LOG; 
+                                               ROLLBACK TRANSACTION;
+                                               RETURN 
+                               END
+GO
+ALTER TABLE [dbo].[TDevises] ENABLE TRIGGER [DELETE_TDevises$ID Devise_IF_NOT_IN_TDossiers$Devise Note Detail]
+GO
+/****** Object:  Trigger [dbo].[UPDATE_TDevises$ID Devise_ON_TDossiers$Devise Note Detail]    Script Date: 23/03/2026 16:28:44 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TRIGGER [dbo].[UPDATE_TDevises$ID Devise_ON_TDossiers$Devise Note Detail]
+                ON [dbo].[TDevises] AFTER UPDATE
+                AS
+                               SET NOCOUNT ON;
+                               IF UPDATE ([ID Devise])
+                               BEGIN
+                                               DECLARE @TmpInserted TABLE ([ID] int IDENTITY PRIMARY KEY, [Value] [nvarchar](10))
+                                               INSERT INTO @TmpInserted ([Value]) SELECT [ID Devise] FROM INSERTED
+                                               
+                                               DECLARE @TmpDeleted TABLE ([ID] int IDENTITY PRIMARY KEY, [Value] [nvarchar](10))
+                                               INSERT INTO @TmpDeleted ([Value]) SELECT [ID Devise] FROM DELETED
+                                               
+                                               DECLARE @Values nvarchar(max), @Message nvarchar(max)
+
+                                               BEGIN TRY
+                                                               UPDATE [TDossiers] 
+                                                               SET [Devise Note Detail]=I.[Value]
+                                                               FROM @TmpInserted I INNER JOIN @TmpDeleted D
+                                                                               ON I.[ID]=D.[ID]
+                                                               INNER JOIN [TDossiers] T
+                                                                               ON D.[Value]=T.[Devise Note Detail]
+                                               END TRY
+                                               BEGIN CATCH
+                                                               SET @Values=STUFF((SELECT DISTINCT ' ¤ '+[ID Devise] AS [text()]
+                                                               FROM INSERTED 
+                                                               FOR XML PATH('') ),1,3,'')
+                                                               SET @Message='ERROR ON TRIGGER [UPDATE_TDevises$ID Devise_ON_TDossiers$Devise Note Detail] Values:{' + @Values +'}'
+                                                               RAISERROR (@Message, 16, 1) WITH LOG; 
+                                                               -- ERROR_MESSAGE() - ERROR_SEVERITY() - ERROR_STATE ()
+                                                               ROLLBACK TRANSACTION;
+                                                               RETURN 
+                                               END CATCH
+                               END
+GO
+ALTER TABLE [dbo].[TDevises] ENABLE TRIGGER [UPDATE_TDevises$ID Devise_ON_TDossiers$Devise Note Detail]
+GO
+/****** Object:  Trigger [dbo].[INSERT_TDossiers]    Script Date: 23/03/2026 16:28:44 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2722,7 +2915,62 @@ AS
 GO
 ALTER TABLE [dbo].[TDossiers] ENABLE TRIGGER [INSERT_TDossiers]
 GO
-/****** Object:  Trigger [dbo].[DELETE_TEntites$ID Entite_IF_NOT_IN_TClients$Entite]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  Trigger [dbo].[INSERT_TDossiers$Devise Note Detail_IF_ON_TDevises$ID Devise]    Script Date: 23/03/2026 16:28:44 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TRIGGER [dbo].[INSERT_TDossiers$Devise Note Detail_IF_ON_TDevises$ID Devise]
+                ON [dbo].[TDossiers] FOR INSERT
+                AS
+                               SET NOCOUNT ON;
+                               DECLARE @Values nvarchar(max), @Message nvarchar(max)
+                               IF EXISTS(SELECT TOP 1 I.[Devise Note Detail] 
+                                               FROM INSERTED I LEFT JOIN [TDevises] T
+                                                               ON I.[Devise Note Detail]=T.[ID Devise]
+                                               WHERE (I.[Devise Note Detail] IS NOT NULL) AND (T.[ID Devise] IS NULL))
+                               BEGIN
+                                               SET @Values=STUFF((SELECT DISTINCT ' ¤ '+[Devise Note Detail] AS [text()]
+                                               FROM INSERTED
+                                               FOR XML PATH('') ),1,3,'')
+                                               SET @Message='ERROR ON TRIGGER [INSERT_TDossiers$Devise Note Detail_IF_ON_TDevises$ID Devise] Values:{' + @Values +'}'
+                                               RAISERROR (@Message, 16, 1) WITH LOG; 
+                                               ROLLBACK TRANSACTION;
+                                               RETURN 
+                               END
+GO
+ALTER TABLE [dbo].[TDossiers] ENABLE TRIGGER [INSERT_TDossiers$Devise Note Detail_IF_ON_TDevises$ID Devise]
+GO
+/****** Object:  Trigger [dbo].[UPDATE_TDossiers$Devise Note Detail_IF_ON_TDevises$ID Devise]    Script Date: 23/03/2026 16:28:44 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TRIGGER [dbo].[UPDATE_TDossiers$Devise Note Detail_IF_ON_TDevises$ID Devise]
+                ON [dbo].[TDossiers] FOR UPDATE
+                AS
+                               SET NOCOUNT ON;
+                               DECLARE @Values nvarchar(max), @Message nvarchar(max)
+                               IF UPDATE ([Devise Note Detail]) 
+                                               AND EXISTS(SELECT TOP 1 I.[Devise Note Detail] 
+                                                               FROM INSERTED I LEFT JOIN [TDevises] T
+                                                                               ON I.[Devise Note Detail]=T.[ID Devise]
+                                                               WHERE (I.[Devise Note Detail] IS NOT NULL) AND (T.[ID Devise] IS NULL))
+                               BEGIN
+                                               SET @Values=STUFF((SELECT DISTINCT ' ¤ '+[Devise Note Detail] AS [text()]
+                                               FROM INSERTED 
+                                               FOR XML PATH('') ),1,3,'')
+                                               SET @Message='ERROR ON TRIGGER [UPDATE_TDossiers$Devise Note Detail_IF_ON_TDevises$ID Devise] Values:{' + @Values +'}'
+                                               RAISERROR (@Message, 16, 1) WITH LOG; 
+                                               ROLLBACK TRANSACTION;
+                                               RETURN 
+                               END
+GO
+ALTER TABLE [dbo].[TDossiers] ENABLE TRIGGER [UPDATE_TDossiers$Devise Note Detail_IF_ON_TDevises$ID Devise]
+GO
+/****** Object:  Trigger [dbo].[DELETE_TEntites$ID Entite_IF_NOT_IN_TClients$Entite]    Script Date: 23/03/2026 16:28:44 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2748,7 +2996,7 @@ CREATE TRIGGER [dbo].[DELETE_TEntites$ID Entite_IF_NOT_IN_TClients$Entite]
 GO
 ALTER TABLE [dbo].[TEntites] ENABLE TRIGGER [DELETE_TEntites$ID Entite_IF_NOT_IN_TClients$Entite]
 GO
-/****** Object:  Trigger [dbo].[DELETE_TEntites$ID Entite_IF_NOT_IN_TConvertions$Entite]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  Trigger [dbo].[DELETE_TEntites$ID Entite_IF_NOT_IN_TConvertions$Entite]    Script Date: 23/03/2026 16:28:44 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2774,7 +3022,7 @@ CREATE TRIGGER [dbo].[DELETE_TEntites$ID Entite_IF_NOT_IN_TConvertions$Entite]
 GO
 ALTER TABLE [dbo].[TEntites] ENABLE TRIGGER [DELETE_TEntites$ID Entite_IF_NOT_IN_TConvertions$Entite]
 GO
-/****** Object:  Trigger [dbo].[UPDATE_TEntites$ID Entite_ON_TClients$Entite]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  Trigger [dbo].[UPDATE_TEntites$ID Entite_ON_TClients$Entite]    Script Date: 23/03/2026 16:28:44 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2816,7 +3064,7 @@ CREATE TRIGGER [dbo].[UPDATE_TEntites$ID Entite_ON_TClients$Entite]
 GO
 ALTER TABLE [dbo].[TEntites] ENABLE TRIGGER [UPDATE_TEntites$ID Entite_ON_TClients$Entite]
 GO
-/****** Object:  Trigger [dbo].[UPDATE_TEntites$ID Entite_ON_TConvertions$Entite]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  Trigger [dbo].[UPDATE_TEntites$ID Entite_ON_TConvertions$Entite]    Script Date: 23/03/2026 16:28:44 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2858,7 +3106,7 @@ CREATE TRIGGER [dbo].[UPDATE_TEntites$ID Entite_ON_TConvertions$Entite]
 GO
 ALTER TABLE [dbo].[TEntites] ENABLE TRIGGER [UPDATE_TEntites$ID Entite_ON_TConvertions$Entite]
 GO
-/****** Object:  Trigger [dbo].[DELETE_TEtapesDossiers]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  Trigger [dbo].[DELETE_TEtapesDossiers]    Script Date: 23/03/2026 16:28:44 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2888,7 +3136,7 @@ CREATE   TRIGGER [dbo].[DELETE_TEtapesDossiers]
 GO
 ALTER TABLE [dbo].[TEtapesDossiers] ENABLE TRIGGER [DELETE_TEtapesDossiers]
 GO
-/****** Object:  Trigger [dbo].[INSERT_TEtapesDossiers]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  Trigger [dbo].[INSERT_TEtapesDossiers]    Script Date: 23/03/2026 16:28:44 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2918,7 +3166,7 @@ AS
 GO
 ALTER TABLE [dbo].[TEtapesDossiers] ENABLE TRIGGER [INSERT_TEtapesDossiers]
 GO
-/****** Object:  Trigger [dbo].[UPDATE_TEtapesDossiers]    Script Date: 13/02/2026 19:58:55 ******/
+/****** Object:  Trigger [dbo].[UPDATE_TEtapesDossiers]    Script Date: 23/03/2026 16:28:44 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2952,559 +3200,3 @@ AS
 GO
 ALTER TABLE [dbo].[TEtapesDossiers] ENABLE TRIGGER [UPDATE_TEtapesDossiers]
 GO
-Use SFX_PreDouane
-GO
-
--- Devises
-SET IDENTITY_INSERT TDevises ON;
-INSERT INTO TDevises([ID Devise], [Code Devise], [Libelle Devise], [Decimales], [Devise Inactive])
-VALUES (0,'','LOCAL CURRENCY',2, 0)
-SET IDENTITY_INSERT TDevises OFF;
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('AED','United Arab Emirates dirham',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('AFN','Afghan afghani',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('ALL','Albanian lek',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('AMD','Armenian dram',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('ANG','Netherlands Antillean guilder',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('AOA','Angolan kwanza',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('ARS','Argentine peso',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('AUD','Australian dollar',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('AWG','Aruban florin',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('AZN','Azerbaijani manat',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('BAM','Bosnia and Herzegovina convertible mark',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('BBD','Barbadian dollar',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('BDT','Bangladeshi taka',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('BGN','Bulgarian lev',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('BHD','Bahraini dinar',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('BIF','Burundian franc',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('BMD','Bermudian dollar',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('BND','Brunei dollar',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('BOB','Bolivian boliviano',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('BRL','Brazilian real',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('BSD','Bahamian dollar',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('BTN','Bhutanese ngultrum',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('BWP','Botswana pula',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('BYR','Belarusian ruble',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('BZD','Belize dollar',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('CAD','Canadian dollar',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('CDF','Congolese franc',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('CHF','Swiss franc',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('CLP','Chilean peso',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('CNY','Chinese yuan',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('COP','Colombian peso',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('CRC','Costa Rican colón',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('CUC','Cuban convertible peso',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('CUP','Cuban peso',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('CVE','Cape Verdean escudo',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('CZK','Czech koruna',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('DJF','Djiboutian franc',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('DKK','Danish krone',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('DOP','Dominican peso',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('DZD','Algerian dinar',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('EGP','Egyptian pound',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('ERN','Eritrean nakfa',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('ETB','Ethiopian birr',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('EUR','Euro',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('FJD','Fijian dollar',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('FKP','Falkland Islands pound',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('GBP','British pound',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('GEL','Georgian lari',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('GGP','Guernsey pound',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('GHS','Ghana cedi',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('GIP','Gibraltar pound',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('GMD','Gambian dalasi',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('GNF','Guinean franc',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('GTQ','Guatemalan quetzal',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('GYD','Guyanese dollar',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('HKD','Hong Kong dollar',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('HNL','Honduran lempira',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('HRK','Croatian kuna',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('HTG','Haitian gourde',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('HUF','Hungarian forint',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('IDR','Indonesian rupiah',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('ILS','Israeli new shekel',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('INR','Indian rupee',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('IQD','Iraqi dinar',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('IRR','Iranian rial',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('ISK','Icelandic króna',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('JMD','Jamaican dollar',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('JOD','Jordanian dinar',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('JPY','Japanese yen',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('KES','Kenyan shilling',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('KGS','Kyrgyzstani som',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('KHR','Cambodian riel',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('KMF','Comorian franc',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('KPW','North Korean won',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('KRW','South Korean won',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('KWD','Kuwaiti dinar',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('KYD','Cayman Islands dollar',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('KZT','Kazakhstani tenge',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('LAK','Lao kip',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('LBP','Lebanese pound',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('LKR','Sri Lankan rupee',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('LRD','Liberian dollar',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('LSL','Lesotho loti',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('LYD','Libyan dinar',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('MAD','Moroccan dirham',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('MDL','Moldovan leu',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('MGA','Malagasy ariary',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('MKD','Macedonian denar',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('MMK','Burmese kyat',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('MNT','Mongolian tögrög',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('MOP','Macanese pataca',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('MRO','Mauritanian ouguiya',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('MUR','Mauritian rupee',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('MVR','Maldivian rufiyaa',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('MWK','Malawian kwacha',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('MXN','Mexican peso',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('MYR','Malaysian ringgit',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('MZN','Mozambican metical',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('NAD','Namibian dollar',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('NGN','Nigerian naira',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('NIO','Nicaraguan córdoba',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('NOK','Norwegian krone',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('none','Abkhazian apsar',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('NPR','Nepalese rupee',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('NZD','New Zealand dollar',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('OMR','Omani rial',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('PAB','Panamanian balboa',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('PEN','Peruvian nuevo sol',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('PGK','Papua New Guinean kina',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('PHP','Philippine peso',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('PKR','Pakistani rupee',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('PLN','Polish złoty',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('PYG','Paraguayan guaraní',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('QAR','Qatari riyal',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('RON','Romanian leu',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('RSD','Serbian dinar',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('RUB','Russian ruble',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('RWF','Rwandan franc',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('SAR','Saudi riyal',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('SBD','Solomon Islands dollar',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('SCR','Seychellois rupee',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('SDG','Sudanese pound',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('SEK','Swedish krona',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('SGD','Singapore dollar',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('SHP','Saint Helena pound',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('SLL','Sierra Leonean leone',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('SOS','Somali shilling',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('SRD','Surinamese dollar',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('SSP','South Sudanese pound',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('STD','São Tomé and Príncipe dobra',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('SYP','Syrian pound',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('SZL','Swazi lilangeni',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('THB','Thai baht',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('TJS','Tajikistani somoni',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('TMT','Turkmenistan manat',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('TND','Tunisian dinar',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('TOP','Tongan paʻanga',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('TRY','Turkish lira',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('TTD','Trinidad and Tobago dollar',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('TWD','New Taiwan dollar',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('TZS','Tanzanian shilling',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('UAH','Ukrainian hryvnia',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('UGX','Ugandan shilling',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('USD','United States dollar',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('UYU','Uruguayan peso',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('UZS','Uzbekistani som',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('VEF','Venezuelan bolívar',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('VND','Vietnamese đồng',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('VUV','Vanuatu vatu',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('WST','Samoan tālā',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('XAF','Central African CFA franc',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('XCD','East Caribbean dollar',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('XOF','West African CFA franc',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('XPF','CFP franc',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('YER','Yemeni rial',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('ZAR','South African rand',2)
-INSERT INTO TDevises([Code Devise], [Libelle Devise], [Decimales]) VALUES ('ZMW','Zambian kwacha',2)
-
--- Pays
-SET IDENTITY_INSERT TPays ON;
-INSERT INTO TPays([ID Pays], [Code Pays] ,[Libelle Pays], [Devise Locale])
-VALUES (0,'', 'DEFAULT COUNTRY',0)
-SET IDENTITY_INSERT TPays OFF;
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('AD','Andorra',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('AE','United Arab Emirates',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('AG','Antigua',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('AI','Anguilla',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('AL','Albania',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('AM','Armenia',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('AN','Netherlands Antilles',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('AO','Angola',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('AR','Argentina',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('AS','American Samoa',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('AT','Austria',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('AU','Australia',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('AW','Aruba',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('AZ','Azerbaijan',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('BB','Barbados',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('BD','Bangladesh',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('BE','Belgium',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('BF','Burkino Faso',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('BG','Bulgaria',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('BH','Bahrain',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('BI','Burundi',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('BJ','Benin',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('BM','Bermuda',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('BN','Brunei',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('BO','Bolivia',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('BR','Brazil',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('BS','Bahamas',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('BT','Bhutan',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('BW','Botswana',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('BY','Belarus',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('BZ','Belize',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('CA','Canada',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('CD','Congo, The Republic of',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('CF','Central African',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('CG','Congo',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('CH','Switzerland',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('CI','Ivory Coast',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('CK','Cook Islands',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('CL','Chile',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('CM','Cameroon',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('CN','China',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('CO','Colombia',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('CR','Costa Rica',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('CV','Cape Verde',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('CY','Cyprus',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('CZ','Czech Republic',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('DE','Germany',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('DJ','Djibouti',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('DK','Denmark',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('DM','Dominica',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('DO','Dominican Republic',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('DZ','Algeria',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('EC','Ecuador',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('EE','Estonia',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('EG','Egypt',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('ER','Eritrea',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('ES','Spain',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('ET','Ethiopia',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('FI','Finland',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('FJ','Fiji',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('FM','Micronesia',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('FO','Faeroe Islands',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('FR','France',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('GA','Gabon',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('GB','United Kingdom',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('GD','Grenada',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('GE','Georgia, Republic of',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('GF','French Guiana',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('GH','Ghana',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('GI','Gibraltar',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('GL','Greenland',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('GM','Gambia',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('GN','Guinea',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('GP','Guadeloupe',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('GQ','Equatorial Guinea',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('GR','Greece',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('GT','Guatemala',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('GU','Guam',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('GW','Guinea-Bissau',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('GY','Guyana',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('HK','Hong Kong',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('HN','Honduras',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('HR','Croatia',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('HT','Haiti',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('HU','Hungary',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('ID','Indonesia',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('IE','Ireland',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('IL','Israel',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('IN','India',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('IS','Iceland',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('IT','Italy',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('JM','Jamaica',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('JO','Jordan',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('JP','Japan',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('KE','Kenya',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('KG','Kyrgyzstan',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('KH','Cambodia',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('KN','St. Kitts & Nevis',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('KR','South Korea',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('KW','Kuwait',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('KY','Cayman Islands',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('KZ','Kazakhstan',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('LB','Lebanon',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('LC','St. Lucia',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('LI','Liechtenstein',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('LK','Sri Lanka',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('LS','Lesotho',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('LT','Lithuania',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('LU','Luxembourg',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('LV','Latvia',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('MA','Morocco',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('MC','Monaco',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('MD','Moldova',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('MG','Madagascar',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('MH','Marshall Islands',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('MK','Macedonia',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('ML','Mali',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('MM','Burma (Myanmar)',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('MN','Mongolia',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('MO','Macau',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('MP','Saipan',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('MQ','Martinique',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('MR','Mauritania',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('MS','Montserrat',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('MT','Malta',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('MU','Mauritius',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('MV','Maldives',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('MW','Malawi',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('MX','Mexico',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('MY','Malaysia',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('MZ','Mozambique',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('NA','Namibia',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('NC','New Caledonia',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('NE','Niger',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('NG','Nigeria',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('NI','Nicaragua',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('NL','Netherlands',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('NO','Norway',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('NP','Nepal',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('NZ','New Zealand',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('OM','Oman',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('PA','Panama',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('PE','Peru',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('PF','French Polynesia',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('PG','Papua New Guinea',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('PH','Philippines',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('PK','Pakistan',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('PL','Poland',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('PR','Puerto Rico',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('PT','Portugal',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('PW','Palau',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('PY','Paraguay',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('QA','Qatar',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('RE','Reunion Island',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('RO','Romania',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('RU','Russia',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('RW','Rwanda',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('SA','Saudi Arabia',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('SC','Seychelles',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('SE','Sweden',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('SG','Singapore',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('SI','Slovenia',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('SK','Slovak Republic',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('SL','Sierra Leone',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('SM','San Marino',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('SN','Senegal',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('SR','Suriname',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('SV','El Salvador',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('SY','Syria',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('SZ','Swaziland',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('TC','Turks & Caicos Is.',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('TD','Chad',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('TG','Togo',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('TH','Thailand',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('TM','Turkmenistan, Republic of',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('TN','Tunisia',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('TR','Turkey',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('TT','Trinidad & Tobago',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('TW','Taiwan',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('TZ','Tanzania',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('UA','Ukraine',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('UG','Uganda',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('UM','United States Minor Outlying Islands',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('US','U.S.A.',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('UY','Uruguay',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('UZ','Uzbekistan',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('VA','Vatican City',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('VC','St. Vincent',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('VE','Venezuela',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('VG','British Virgin Is.',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('VI','U.S. Virgin Islands',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('VN','Vietnam',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('VU','Vanuatu',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('WF','Wallis & Futuna Islands',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('YE','Yemen',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('ZA','South Africa',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('ZM','Zambia',0)
-INSERT INTO TPays ([Code Pays], [Libelle Pays],[Devise Locale]) VALUES ('ZW','Zimbabwe',0)
-
-
--- Groupes Entites
-SET IDENTITY_INSERT TGroupesEntites ON;
-INSERT INTO TGroupesEntites([ID Groupe Entite], [Nom Groupe Entite])
-VALUES (0,'DEFAULT GROUP')
-SET IDENTITY_INSERT TGroupesEntites OFF;
-
--- Entites
-SET IDENTITY_INSERT TEntites ON;
-INSERT INTO TEntites([ID Entite], [Code Entite] , [Nom Entite], [Groupe Entite], [Pays])
-VALUES (0,'','DEFAULT ENTITY', 0,0)
-SET IDENTITY_INSERT TEntites OFF;
-
--- Branches
-SET IDENTITY_INSERT TBranches ON;
-INSERT INTO TBranches([ID Branche], [Code Branche] , [Nom Branche], [Entite])
-VALUES (0,'','DEFAULT BRANCH', 0)
-SET IDENTITY_INSERT TBranches OFF;
-
-
-
--- Modes Transport
-INSERT INTO TModesTransport([ID Mode Transport], [Libelle Mode Transport])
-VALUES (1,'Sea')
-                ,(2,'Air')
-                ,(3,'Road')
-                ,(9,'Other')
-
--- Sens Trafic
-INSERT INTO TSensTrafic([ID Sens Trafic], [Libelle Sens Trafic])
-VALUES (1,'Import')
-                ,(2,'Export')
-
--- Types Dossiers
-INSERT INTO TTypesDossiers([Libelle Type Dossier], [Mode Transport], [Sens Trafic])
-VALUES ('Sea Import',1,1)
-                ,('Sea Export',1,2)
-                ,('Air Import',2,1)
-                ,('Air Export',2,2)
-                ,('Road Import',3,1)
-                ,('Road Export',3,2)
-
---Regimes Douaniers
-SET IDENTITY_INSERT TRegimesDouaniers ON;
-INSERT INTO TRegimesDouaniers([ID Regime Douanier], [Code Regime Douanier] ,[Libelle Regime Douanier])
-VALUES (0,'', '-')
-SET IDENTITY_INSERT TRegimesDouaniers OFF;
-INSERT INTO TRegimesDouaniers ([Code Regime Douanier], [Libelle Regime Douanier]) VALUES ('IM4','Mise à la consommation')
-INSERT INTO TRegimesDouaniers ([Code Regime Douanier], [Libelle Regime Douanier]) VALUES ('DS1','Déclaration Simplifiée à l''Exportation')
-INSERT INTO TRegimesDouaniers ([Code Regime Douanier], [Libelle Regime Douanier]) VALUES ('DS4','Déclaration Simplifiée à  l''Importation')
-INSERT INTO TRegimesDouaniers ([Code Regime Douanier], [Libelle Regime Douanier]) VALUES ('EX1','Exportation définitive ou en simple sortie')
-INSERT INTO TRegimesDouaniers ([Code Regime Douanier], [Libelle Regime Douanier]) VALUES ('EX2','Exportation temporaire')
-INSERT INTO TRegimesDouaniers ([Code Regime Douanier], [Libelle Regime Douanier]) VALUES ('EX3','Réexportation')
-INSERT INTO TRegimesDouaniers ([Code Regime Douanier], [Libelle Regime Douanier]) VALUES ('EX7','Mise en entrepôt d''une marchandise nationale à exporter')
-INSERT INTO TRegimesDouaniers ([Code Regime Douanier], [Libelle Regime Douanier]) VALUES ('EX8','Transit national ou communautaire d''une marchandise à exporter')
-INSERT INTO TRegimesDouaniers ([Code Regime Douanier], [Libelle Regime Douanier]) VALUES ('EX9','Autres procédures (avitaillement, comptoirs de vente,...)')
-INSERT INTO TRegimesDouaniers ([Code Regime Douanier], [Libelle Regime Douanier]) VALUES ('EX-9','Avitaillement')
-INSERT INTO TRegimesDouaniers ([Code Regime Douanier], [Libelle Regime Douanier]) VALUES ('IM0','Mise en libre pratique')
-INSERT INTO TRegimesDouaniers ([Code Regime Douanier], [Libelle Regime Douanier]) VALUES ('IM5','Admission et Importation temporaires')
-INSERT INTO TRegimesDouaniers ([Code Regime Douanier], [Libelle Regime Douanier]) VALUES ('IM6','Réimportation')
-INSERT INTO TRegimesDouaniers ([Code Regime Douanier], [Libelle Regime Douanier]) VALUES ('IM7','Mise en entrepôt d''une marchandise importée')
-INSERT INTO TRegimesDouaniers ([Code Regime Douanier], [Libelle Regime Douanier]) VALUES ('IM8','Transit national, communautaire ou international et transbordement ')
-INSERT INTO TRegimesDouaniers ([Code Regime Douanier], [Libelle Regime Douanier]) VALUES ('IM9','Autres procédures (admission temporaire pour transformation sous douane,...)')
-INSERT INTO TRegimesDouaniers ([Code Regime Douanier], [Libelle Regime Douanier]) VALUES ('LO1','Liquidation d''Office à  l''Exportation')
-INSERT INTO TRegimesDouaniers ([Code Regime Douanier], [Libelle Regime Douanier]) VALUES ('LO4','Liquidation d''Office à l''Importation')
-
-
--- Regimes declarations
-SET IDENTITY_INSERT TRegimesDeclarations ON;
-INSERT INTO TRegimesDeclarations([ID Regime Declaration], [Regime Douanier] ,[Libelle Regime Declaration], [Taux DC])
-VALUES (0,0, 'EXO',0)
-SET IDENTITY_INSERT TRegimesDeclarations OFF;
-INSERT INTO TRegimesDeclarations([Regime Douanier] ,[Libelle Regime Declaration], [Taux DC])
-VALUES (0, '100% DC',1)
-
--- HS Codes
-SET IDENTITY_INSERT THSCodes ON;
-INSERT INTO THSCodes([ID HS Code], [HS Code] , [Libelle HS Code])
-VALUES (0,'0','NO HS CODE')
-SET IDENTITY_INSERT THSCodes OFF;
-
-
--- Codes etapes
-SET IDENTITY_INSERT TCodesEtapes ON;
-INSERT INTO TCodesEtapes ([ID Code Etape], [Libelle Etape], [Circuit Etape],[Suivi Duree], [Index Etape])
-VALUES (0,'File Opening','',0,0)
-SET IDENTITY_INSERT TCodesEtapes OFF;
-INSERT INTO TCodesEtapes ([Libelle Etape], [Circuit Etape],[Suivi Duree], [Index Etape])
-VALUES ('Operations Completed','',0,1000000)
-
---Utilisateurs
-SET IDENTITY_INSERT TUtilisateurs ON;
-INSERT INTO TUtilisateurs ([ID Utilisateur], [Code Utilisateur],[Nom Utilisateur])
-VALUES (0,'','SYSTEM')
-SET IDENTITY_INSERT TUtilisateurs OFF;
-
---Sessions
-SET IDENTITY_INSERT TSessions ON;
-INSERT INTO TSessions ([ID Session], [Utilisateur])
-VALUES (0,0)
-SET IDENTITY_INSERT TSessions OFF;
-
--- Permissions Base
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (0,'Permission 0',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (1,'Permission 1',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (2,'Permission 2',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (3,'Permission 3',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (4,'Permission 4',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (5,'Permission 5',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (6,'Permission 6',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (7,'Permission 7',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (8,'Permission 8',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (9,'Permission 9',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (10,'Permission 10',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (11,'Permission 11',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (12,'Permission 12',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (13,'Permission 13',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (14,'Permission 14',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (15,'Permission 15',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (16,'Permission 16',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (17,'Permission 17',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (18,'Permission 18',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (19,'Permission 19',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (20,'Permission 20',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (21,'Permission 21',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (22,'Permission 22',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (23,'Permission 23',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (24,'Permission 24',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (25,'Permission 25',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (26,'Permission 26',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (27,'Permission 27',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (28,'Permission 28',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (29,'Permission 29',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (30,'Permission 30',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (31,'Permission 31',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (32,'Permission 32',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (33,'Permission 33',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (34,'Permission 34',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (35,'Permission 35',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (36,'Permission 36',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (37,'Permission 37',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (38,'Permission 38',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (39,'Permission 39',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (40,'Permission 40',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (41,'Permission 41',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (42,'Permission 42',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (43,'Permission 43',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (44,'Permission 44',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (45,'Permission 45',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (46,'Permission 46',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (47,'Permission 47',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (48,'Permission 48',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (49,'Permission 49',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (50,'Permission 50',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (51,'Permission 51',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (52,'Permission 52',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (53,'Permission 53',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (54,'Permission 54',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (55,'Permission 55',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (56,'Permission 56',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (57,'Permission 57',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (58,'Permission 58',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (59,'Permission 59',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (60,'Permission 60',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (61,'Permission 61',0)
-INSERT INTO TPermissionsBase ([ID Permission Base], [Libelle Permission], [Permission Active]) VALUES (62,'Permission 62',0)
-
--- Roles
-SET IDENTITY_INSERT TRoles ON;
-INSERT INTO TRoles([ID Role], [Libelle Role])
-VALUES (0,'SYSTEM')
-SET IDENTITY_INSERT TRoles OFF;
-
--- Permissions Roles
-INSERT INTO TPermissonsRoles ([Role], [Permission])
-SELECT 0, [ID Permission Base] 
-FROM TPermissionsBase
-
--- Roles Utilisateur
-INSERT INTO TRolesUtilisateurs ([Utilisateur], [Role])
-VALUES (0,0)
-
-INSERT INTO TStatutsDossier ([ID Statut Dossier],[Libelle Statut Dossier])
-VALUES (0,'Operations in progress')
-                ,(-1,'Operations completed')
-                ,(-2,'File Cancelled')
