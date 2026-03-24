@@ -1,0 +1,418 @@
+
+CREATE OR ALTER     FUNCTION [dbo].[fx_EvalTauxChangeDossier](@Id_Dossier INT ,@Id_DeviseNoteDetail int ,@DateDeclaration datetime2(7))
+RETURNS TABLE
+AS
+RETURN
+(
+
+                               -- Recuperer les devises distinctes du dossier 
+                WITH DEVISES_DOSSIER ([ID Devise]) AS
+                (
+                               SELECT DISTINCT cd.[Devise]
+                               FROM [dbo].[TColisageDossiers] cd INNER JOIN dbo.TDossiers d ON cd.Dossier=d.[ID Dossier]
+                               WHERE cd.[Dossier]=@Id_Dossier
+                ),
+                               -- Recuperer l'ID de l'entite et la devise de la note de detail 
+                ENTITE_DOSSIER([ID Entite]) AS 
+                (
+                               SELECT b.[Entite]
+                               FROM dbo.TDossiers d
+                                               INNER JOIN dbo.TBranches b On d.[Branche]=b.[ID Branche]
+                               WHERE d.[ID Dossier]=@Id_Dossier
+                ),                             
+                               -- Recuperer les taux des devises a la date de la declaration de l'entite
+                TAUX_CHANGE_DOSSIER ([ID Convertion],[ID Devise], [Taux Change]) AS
+                (
+                               SELECT c.[ID Convertion], tc.[Devise] ,tc.[Taux Change]
+                               FROM dbo.TTauxChange tc 
+                                               INNER JOIN dbo.TConvertions c ON tc.[Convertion]=c.[ID Convertion], ENTITE_DOSSIER ed
+                               WHERE (c.[Date Convertion]=@DateDeclaration) AND (c.[Entite]=ed.[ID Entite])
+                ),
+                               -- Recuperer le coef du taux de change de la devise de la note de detail
+                TAUX_DEVISE_NOTE_DETAIL([Taux Change0]) AS 
+                (
+                               SELECT tcd.[Taux Change]
+                               FROM TAUX_CHANGE_DOSSIER tcd
+                               WHERE tcd.[ID Devise]=@Id_DeviseNoteDetail
+                )
+                
+
+                SELECT d.[ID Devise] AS [ID_Devise]
+                               ,d.[Code Devise] AS [Code_Devise]
+                               ,CAST( CASE
+                                                               WHEN dd.[ID Devise]= @Id_DeviseNoteDetail THEN 1
+                                                               WHEN ISNULL(tcd.[Taux Change],0)=0 OR ISNULL(tdnd.[Taux Change0],0)=0 THEN NULL
+                                                               ELSE tcd.[Taux Change]/tdnd.[Taux Change0]
+                                               END 
+                                               AS numeric(24,6)) AS [Taux_Change]
+                FROM DEVISES_DOSSIER dd 
+                               INNER JOIN dbo.TDevises d ON dd.[ID Devise]=d.[ID Devise]
+                               LEFT JOIN TAUX_CHANGE_DOSSIER tcd ON dd.[ID Devise]=tcd.[ID Devise], ENTITE_DOSSIER ed, TAUX_DEVISE_NOTE_DETAIL tdnd
+)
+GO
+CREATE OR ALTER PROCEDURE [dbo].[pSP_SupprimerNoteDetail]
+                @Id_Dossier int=0
+AS
+BEGIN
+                SET NOCOUNT ON;
+                DECLARE @Values nvarchar(max), @Message nvarchar(max)
+
+                --Verifier que le dossier est en cours
+                IF NOT EXISTS(SELECT TOP 1 [ID Dossier] FROM TDossiers WHERE ([ID Dossier]=@Id_Dossier) AND ([Statut Dossier]=-1))
+                BEGIN
+                               SET @Message='FILE WAS NOT COMPLETED'
+                               RAISERROR (@Message, 16, 1) WITH LOG; 
+                               RETURN 
+                END
+
+                BEGIN TRY
+                BEGIN TRANSACTION;
+                               -- Effacement des ajustements du colisage base sur HS Code = '0'
+                               UPDATE TColisageDossiers
+                               SET [Ajustement Valeur]=0
+                               WHERE [Dossier]=@Id_Dossier
+
+                               --Suppression lignes de note de detail
+                               DELETE A
+                               FROM [dbo].[TNotesDetail] A INNER JOIN [dbo].[TColisageDossiers] B ON A.[Colisage Dossier]=B.[ID Colisage Dossier]
+                               WHERE B.Dossier=@Id_Dossier
+                               
+                               -- SUPPRESSION de l'etape 1=> Operations Completed et recalcule de la derniere etape
+                               DELETE dbo.TEtapesDossiers WHERE ([Dossier]=@Id_Dossier) AND ([Etape Dossier]=1)
+                               EXEC [dbo].[pSP_RecalculeDerniereEtapeDossier] @Id_Dossier
+
+                               -- SUPPRESSION DU LIEN DE LA CONVERTION AVEC LE DOSSIER ET RAMENER LE STATUT A EN COURS
+                               UPDATE dbo.TDossiers SET [Convertion]=null, [Devise Note Detail]=null, [Statut Dossier]=0 WHERE [ID Dossier] =@Id_Dossier
+
+
+                COMMIT TRANSACTION;
+                END TRY
+                BEGIN CATCH
+                               -- Rollback if transaction is active
+                               IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+
+                               SET @Message=ERROR_MESSAGE()
+                               RAISERROR (@Message, 16, 1) WITH LOG;
+                               RETURN
+                END CATCH;
+END
+GO
+
+CREATE OR ALTER       PROCEDURE [dbo].[pSP_CreerNoteDetail]
+                @Id_Dossier int
+                ,@DateDeclaration datetime2(7)
+                ,@Id_DeviseNoteDetail int
+                ,@RoundDigit int=2
+AS
+BEGIN
+                SET NOCOUNT ON;
+                DECLARE @Message nvarchar(1000)
+                DECLARE @TAUX_DEVISES TABLE ([ID_Devise] int PRIMARY KEY NOT NULL,  [Code_Devise] nvarchar(5)  NOT NULL, [Taux_Change] numeric(24,6))
+
+                --Verifier que le dossier est en cours
+                IF NOT EXISTS(SELECT TOP (1) 1 FROM TDossiers WHERE ([ID Dossier]=@Id_Dossier) AND ([Statut Dossier]=0))
+                BEGIN
+                               SET @Message='FILE IS NOT IN PROGRESS'
+                               RAISERROR (@Message, 16, 1) WITH LOG; 
+                               RETURN 
+                END
+
+                -- recuperer les taux de change des devises dans [dbo].[TColisageDossiers] par rapport a la devise de la note de detail
+                INSERT INTO @TAUX_DEVISES([ID_Devise],[Code_Devise],[Taux_Change])
+                SELECT [ID_Devise], [Code_Devise], [Taux_Change] 
+                FROM [dbo].[fx_EvalTauxChangeDossier](@Id_Dossier,@Id_DeviseNoteDetail,@DateDeclaration)
+                -- verifier s'il existe une convertion a la date de la declaration et si toutes les devises du colisage ont un taux de change
+                declare @NbreDevises int=0, @DevisesSansTauxDeChange nvarchar(200)=N''
+                SELECT @NbreDevises=COUNT(*), @DevisesSansTauxDeChange=STRING_AGG(IIF([Taux_Change] IS NULL,[Code_Devise], NULL),N' / ')
+                FROM @TAUX_DEVISES
+
+                IF (@NbreDevises=0)
+                BEGIN
+                               SET @Message='NO EXCHANGE RATE AT ' + FORMAT(@DateDeclaration,'dd-MMM-yy') + ' FOR THIS ENTITY'
+                               RAISERROR (@Message, 16, 1) WITH LOG; 
+                               RETURN 
+                END
+                IF (@DevisesSansTauxDeChange<>N'')
+                BEGIN
+                               SET @Message='MISSING EXCHANGE RATE FOR CURRENCIES ' + @DevisesSansTauxDeChange + ' AT ' + FORMAT(@DateDeclaration,'dd-MMM-yy') + ' FOR THIS ENTITY'
+                               RAISERROR (@Message, 16, 1) WITH LOG; 
+                               RETURN 
+                END
+
+                --Verifier information de la pesee et du paquetage du dossier
+                Declare @NbrePaquetagePesee int, @PoidsBrutPesee numeric (24,2), @PoidsNetPesee numeric (24,2), @VolumePesee numeric (24,2)
+                SELECT @NbrePaquetagePesee=[Nbre Paquetage Pesee], @PoidsBrutPesee=[Poids Brut Pesee], @PoidsNetPesee=[Poids Net Pesee], @VolumePesee=[Volume Pesee]
+                FROM TDossiers
+                WHERE [ID Dossier]=@Id_Dossier
+
+                IF (@NbrePaquetagePesee=0) OR (@PoidsBrutPesee=0)
+                BEGIN
+                               SET @Message='MISSING Gross Weight or Package number on File Header'
+                               RAISERROR (@Message, 16, 1) WITH LOG; 
+                               RETURN 
+                END
+
+                --Verifier existence Colisage
+                Declare @ValeurTotaleColisage numeric (24,2)=0
+                SELECT @ValeurTotaleColisage =SUM ([Qte Colis]*[Prix Unitaire Colis]) FROM TColisageDossiers WHERE [Dossier]=@Id_Dossier
+                IF @ValeurTotaleColisage=0
+                BEGIN
+                               SET @Message='MISSING PACKING LIST ON FILE'
+                               RAISERROR (@Message, 16, 1) WITH LOG; 
+                               RETURN 
+                END
+
+
+                -- Verifier HS Code et regime obligatoire sur toutes les lignes
+                Declare @DescriptionsAvecNull nvarchar(max)=N''
+                SELECT @DescriptionsAvecNull= STRING_AGG(CHAR(34) + [Description Colis] + CHAR(34),N' , ')
+                FROM 
+                               (
+                                               SELECT DISTINCT [Description Colis] AS [Description Colis]
+                                               FROM TColisageDossiers
+                                               WHERE ([Dossier]=@Id_Dossier) AND ([HS Code] IS NULL) OR ([Regime Declaration] IS NULL)
+                               )T
+
+                IF @DescriptionsAvecNull<>N''
+                BEGIN
+                               SET @Message='MISSING HS CODE OR REGIME FOR LINES {' + @DescriptionsAvecNull +'}'
+                               RAISERROR (@Message, 16, 1) WITH LOG; 
+                               RETURN 
+                END
+
+                BEGIN TRY
+                BEGIN TRANSACTION;
+                                               
+                               -- Calcule ajustement Valeur
+                               EXEC [dbo].[pSP_CalculeAjustementValeurColisage] @Id_Dossier
+                                               
+                                               -- Ajout de lignes des notes de detail
+                               ;WITH TMP_NOTES_DETAIL_100                           ([Colisage Dossier]
+                                                                               ,[Regime]
+                                                                               ,[Qte Colis]
+                                                                               ,[Valeur]
+                                                                               ,[Nbre Paquetage]
+                                                                               ,[Base Poids Brut]
+                                                                               ,[Base Poids Net]
+                                                                               ,[Base Volume]) AS
+
+                               (
+                                               --Traitement [Taux Regime]=-2 ==> TTC
+                                               SELECT A.[ID Colisage Dossier]
+                                                               ,N'TTC'
+                                                               ,A.[Qte Colis]
+                                                               ,(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])     
+                                                               ,@NbrePaquetagePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
+                                                               ,@PoidsBrutPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
+                                                               ,@PoidsNetPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
+                                                               ,@VolumePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
+                                               FROM [dbo].[TColisageDossiers] A
+                                                               INNER JOIN dbo.TRegimesDeclarations B ON A.[Regime Declaration]=B.[ID Regime Declaration]
+                                               WHERE ([Dossier]=@Id_Dossier) AND (A.[HS Code]<>0) AND (B.[Taux Regime]=-2)
+
+                                               --Traitement [Taux Regime]=-1 ==> 100% TR
+                                               UNION ALL 
+                                               SELECT A.[ID Colisage Dossier]
+                                                               ,N'100% TR'
+                                                               ,A.[Qte Colis]
+                                                               ,(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])     
+                                                               ,@NbrePaquetagePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
+                                                               ,@PoidsBrutPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
+                                                               ,@PoidsNetPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
+                                                               ,@VolumePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
+                                               FROM [dbo].[TColisageDossiers] A
+                                                               INNER JOIN dbo.TRegimesDeclarations B ON A.[Regime Declaration]=B.[ID Regime Declaration]
+                                               WHERE ([Dossier]=@Id_Dossier) AND (A.[HS Code]<>0) AND (B.[Taux Regime]=-1)
+
+                                               --Traitement [Taux Regime]=0 ==> EXO
+                                               UNION ALL
+                                               SELECT A.[ID Colisage Dossier]
+                                                               ,N'EXO'
+                                                               ,A.[Qte Colis]
+                                                               ,(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])     
+                                                               ,@NbrePaquetagePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
+                                                               ,@PoidsBrutPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
+                                                               ,@PoidsNetPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
+                                                               ,@VolumePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
+                                               FROM [dbo].[TColisageDossiers] A
+                                                               INNER JOIN dbo.TRegimesDeclarations B ON A.[Regime Declaration]=B.[ID Regime Declaration]
+                                               WHERE ([Dossier]=@Id_Dossier) AND (A.[HS Code]<>0) AND (B.[Taux Regime]=0)
+
+                                               --Traitement [Taux Regime]=1 ==> 100% DC
+                                               UNION ALL
+                                               SELECT A.[ID Colisage Dossier]
+                                                               ,N'100% DC'
+                                                               ,A.[Qte Colis]
+                                                               ,(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])     
+                                                               ,@NbrePaquetagePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
+                                                               ,@PoidsBrutPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
+                                                               ,@PoidsNetPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
+                                                               ,@VolumePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
+                                               FROM [dbo].[TColisageDossiers] A
+                                                               INNER JOIN dbo.TRegimesDeclarations B ON A.[Regime Declaration]=B.[ID Regime Declaration]
+                                               WHERE ([Dossier]=@Id_Dossier) AND (A.[HS Code]<>0) AND (B.[Taux Regime]=1)
+                               ),
+
+                                               --Traitement DC=x% x in ]0%,100%[ ==> DC RATIO
+                              CTE_VALEUR_GLOBALE  AS
+                               (
+                                               SELECT A.[ID Colisage Dossier] AS [Colisage Dossier]
+                                                               ,A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur] AS [Valeur Globale]
+                                                               ,B.[Taux Regime]
+                                               FROM [dbo].[TColisageDossiers] A
+                                                               INNER JOIN dbo.TRegimesDeclarations B ON A.[Regime Declaration]=B.[ID Regime Declaration]
+                                               WHERE ([Dossier]=@Id_Dossier) AND (A.[HS Code]<>0) AND (B.[Taux Regime]>0 AND B.[Taux Regime]<1)
+                               ),
+                               CTE_VALEUR_DC AS 
+                               (
+                                               SELECT [Colisage Dossier]
+                                               ,[Valeur Globale]
+                                               ,[Taux Regime]
+                                               ,ROUND([Valeur Globale]*[Taux Regime],@RoundDigit) AS [Valeur DC]
+                                               FROM CTE_VALEUR_GLOBALE
+                               ),
+                               TMP_NOTES_DETAIL_RATIO                    ([Colisage Dossier]
+                                                                               ,[Regime]
+                                                                               ,[Qte Colis]
+                                                                               ,[Valeur]
+                                                                               ,[Nbre Paquetage]
+                                                                               ,[Base Poids Brut]
+                                                                               ,[Base Poids Net]
+                                                                               ,[Base Volume]) AS
+                               (
+                                                               -- Cas DC
+                                                               SELECT A.[ID Colisage Dossier]
+                                                                               ,FORMAT(B.[Taux Regime],'P') + N' DC'
+                                                                               ,A.[Qte Colis]*B.[Taux Regime]
+                                                                               ,B.[Valeur DC]                  -- La valeur doit integrer l'ajustement
+                                                                               ,@NbrePaquetagePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])*B.[Taux Regime]/@ValeurTotaleColisage
+                                                                               ,@PoidsBrutPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])*B.[Taux Regime]/@ValeurTotaleColisage
+                                                                               ,@PoidsNetPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])*B.[Taux Regime]/@ValeurTotaleColisage
+                                                                               ,@VolumePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])*B.[Taux Regime]/@ValeurTotaleColisage
+                                                               FROM [dbo].[TColisageDossiers] A INNER JOIN CTE_VALEUR_DC B ON A.[ID Colisage Dossier]=B.[Colisage Dossier]
+                                                               -- Cas TR
+                                                               UNION ALL 
+                                                               SELECT A.[ID Colisage Dossier]
+                                                                               ,FORMAT(1-B.[Taux Regime],'P')  + N'TR'
+                                                                               ,A.[Qte Colis]*(1-B.[Taux Regime])
+                                                                               ,B.[Valeur Globale]-B.[Valeur DC]                         -- La valeur doit integrer l'ajustement
+                                                                               ,@NbrePaquetagePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])*(1-B.[Taux Regime])/@ValeurTotaleColisage
+                                                                               ,@PoidsBrutPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])*(1-B.[Taux Regime])/@ValeurTotaleColisage
+                                                                               ,@PoidsNetPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])*(1-B.[Taux Regime])/@ValeurTotaleColisage
+                                                                               ,@VolumePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])*(1-B.[Taux Regime])/@ValeurTotaleColisage
+                                                               FROM [dbo].[TColisageDossiers] A INNER JOIN CTE_VALEUR_DC B ON A.[ID Colisage Dossier]=B.[Colisage Dossier]
+                                               )
+
+                                               INSERT INTO [dbo].[TNotesDetail]
+                                                               ([Colisage Dossier]
+                                                               ,[Regime]
+                                                               ,[Qte Colis]
+                                                               ,[Valeur]
+                                                               ,[Nbre Paquetage]
+                                                               ,[Base Poids Brut]
+                                                               ,[Base Poids Net]
+                                                               ,[Base Volume])
+                                               SELECT [Colisage Dossier]
+                                                               ,[Regime]
+                                                               ,GREATEST([Qte Colis],0.01)
+                                                               ,GREATEST([Valeur],0.01)
+                                                               ,GREATEST([Nbre Paquetage],0.01)
+                                                               ,GREATEST([Base Poids Brut],0.01)
+                                                               ,GREATEST([Base Poids Net],0.01)
+                                                               ,GREATEST([Base Volume],0.01)
+                                               FROM TMP_NOTES_DETAIL_100
+                                               UNION ALL 
+                                               SELECT [Colisage Dossier]
+                                                               ,[Regime]
+                                                               ,GREATEST([Qte Colis],0.01)
+                                                               ,GREATEST([Valeur],0.01)
+                                                               ,GREATEST([Nbre Paquetage],0.01)
+                                                               ,GREATEST([Base Poids Brut],0.01)
+                                                               ,GREATEST([Base Poids Net],0.01)
+                                                               ,GREATEST([Base Volume],0.01)
+                                               FROM TMP_NOTES_DETAIL_RATIO
+
+
+
+                               -- AJUSTEMENT DES VALEURS DE COLISAGE SUR LES TOTAUX (LA VALEUR N'EST PAS INCLUSE DANS CET AJUSTEMENT CAR ON A PAS UNE VALEUR IMPOSEE AU TOTAL)
+                               declare @TotalRowsPaquetage numeric(24,2),@TotalRowsPoidsBrut numeric(24,2),@TotalRowsPoidsNet numeric(24,2),@TotalRowsVolume numeric(24,2)
+                               declare @NoteDetailId int
+                               SELECT  @TotalRowsPaquetage=SUM([Nbre Paquetage])
+                                               ,@TotalRowsPoidsBrut=SUM([Base Poids Brut])
+                                               ,@TotalRowsPoidsNet=SUM([Base Poids Net])
+                                               ,@TotalRowsVolume=SUM([Base Volume]) 
+                               FROM TNotesDetail A INNER JOIN TColisageDossiers B ON A.[Colisage Dossier]=B.[ID Colisage Dossier]
+                               WHERE B.Dossier=@Id_Dossier
+                                               --Ajustement [Nbre Paquetage]
+                               if (@NbrePaquetagePesee<>@TotalRowsPaquetage)
+                               BEGIN
+                                               SELECT TOP 1 @NoteDetailId=A.[ID Note Detail]
+                                               FROM TNotesDetail A INNER JOIN TColisageDossiers B ON A.[Colisage Dossier]=B.[ID Colisage Dossier]
+                                               WHERE B.Dossier=@Id_Dossier
+                                               ORDER BY [Nbre Paquetage] DESC;
+
+                                               UPDATE TNotesDetail SET [Nbre Paquetage]=[Nbre Paquetage] + @NbrePaquetagePesee - @TotalRowsPaquetage WHERE [ID Note Detail]=@NoteDetailId
+                               END
+                                               --Ajustement [Base Poids Brut]
+                               if (@PoidsBrutPesee<>@TotalRowsPoidsBrut)
+                               BEGIN
+                                               SELECT TOP 1 @NoteDetailId=A.[ID Note Detail]
+                                               FROM TNotesDetail A INNER JOIN TColisageDossiers B ON A.[Colisage Dossier]=B.[ID Colisage Dossier]
+                                               WHERE B.Dossier=@Id_Dossier
+                                               ORDER BY [Base Poids Brut] DESC;
+
+                                               UPDATE TNotesDetail SET [Base Poids Brut]=[Base Poids Brut] + @PoidsBrutPesee - @TotalRowsPoidsBrut WHERE [ID Note Detail]=@NoteDetailId
+                               END
+                                               --Ajustement [Base Poids Net]
+                               if (@PoidsNetPesee<>@TotalRowsPoidsNet)
+                               BEGIN
+                                               SELECT TOP 1 @NoteDetailId=A.[ID Note Detail]
+                                               FROM TNotesDetail A INNER JOIN TColisageDossiers B ON A.[Colisage Dossier]=B.[ID Colisage Dossier]
+                                               WHERE B.Dossier=@Id_Dossier
+                                               ORDER BY [Base Poids Net] DESC;
+
+                                               UPDATE TNotesDetail SET [Base Poids Net]=[Base Poids Net] + @PoidsNetPesee - @TotalRowsPoidsNet WHERE [ID Note Detail]=@NoteDetailId
+                               END
+                                               --Ajustement [Base Volume]
+                               if (@VolumePesee<>@TotalRowsVolume)
+                               BEGIN
+                                               SELECT TOP 1 @NoteDetailId=A.[ID Note Detail]
+                                               FROM TNotesDetail A INNER JOIN TColisageDossiers B ON A.[Colisage Dossier]=B.[ID Colisage Dossier]
+                                               WHERE B.Dossier=@Id_Dossier
+                                               ORDER BY [Base Volume] DESC;
+
+                                               UPDATE TNotesDetail SET [Base Volume]=[Base Volume] + @VolumePesee - @TotalRowsVolume WHERE [ID Note Detail]=@NoteDetailId
+                               END
+
+                               -- MISE A JOUR DU STATUT DU DOSSIER
+                               UPDATE dbo.TDossiers SET [Statut Dossier]=-1 WHERE [ID Dossier]=@Id_Dossier
+
+                               -- CREATION DE L'ETAPE DE CLOTURE
+                               INSERT INTO dbo.TEtapesDossiers ([Dossier], [Etape Dossier],[Date Debut], [Date Fin])
+                               VALUES (@Id_Dossier, 1, GETDATE() , GETDATE() )
+
+                               -- MISE A JOUR DE LA DERNIERE ETAPE DU DOSSIER
+                               EXEC [dbo].[pSP_RecalculeDerniereEtapeDossier] @Id_Dossier
+
+
+                               -- MISE A JOUR DU LIEN DE LA CONVERTION AVEC LE DOSSIER
+                               Declare @Id_Convertion int
+                               SELECT @Id_Convertion=co.[ID Convertion]
+                               FROM TConvertions co 
+                                               INNER JOIN TBranches br on co.Entite = br.[Entite]
+                                               INNER JOIN TDossiers dr ON br.[ID Branche]=dr.Branche
+                               WHERE (dr.[ID Dossier]=@Id_Dossier) AND (co.[Date Convertion]=@DateDeclaration)
+                               UPDATE dbo.TDossiers SET [Convertion]=@Id_Convertion, [Devise Note Detail]=@Id_DeviseNoteDetail WHERE [ID Dossier] =@Id_Dossier
+
+                COMMIT TRANSACTION;
+                END TRY
+                BEGIN CATCH
+                               -- Rollback if transaction is active
+                               IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+
+                               SET @Message=ERROR_MESSAGE()
+                               RAISERROR (@Message, 16, 1) WITH LOG;
+                               RETURN
+                END CATCH;
+END
+

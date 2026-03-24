@@ -15,14 +15,12 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useConfirm } from "@/hooks/use-confirm";
 import {
-  genererNotesDetail,
   supprimerNotesDetail,
   getNotesDetail,
   getTauxChangeDossier,
   getDossierDeviseNoteDetail,
 } from "../../server/note-detail-actions";
 import { GenererNotesDialog } from "./generer-notes-dialog";
-import { SelectDeviseNoteDetailDialog } from "./select-devise-note-detail-dialog";
 import { DataTable } from "@/components/data-table";
 import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
@@ -54,8 +52,6 @@ export const NoteDetailView = ({
   const [isLoading, setIsLoading] = useState(true);
   const [notes, setNotes] = useState<any[]>([]);
   const [showGenererDialog, setShowGenererDialog] = useState(false);
-  const [showSelectDeviseDialog, setShowSelectDeviseDialog] = useState(false);
-  const [deviseNoteDetail, setDeviseNoteDetail] = useState<number | null>(null);
   const [exchangeRates, setExchangeRates] = useState<{ [devise: string]: number }>({});
   const [dateDeclaration, setDateDeclaration] = useState<Date | null>(null);
   const router = useRouter();
@@ -112,11 +108,6 @@ export const NoteDetailView = ({
       if (result.success && result.data) {
         const sortedNotes = groupNotesByRegime(result.data);
         setNotes(sortedNotes);
-      }
-
-      const deviseResult = await getDossierDeviseNoteDetail(dossierId);
-      if (deviseResult.success && deviseResult.data) {
-        setDeviseNoteDetail(deviseResult.data.deviseNoteDetail ?? null);
       }
 
       const tauxResult = await getTauxChangeDossier(dossierId);
@@ -1017,7 +1008,7 @@ export const NoteDetailView = ({
       header: "Qté Colis",
       cell: ({ row }) => {
         const qte = row.getValue("Qte_Colis") as number;
-        return Number(qte || 0).toFixed(0);
+        return Number(qte || 0).toFixed(2);
       },
     },
   ];
@@ -1035,15 +1026,6 @@ export const NoteDetailView = ({
   return (
     <>
       <DeleteConfirmation />
-      <SelectDeviseNoteDetailDialog
-        open={showSelectDeviseDialog}
-        onOpenChange={setShowSelectDeviseDialog}
-        dossierId={dossierId}
-        entiteId={entiteId}
-        onSuccess={() => {
-          loadNotes();
-        }}
-      />
       <GenererNotesDialog
         open={showGenererDialog}
         onOpenChange={(open) => {
@@ -1052,6 +1034,7 @@ export const NoteDetailView = ({
         }}
         dossierId={dossierId}
         entiteId={entiteId}
+        onSuccess={loadNotes}
       />
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -1114,28 +1097,15 @@ export const NoteDetailView = ({
               </>
             )}
 
-            {/* Étape 1 : sélectionner la devise (toujours visible) */}
+            {/* Bouton Générer */}
             <Button
-              onClick={() => setShowSelectDeviseDialog(true)}
-              variant={deviseNoteDetail ? "outline" : "default"}
+              onClick={() => setShowGenererDialog(true)}
               size="sm"
               disabled={isDeleting}
             >
               <FileText className="w-4 h-4" />
-              {deviseNoteDetail ? "Changer devise" : "Sélectionner devise"}
+              {notes.length > 0 ? "Régénérer" : "Générer"}
             </Button>
-
-            {/* Étape 2 : générer (visible seulement si devise configurée) */}
-            {deviseNoteDetail && (
-              <Button
-                onClick={() => setShowGenererDialog(true)}
-                size="sm"
-                disabled={isDeleting}
-              >
-                <FileText className="w-4 h-4" />
-                {notes.length > 0 ? "Régénérer" : "Générer"}
-              </Button>
-            )}
           </div>
         </div>
 
