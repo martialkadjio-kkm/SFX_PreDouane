@@ -164,11 +164,11 @@ export const NoteDetailView = ({
         Régime: note.Regime || "",
         "Nbre Paquetage": note.Nbre_paquetage,
         Devise: note.Code_Devise || "",
+        "Qté Colis": Number(note.Qte_Colis || 0),
         "Valeur Totale": Number(note.Valeur),
-        "Volume (m³)": Number(note.Volume),
         "Poids Brut (kg)": Number(note.Poids_Brut || 0),
         "Poids Net (kg)": Number(note.Poids_Net || 0),
-        "Qté Colis": Number(note.Qte_Colis || 0),
+        "Volume (m³)": Number(note.Volume),
       }));
 
       const worksheet = XLSX.utils.json_to_sheet(exportData);
@@ -182,11 +182,11 @@ export const NoteDetailView = ({
         { wch: 10 }, // Régime
         { wch: 15 }, // Nbre Paquetage
         { wch: 10 }, // Devise
+        { wch: 12 }, // Qté Colis
         { wch: 15 }, // Valeur Totale
-        { wch: 12 }, // Volume
         { wch: 12 }, // Poids Brut
         { wch: 12 }, // Poids Net
-        { wch: 12 }, // Qté Colis
+        { wch: 12 }, // Volume
       ];
 
       XLSX.writeFile(workbook, `note-details-dossier-${dossierId}.xlsx`);
@@ -206,11 +206,11 @@ export const NoteDetailView = ({
         "Régime",
         "Nbre Paquetage",
         "Devise",
+        "Qté Colis",
         "Valeur Totale",
-        "Volume (m³)",
         "Poids Brut (kg)",
         "Poids Net (kg)",
-        "Qté Colis",
+        "Volume (m³)",
       ];
 
       // Appliquer le regroupement par régime pour l'export
@@ -222,11 +222,11 @@ export const NoteDetailView = ({
         note.Regime || "",
         Number(note.Nbre_Paquetage),
         note.Code_Devise || "",
+        Number(note.Qte_Colis || 0),
         Number(note.Valeur),
-        Number(note.Volume),
         Number(note.Poids_Brut || 0),
         Number(note.Poids_Net || 0),
-        Number(note.Qte_Colis || 0),
+        Number(note.Volume),
       ]);
 
       const csvContent = [
@@ -793,11 +793,11 @@ export const NoteDetailView = ({
         note.Regime || "",
         Number(note.Nbre_Paquetage).toFixed(2),
         note.Code_Devise || "",
+        Number(note.Qte_Colis || 0).toFixed(0),
         Number(note.Valeur).toFixed(2),
-        Number(note.Volume).toFixed(1),
         Number(note.Poids_Brut || 0).toFixed(1),
         Number(note.Poids_Net || 0).toFixed(1),
-        Number(note.Qte_Colis || 0).toFixed(0),
+        Number(note.Volume).toFixed(1),
       ]);
 
       // === BARRE DE TITRE "DETAILS" ===
@@ -823,11 +823,11 @@ export const NoteDetailView = ({
             t.regime,
             t.nbPackages,
             t.currency,
+            t.qteColis,
             t.value,
-            t.volumeCol,
             t.grossWeightCol,
             t.netWeightCol,
-            t.qteColis,
+            t.volumeCol,
           ],
         ],
         body: tableData,
@@ -853,11 +853,11 @@ export const NoteDetailView = ({
           3: { halign: "center" }, // Régime
           4: { halign: "right" }, // Nbre Paq.
           5: { halign: "center" }, // Devise
-          6: { halign: "right" }, // Valeur Totale
-          7: { halign: "right" }, // Volume
+          6: { halign: "right" }, // Qté Colis
+          7: { halign: "right" }, // Valeur Totale
           8: { halign: "right" }, // Poids Brut
           9: { halign: "right" }, // Poids Net
-          10: { halign: "right" }, // Qté Colis
+          10: { halign: "right" }, // Volume
         },
       });
 
@@ -971,7 +971,16 @@ export const NoteDetailView = ({
         );
       },
     },
-    // 7. Valeur Totale
+    // 7. Qté Colis
+    {
+      accessorKey: "Qte_Colis",
+      header: "Qté Colis",
+      cell: ({ row }) => {
+        const qte = row.getValue("Qte_Colis") as number;
+        return Number(qte || 0).toFixed(2);
+      },
+    },
+    // 8. Valeur Totale
     {
       accessorKey: "Valeur",
       header: "Valeur Totale",
@@ -984,7 +993,7 @@ export const NoteDetailView = ({
         );
       },
     },
-    // 8. Poids Brut
+    // 9. Poids Brut
     {
       accessorKey: "Poids_Brut",
       header: "Poids Brut",
@@ -993,7 +1002,7 @@ export const NoteDetailView = ({
         return `${Number(poids || 0).toFixed(2)} kg`;
       },
     },
-    // 9. Poids Net
+    // 10. Poids Net
     {
       accessorKey: "Poids_Net",
       header: "Poids Net",
@@ -1002,13 +1011,13 @@ export const NoteDetailView = ({
         return `${Number(poids || 0).toFixed(2)} kg`;
       },
     },
-    // 10. Qté Colis
+    // 11. Volume
     {
-      accessorKey: "Qte_Colis",
-      header: "Qté Colis",
+      accessorKey: "Volume",
+      header: "Volume",
       cell: ({ row }) => {
-        const qte = row.getValue("Qte_Colis") as number;
-        return Number(qte || 0).toFixed(2);
+        const volume = row.getValue("Volume") as number;
+        return `${Number(volume || 0).toFixed(2)} m³`;
       },
     },
   ];
