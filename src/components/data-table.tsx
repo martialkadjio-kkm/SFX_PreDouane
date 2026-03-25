@@ -154,7 +154,7 @@ export function DataTable<TData, TValue>({
                 </TableBody>
             </Table>
         </div>
-        <div className="flex items-center justify-between px-2">
+        <div className="flex items-center justify-between px-2 mb-4">
             <div className="flex-1 text-sm text-muted-foreground">
                 {enableRowSelection && table.getFilteredSelectedRowModel().rows.length > 0 ? (
                     <span>
