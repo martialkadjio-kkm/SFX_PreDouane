@@ -151,6 +151,34 @@ export const NoteDetailView = ({
     }
   };
 
+  const handleRegenerate = async () => {
+    // Si des notes existent, les supprimer d'abord
+    if (notes.length > 0) {
+      setIsDeleting(true);
+      try {
+        const result = await supprimerNotesDetail(dossierId);
+
+        if (result.success) {
+          toast.success("Note de détails supprimée");
+          await loadNotes();
+          router.refresh();
+          // Ouvrir le dialogue après la suppression
+          setShowGenererDialog(true);
+        } else {
+          toast.error(result.error || "Erreur lors de la suppression");
+        }
+      } catch (error) {
+        toast.error("Erreur lors de la suppression de la note");
+        console.error(error);
+      } finally {
+        setIsDeleting(false);
+      }
+    } else {
+      // Si pas de notes, ouvrir directement le dialogue
+      setShowGenererDialog(true);
+    }
+  };
+
   const exportToExcel = () => {
     try {
       const XLSX = require("xlsx");
@@ -1108,7 +1136,7 @@ export const NoteDetailView = ({
 
             {/* Bouton Générer */}
             <Button
-              onClick={() => setShowGenererDialog(true)}
+              onClick={handleRegenerate}
               size="sm"
               disabled={isDeleting}
             >
