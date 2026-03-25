@@ -1,0 +1,1690 @@
+\documentclass[12pt,a4paper]{report}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{fancyhdr}
+\usepackage{tocloft}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{enumitem}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{titlesec}
+
+% Configuration de la page
+\geometry{left=2.5cm,right=2.5cm,top=3cm,bottom=3cm}
+
+% Configuration des en-têtes et pieds de page
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\leftmark}
+\fancyhead[R]{SFX PreDouane v0.1.0}
+\fancyfoot[C]{\thepage}
+\fancyfoot[R]{©Softronic Innoving}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+% Configuration des liens hypertextes
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,
+    urlcolor=cyan,
+    pdftitle={Manuel d'Utilisation - SFX PreDouane},
+    pdfauthor={Softronic Innoving},
+}
+
+% Configuration des couleurs
+\definecolor{primarycolor}{RGB}{66,139,202}
+\definecolor{secondarycolor}{RGB}{52,58,64}
+
+\begin{document}
+
+% PAGE DE TITRE
+\begin{titlepage}
+    \centering
+    \vspace*{2cm}
+    {\Huge\bfseries Manuel d'Utilisation\par}
+    \vspace{1cm}
+    {\LARGE\bfseries SFX PreDouane\par}
+    \vspace{0.5cm}
+    {\Large Système de Gestion de Pré-Dédouanement\par}
+    \vspace{2cm}
+    % \includegraphics[width=0.4\textwidth]{logo.png}
+    \vspace{2cm}
+    {\Large\itshape Softronic Innoving\par}
+    \vfill
+    {\large Version 0.1.0\par}
+    {\large \today\par}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ============================================
+% CHAPITRE 1: INTRODUCTION
+% ============================================
+\chapter{Introduction}
+
+\section{Présentation de l'Application}
+
+\textbf{SFX PreDouane} est une application web professionnelle de gestion de pré-dédouanement développée par Softronic Innoving. Elle permet aux entreprises de transit et aux commissionnaires en douane de gérer efficacement leurs opérations de dédouanement.
+
+\subsection{Informations Générales}
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Nom :} SFX PreDouane (SFX Transit)
+    \item \textbf{Type :} Application Web
+    \item \textbf{Version :} 0.1.0
+    \item \textbf{Éditeur :} Softronic Innoving
+    \item \textbf{Technologie :} Next.js 16, React 19, Prisma ORM
+    \item \textbf{Base de données :} Microsoft SQL Server
+\end{itemize}
+
+\subsection{Objectif de l'Application}
+
+L'application SFX PreDouane a pour objectif principal de :
+
+\begin{itemize}[leftmargin=*]
+    \item Faciliter la gestion des dossiers de transit douanier
+    \item Automatiser le calcul des droits et taxes de douane
+    \item Gérer les conversions de devises et les taux de change
+    \item Générer automatiquement les notes de détail pour les déclarations
+    \item Assurer le suivi des colisages et des marchandises
+    \item Optimiser les processus de pré-dédouanement
+\end{itemize}
+
+\subsection{Public Cible}
+
+Cette application s'adresse aux profils suivants :
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Commissionnaires en douane} : Gestion complète des dossiers clients
+    \item \textbf{Agents de transit} : Suivi des opérations de transit
+    \item \textbf{Responsables d'entités} : Supervision et validation des opérations
+    \item \textbf{Administrateurs système} : Configuration et gestion des utilisateurs
+\end{itemize}
+
+\section{Fonctionnalités Principales}
+
+\subsection{Gestion des Dossiers}
+\begin{itemize}[leftmargin=*]
+    \item Création et suivi des dossiers de transit
+    \item Association des clients aux dossiers
+    \item Gestion des types de dossiers (Import/Export)
+    \item Suivi des étapes et statuts des dossiers
+    \item Gestion des modes de transport
+\end{itemize}
+
+\subsection{Gestion des Clients}
+\begin{itemize}[leftmargin=*]
+    \item Création et modification des fiches clients
+    \item Association des régimes douaniers aux clients
+    \item Historique des dossiers par client
+    \item Gestion des régimes clients personnalisés
+\end{itemize}
+
+\subsection{Gestion du Colisage}
+\begin{itemize}[leftmargin=*]
+    \item Saisie des informations de colisage
+    \item Import de données via fichiers Excel
+    \item Gestion des codes HS (Harmonized System)
+    \item Calcul automatique des poids et volumes
+    \item Association des devises aux colisages
+\end{itemize}
+
+\subsection{Gestion des Conversions et Devises}
+\begin{itemize}[leftmargin=*]
+    \item Création de conversions de devises par date
+    \item Gestion des taux de change multiples
+    \item Ajout de taux de change depuis la liste
+    \item Historique des conversions
+    \item Sélection automatique de devise unique
+\end{itemize}
+
+\subsection{Génération de Notes de Détail}
+\begin{itemize}[leftmargin=*]
+    \item Génération automatique des notes de détail
+    \item Regroupement par régime douanier
+    \item Calcul automatique des valeurs converties
+    \item Export multi-format (PDF, Excel, CSV)
+    \item Régénération avec suppression automatique
+\end{itemize}
+
+\subsection{Gestion des Régimes de Déclaration}
+\begin{itemize}[leftmargin=*]
+    \item Création et modification des régimes
+    \item Gestion des taux de régime (DC, TR, EXO, TTC)
+    \item Association aux régimes douaniers
+    \item Modification et suppression directes depuis la liste
+\end{itemize}
+
+\section{Contexte Métier}
+
+\subsection{Domaine d'Application}
+
+SFX PreDouane s'inscrit dans le domaine du \textbf{transit douanier} et du \textbf{dédouanement international}. L'application répond aux besoins spécifiques des professionnels du commerce international.
+
+\subsection{Processus Métier}
+
+Le processus typique de pré-dédouanement comprend les étapes suivantes :
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Création du dossier} : Ouverture d'un dossier pour un client
+    \item \textbf{Saisie du colisage} : Enregistrement des marchandises
+    \item \textbf{Association des régimes} : Définition des régimes douaniers applicables
+    \item \textbf{Conversion des devises} : Application des taux de change officiels
+    \item \textbf{Génération de la note de détail} : Production du document de synthèse
+    \item \textbf{Export et transmission} : Envoi aux autorités douanières
+\end{enumerate}
+
+\section{Contraintes et Règles Métier}
+
+\subsection{Règles de Gestion des Devises}
+
+\begin{itemize}[leftmargin=*]
+    \item Une conversion doit être créée avant de générer une note de détail
+    \item Tous les taux de change des devises utilisées doivent être renseignés
+    \item La devise locale (ID 0) a toujours un taux de 1.0 (non modifiable)
+    \item Les taux de change sont liés à une date de déclaration spécifique
+    \item Si une seule devise est présente, elle est automatiquement sélectionnée
+\end{itemize}
+
+\subsection{Règles de Gestion des Régimes}
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{100\% DC} : Droits de douane à 100\%
+    \item \textbf{100\% TR} : Transit à 100\%
+    \item \textbf{EXO} : Exonération totale (taux = 0)
+    \item \textbf{TTC} : Toutes taxes comprises (taux = -2)
+    \item \textbf{Ratios DC/TR} : Pourcentages personnalisés (ex: 51.49\% DC)
+\end{itemize}
+
+\subsection{Règles de Génération des Notes de Détail}
+
+\begin{itemize}[leftmargin=*]
+    \item Les notes sont regroupées par régime douanier
+    \item Ordre de priorité : 100\% DC, 100\% TR, EXO, Ratios DC, Ratios TR, TTC
+    \item Les valeurs sont converties dans la devise de référence sélectionnée
+    \item La régénération supprime automatiquement la note existante
+    \item Les colonnes sont ordonnées selon les spécifications métier
+\end{itemize}
+
+\section{Prérequis Techniques}
+
+\subsection{Configuration Requise - Côté Client}
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Navigateur web moderne} :
+    \begin{itemize}
+        \item Google Chrome (version 90+)
+        \item Mozilla Firefox (version 88+)
+        \item Microsoft Edge (version 90+)
+        \item Safari (version 14+)
+    \end{itemize}
+    \item \textbf{Résolution d'écran} : Minimum 1366x768 pixels (recommandé : 1920x1080)
+    \item \textbf{Connexion Internet} : Haut débit recommandé
+    \item \textbf{JavaScript} : Activé
+\end{itemize}
+
+\subsection{Accès à l'Application}
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{URL d'accès} : \texttt{https://[serveur]:3000} [À compléter]
+    \item \textbf{Identifiants} : Fournis par l'administrateur système
+    \item \textbf{Support technique} : [À compléter : coordonnées]
+\end{itemize}
+
+\section{Conventions du Manuel}
+
+\subsection{Symboles Utilisés}
+
+\begin{itemize}[leftmargin=*]
+    \item \textcolor{blue}{$\blacktriangleright$} \textbf{Note} : Information importante
+    \item \textcolor{orange}{$\blacktriangleright$} \textbf{Attention} : Point nécessitant une vigilance particulière
+    \item \textcolor{red}{$\blacktriangleright$} \textbf{Avertissement} : Action critique ou irréversible
+    \item \textcolor{green}{$\blacktriangleright$} \textbf{Conseil} : Bonne pratique recommandée
+\end{itemize}
+
+\subsection{Typographie}
+
+\begin{itemize}[leftmargin=*]
+    \item \texttt{Texte en police monospace} : Éléments de l'interface, boutons, champs
+    \item \textbf{Texte en gras} : Termes importants, actions à effectuer
+    \item \textit{Texte en italique} : Références, citations
+\end{itemize}
+
+% ============================================
+% CHAPITRE 2: PRÉSENTATION DE L'INTERFACE
+% ============================================
+\chapter{Présentation de l'Interface}
+
+\section{Vue d'Ensemble}
+
+L'interface de SFX PreDouane est conçue selon les principes modernes d'ergonomie et d'expérience utilisateur. Elle se compose de plusieurs zones fonctionnelles organisées de manière intuitive.
+
+\subsection{Structure Générale}
+
+L'interface principale se divise en quatre zones :
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Barre de navigation supérieure} : Accès aux modules principaux
+    \item \textbf{Menu latéral} : Navigation contextuelle selon le module actif
+    \item \textbf{Zone de contenu principale} : Affichage des données et formulaires
+    \item \textbf{Pied de page} : Informations de copyright et version
+\end{enumerate}
+
+\section{Barre de Navigation}
+
+La barre de navigation supérieure permet d'accéder rapidement aux différents modules de l'application.
+
+\subsection{Modules Disponibles}
+
+\begin{itemize}[leftmargin=*]
+    \item \texttt{Tableau de bord} : Vue d'ensemble des activités
+    \item \texttt{Dossiers} : Gestion des dossiers de transit
+    \item \texttt{Clients} : Gestion des fiches clients
+    \item \texttt{Conversions} : Gestion des taux de change
+    \item \texttt{Régimes de Déclaration} : Configuration des régimes
+    \item \texttt{Paramètres} : Configuration de l'application [À compléter]
+\end{itemize}
+
+\subsection{Zone Utilisateur}
+
+Dans le coin supérieur droit, vous trouverez :
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Avatar utilisateur} : Affiche votre profil
+    \item \textbf{Nom d'utilisateur} : Votre identifiant de connexion
+    \item \textbf{Menu déroulant} :
+    \begin{itemize}
+        \item Mon profil
+        \item Paramètres
+        \item Déconnexion
+    \end{itemize}
+\end{itemize}
+
+\section{Éléments d'Interface Communs}
+
+\subsection{Tableaux de Données}
+
+Les tableaux de données présentent les informations de manière structurée avec les fonctionnalités suivantes :
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Tri} : Cliquez sur les en-têtes de colonnes pour trier
+    \item \textbf{Recherche} : Barre de recherche en haut du tableau
+    \item \textbf{Pagination} : Navigation entre les pages de résultats
+    \item \textbf{Actions} : Colonne dédiée aux actions (modifier, supprimer)
+    \item \textbf{Sélection} : Clic sur une ligne pour accéder aux détails
+\end{itemize}
+
+\subsection{Formulaires}
+
+Les formulaires de saisie respectent les conventions suivantes :
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Champs obligatoires} : Marqués d'un astérisque rouge (*)
+    \item \textbf{Validation} : Messages d'erreur en rouge sous les champs
+    \item \textbf{Aide contextuelle} : Icônes d'information avec bulles d'aide
+    \item \textbf{Boutons d'action} :
+    \begin{itemize}
+        \item \texttt{Enregistrer} : Bouton bleu pour valider
+        \item \texttt{Annuler} : Bouton gris pour abandonner
+        \item \texttt{Supprimer} : Bouton rouge pour les suppressions
+    \end{itemize}
+\end{itemize}
+
+\subsection{Notifications}
+
+Le système de notifications affiche des messages temporaires :
+
+\begin{itemize}[leftmargin=*]
+    \item \textcolor{green}{$\blacksquare$} \textbf{Succès} : Opération réussie (vert)
+    \item \textcolor{red}{$\blacksquare$} \textbf{Erreur} : Échec de l'opération (rouge)
+    \item \textcolor{orange}{$\blacksquare$} \textbf{Avertissement} : Attention requise (orange)
+    \item \textcolor{blue}{$\blacksquare$} \textbf{Information} : Message informatif (bleu)
+\end{itemize}
+
+\subsection{Badges et Indicateurs}
+
+L'application utilise des badges colorés pour indiquer les statuts :
+
+\begin{itemize}[leftmargin=*]
+    \item \textcolor{blue}{$\blacksquare$} \textbf{Bleu} : En cours, actif
+    \item \textcolor{green}{$\blacksquare$} \textbf{Vert} : Complété, validé, EXO
+    \item \textcolor{orange}{$\blacksquare$} \textbf{Orange} : En attente, TR
+    \item \textcolor{red}{$\blacksquare$} \textbf{Rouge} : Annulé, erreur
+    \item \textcolor{purple}{$\blacksquare$} \textbf{Violet} : TTC
+\end{itemize}
+
+% ============================================
+% CHAPITRE 3: GUIDES PAS À PAS
+% ============================================
+\chapter{Guides Pas à Pas}
+
+\section{Connexion à l'Application}
+
+\subsection{Première Connexion}
+
+\textbf{Étape 1 : Accéder à l'application}
+
+\begin{enumerate}[leftmargin=*]
+    \item Ouvrez votre navigateur web
+    \item Saisissez l'URL : \texttt{https://[serveur]:3000}
+    \item Appuyez sur \texttt{Entrée}
+\end{enumerate}
+
+\textbf{Étape 2 : Saisir vos identifiants}
+
+\begin{enumerate}[leftmargin=*]
+    \item Dans le champ \texttt{Nom d'utilisateur}, saisissez votre identifiant
+    \item Dans le champ \texttt{Mot de passe}, saisissez votre mot de passe
+    \item Cochez \texttt{Se souvenir de moi} (optionnel)
+    \item Cliquez sur le bouton \texttt{Se connecter}
+\end{enumerate}
+
+\textcolor{orange}{$\blacktriangleright$} \textbf{Attention :} Les identifiants sont sensibles à la casse. Vérifiez que la touche \texttt{Caps Lock} n'est pas activée.
+
+\subsection{Déconnexion}
+
+Pour vous déconnecter en toute sécurité :
+
+\begin{enumerate}[leftmargin=*]
+    \item Cliquez sur votre avatar en haut à droite
+    \item Sélectionnez \texttt{Déconnexion} dans le menu déroulant
+    \item Confirmez la déconnexion si demandé
+\end{enumerate}
+
+\textcolor{green}{$\blacktriangleright$} \textbf{Conseil :} Déconnectez-vous toujours après avoir terminé votre session, surtout sur un poste partagé.
+
+\section{Gestion des Dossiers}
+
+\subsection{Créer un Nouveau Dossier}
+
+\textbf{Objectif :} Créer un dossier de transit pour un client.
+
+\textbf{Prérequis :} Le client doit être créé au préalable.
+
+\textbf{Procédure :}
+
+\begin{enumerate}[leftmargin=*]
+    \item Cliquez sur \texttt{Dossiers} dans la barre de navigation
+    \item Cliquez sur le bouton \texttt{+ Nouveau Dossier}
+    \item Remplissez le formulaire :
+    \begin{itemize}
+        \item \texttt{N° Dossier}* : Numéro unique du dossier
+        \item \texttt{N° OT}* : Numéro d'ordre de transit
+        \item \texttt{Client}* : Sélectionnez le client dans la liste
+        \item \texttt{Type de dossier}* : Import ou Export
+        \item \texttt{Sens de trafic}* : Entrée ou Sortie
+        \item \texttt{Mode de transport}* : Maritime, Aérien, Routier, Ferroviaire
+        \item \texttt{Date d'ouverture} : Date du jour par défaut
+    \end{itemize}
+    \item Cliquez sur \texttt{Enregistrer}
+\end{enumerate}
+
+\textcolor{blue}{$\blacktriangleright$} \textbf{Note :} Le numéro de dossier doit être unique dans le système.
+
+\subsection{Consulter un Dossier}
+
+\begin{enumerate}[leftmargin=*]
+    \item Accédez à la liste des dossiers via \texttt{Dossiers}
+    \item Utilisez la barre de recherche pour filtrer (optionnel)
+    \item Cliquez sur la ligne du dossier souhaité
+    \item La page de détail s'affiche avec les onglets :
+    \begin{itemize}
+        \item \texttt{Informations générales}
+        \item \texttt{Colisage}
+        \item \texttt{Note de détail}
+        \item \texttt{Historique} [À compléter]
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Modifier un Dossier}
+
+\begin{enumerate}[leftmargin=*]
+    \item Ouvrez le dossier à modifier
+    \item Cliquez sur le bouton \texttt{Modifier} (icône crayon)
+    \item Modifiez les champs nécessaires
+    \item Cliquez sur \texttt{Enregistrer}
+\end{enumerate}
+
+\textcolor{orange}{$\blacktriangleright$} \textbf{Attention :} Certains champs ne peuvent plus être modifiés après la génération de la note de détail.
+
+\section{Gestion des Clients}
+
+\subsection{Créer un Nouveau Client}
+
+\textbf{Procédure :}
+
+\begin{enumerate}[leftmargin=*]
+    \item Cliquez sur \texttt{Clients} dans la barre de navigation
+    \item Cliquez sur le bouton \texttt{+ Nouveau Client}
+    \item Remplissez le formulaire :
+    \begin{itemize}
+        \item \texttt{Nom du client}* : Raison sociale
+        \item \texttt{Entité}* : Sélectionnez l'entité de rattachement
+        \item [À compléter : autres champs du formulaire]
+    \end{itemize}
+    \item Cliquez sur \texttt{Enregistrer}
+\end{enumerate}
+
+\subsection{Associer des Régimes à un Client}
+
+Les régimes douaniers peuvent être associés à un client pour faciliter la saisie.
+
+\textbf{Procédure :}
+
+\begin{enumerate}[leftmargin=*]
+    \item Ouvrez la fiche du client
+    \item Accédez à l'onglet \texttt{Régimes associés}
+    \item Cliquez sur \texttt{+ Associer un régime}
+    \item Sélectionnez le régime de déclaration dans la liste
+    \item Cliquez sur \texttt{Associer}
+\end{enumerate}
+
+\textcolor{green}{$\blacktriangleright$} \textbf{Conseil :} Associez les régimes les plus fréquemment utilisés pour gagner du temps lors de la création des dossiers.
+
+\subsection{Consulter l'Historique des Dossiers d'un Client}
+
+\begin{enumerate}[leftmargin=*]
+    \item Ouvrez la fiche du client
+    \item Accédez à l'onglet \texttt{Dossiers}
+    \item La liste de tous les dossiers du client s'affiche
+    \item Cliquez sur un dossier pour accéder à ses détails
+\end{enumerate}
+
+\section{Gestion du Colisage}
+
+\subsection{Saisir un Colisage Manuellement}
+
+\textbf{Prérequis :} Un dossier doit être créé.
+
+\textbf{Procédure :}
+
+\begin{enumerate}[leftmargin=*]
+    \item Ouvrez le dossier concerné
+    \item Accédez à l'onglet \texttt{Colisage}
+    \item Cliquez sur \texttt{+ Ajouter un colisage}
+    \item Remplissez le formulaire :
+    \begin{itemize}
+        \item \texttt{Regroupement client}* : Code de regroupement
+        \item \texttt{Pays d'origine}* : Sélectionnez le pays
+        \item \texttt{Code HS}* : Code du système harmonisé
+        \item \texttt{Nombre de paquetages}* : Quantité
+        \item \texttt{Poids brut (kg)}* : Poids total
+        \item \texttt{Poids net (kg)}* : Poids net
+        \item \texttt{Volume (m³)}* : Volume total
+        \item \texttt{Devise}* : Devise de la valeur
+        \item \texttt{Valeur}* : Valeur en devise
+        \item \texttt{Régime}* : Régime douanier applicable
+    \end{itemize}
+    \item Cliquez sur \texttt{Enregistrer}
+\end{enumerate}
+
+\subsection{Importer un Colisage depuis Excel}
+
+\textbf{Format du fichier Excel :}
+
+Le fichier Excel doit contenir les colonnes suivantes dans l'ordre :
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{|l|l|p{5cm}|}
+\hline
+\textbf{Colonne} & \textbf{Type} & \textbf{Description} \\
+\hline
+Regroupement & Texte & Code de regroupement client \\
+\hline
+Pays d'origine & Texte & Code ou nom du pays \\
+\hline
+Code HS & Texte & Code du système harmonisé (8 chiffres) \\
+\hline
+Nbre Paquetage & Nombre & Nombre de colis \\
+\hline
+Poids Brut & Nombre & Poids brut en kg \\
+\hline
+Poids Net & Nombre & Poids net en kg \\
+\hline
+Volume & Nombre & Volume en m³ \\
+\hline
+Devise & Texte & Code devise (USD, EUR, XOF, etc.) \\
+\hline
+Valeur & Nombre & Valeur en devise \\
+\hline
+Régime & Texte & Code du régime douanier \\
+\hline
+\end{tabular}
+\caption{Structure du fichier Excel pour l'import de colisage}
+\end{table}
+
+\textbf{Procédure d'import :}
+
+\begin{enumerate}[leftmargin=*]
+    \item Ouvrez le dossier concerné
+    \item Accédez à l'onglet \texttt{Colisage}
+    \item Cliquez sur \texttt{Importer depuis Excel}
+    \item Cliquez sur \texttt{Choisir un fichier}
+    \item Sélectionnez votre fichier Excel (.xlsx)
+    \item Cliquez sur \texttt{Importer}
+    \item Vérifiez le résumé de l'import
+    \item Cliquez sur \texttt{Confirmer}
+\end{enumerate}
+
+\textcolor{orange}{$\blacktriangleright$} \textbf{Attention :} 
+\begin{itemize}[leftmargin=*]
+    \item Le fichier doit être au format .xlsx (Excel 2007+)
+    \item La première ligne doit contenir les en-têtes
+    \item Les codes HS doivent exister dans la base de données
+    \item Les devises doivent être actives dans le système
+\end{itemize}
+
+\subsection{Modifier un Colisage}
+
+\begin{enumerate}[leftmargin=*]
+    \item Dans l'onglet \texttt{Colisage}, localisez la ligne à modifier
+    \item Cliquez sur l'icône \texttt{Modifier} (crayon)
+    \item Modifiez les champs nécessaires
+    \item Cliquez sur \texttt{Enregistrer}
+\end{enumerate}
+
+\subsection{Supprimer un Colisage}
+
+\begin{enumerate}[leftmargin=*]
+    \item Dans l'onglet \texttt{Colisage}, localisez la ligne à supprimer
+    \item Cliquez sur l'icône \texttt{Supprimer} (corbeille)
+    \item Confirmez la suppression dans la boîte de dialogue
+\end{enumerate}
+
+\textcolor{red}{$\blacktriangleright$} \textbf{Avertissement :} La suppression d'un colisage est irréversible. Assurez-vous de votre choix avant de confirmer.
+
+\section{Gestion des Conversions et Taux de Change}
+
+\subsection{Créer une Conversion}
+
+\textbf{Objectif :} Définir les taux de change pour une date de déclaration.
+
+\textbf{Procédure :}
+
+\begin{enumerate}[leftmargin=*]
+    \item Cliquez sur \texttt{Conversions} dans la barre de navigation
+    \item Cliquez sur \texttt{+ Nouvelle Conversion}
+    \item Sélectionnez la \texttt{Date de conversion}*
+    \item Cliquez sur \texttt{Créer}
+    \item La conversion est créée, vous pouvez maintenant ajouter les taux
+\end{enumerate}
+
+\subsection{Ajouter un Taux de Change}
+
+\textbf{Méthode 1 : Depuis la page de détail de la conversion}
+
+\begin{enumerate}[leftmargin=*]
+    \item Ouvrez la conversion concernée
+    \item Cliquez sur \texttt{+ Ajouter un taux}
+    \item Sélectionnez la \texttt{Devise}*
+    \item Saisissez le \texttt{Taux de change}* (avec 3 décimales minimum)
+    \item Cliquez sur \texttt{Enregistrer}
+\end{enumerate}
+
+\textbf{Méthode 2 : Depuis la liste des conversions (nouveau)}
+
+\begin{enumerate}[leftmargin=*]
+    \item Dans la liste des conversions, localisez la conversion
+    \item Cliquez sur le bouton \texttt{Ajouter taux} (icône +) dans la colonne Actions
+    \item Le dialogue s'ouvre directement
+    \item Sélectionnez la devise et saisissez le taux
+    \item Cliquez sur \texttt{Enregistrer}
+\end{enumerate}
+
+\textcolor{green}{$\blacktriangleright$} \textbf{Conseil :} La méthode 2 est plus rapide pour ajouter des taux sans quitter la liste.
+
+\textcolor{blue}{$\blacktriangleright$} \textbf{Note :} 
+\begin{itemize}[leftmargin=*]
+    \item La devise locale (ID 0) a toujours un taux de 1.0 et ne peut pas être modifiée
+    \item Les taux doivent être saisis avec au moins 3 décimales pour la précision
+    \item Un taux ne peut être ajouté qu'une seule fois par devise et par conversion
+\end{itemize}
+
+\subsection{Filtrer les Conversions par Date}
+
+\begin{enumerate}[leftmargin=*]
+    \item Dans la page \texttt{Conversions}, cliquez sur \texttt{Filtrer par date}
+    \item Sélectionnez la \texttt{Date de début} (optionnel)
+    \item Sélectionnez la \texttt{Date de fin} (optionnel)
+    \item Cliquez sur \texttt{Appliquer}
+    \item Les conversions sont filtrées selon la période
+\end{enumerate}
+
+\section{Gestion des Régimes de Déclaration}
+
+\subsection{Créer un Régime de Déclaration}
+
+\textbf{Procédure :}
+
+\begin{enumerate}[leftmargin=*]
+    \item Cliquez sur \texttt{Régimes de Déclaration} dans la navigation
+    \item Cliquez sur \texttt{+ Nouveau Régime}
+    \item Remplissez le formulaire :
+    \begin{itemize}
+        \item \texttt{Libellé}* : Nom du régime
+        \item \texttt{Régime douanier}* : Sélectionnez le régime de base
+        \item \texttt{Taux de régime}* : Saisissez le taux
+        \begin{itemize}
+            \item 0 pour EXO (exonération)
+            \item 1 pour 100\% DC
+            \item -1 pour 100\% TR
+            \item -2 pour TTC
+            \item Valeur entre 0 et 1 pour un ratio (ex: 0.5149 pour 51.49\% DC)
+        \end{itemize}
+    \end{itemize}
+    \item Cliquez sur \texttt{Enregistrer}
+\end{enumerate}
+
+\subsection{Modifier un Régime de Déclaration}
+
+\textbf{Méthode directe depuis la liste :}
+
+\begin{enumerate}[leftmargin=*]
+    \item Dans la liste des régimes, localisez le régime à modifier
+    \item Cliquez sur l'icône \texttt{Modifier} (crayon) dans la colonne Actions
+    \item Le dialogue de modification s'ouvre avec les valeurs actuelles
+    \item Modifiez les champs nécessaires
+    \item Cliquez sur \texttt{Enregistrer}
+\end{enumerate}
+
+\textcolor{green}{$\blacktriangleright$} \textbf{Conseil :} La modification directe depuis la liste évite de naviguer vers une page de détail.
+
+\subsection{Supprimer un Régime de Déclaration}
+
+\begin{enumerate}[leftmargin=*]
+    \item Dans la liste des régimes, localisez le régime à supprimer
+    \item Cliquez sur l'icône \texttt{Supprimer} (corbeille rouge) dans la colonne Actions
+    \item Confirmez la suppression dans la boîte de dialogue
+\end{enumerate}
+
+\textcolor{red}{$\blacktriangleright$} \textbf{Avertissement :} 
+\begin{itemize}[leftmargin=*]
+    \item La suppression est irréversible
+    \item Vous ne pouvez pas supprimer un régime utilisé dans des dossiers existants
+\end{itemize}
+
+\section{Génération de la Note de Détail}
+
+\subsection{Prérequis}
+
+Avant de générer une note de détail, assurez-vous que :
+
+\begin{itemize}[leftmargin=*]
+    \item Le dossier contient au moins un colisage
+    \item Une conversion existe pour la date de déclaration souhaitée
+    \item Tous les taux de change des devises utilisées sont renseignés
+    \item Les régimes douaniers sont correctement associés
+\end{itemize}
+
+\subsection{Générer une Note de Détail}
+
+\textbf{Procédure :}
+
+\begin{enumerate}[leftmargin=*]
+    \item Ouvrez le dossier concerné
+    \item Accédez à l'onglet \texttt{Note de détail}
+    \item Cliquez sur le bouton \texttt{Générer}
+    \item Le dialogue de génération s'ouvre :
+    \begin{enumerate}
+        \item \textbf{Sélection de la devise} :
+        \begin{itemize}
+            \item Si une seule devise est présente, elle est automatiquement sélectionnée
+            \item Si plusieurs devises, sélectionnez la devise de référence
+            \item La devise majoritaire est indiquée par une étoile
+            \item Le pourcentage de chaque devise est affiché
+        \end{itemize}
+        \item \textbf{Sélection de la date} :
+        \begin{itemize}
+            \item Cliquez sur le champ \texttt{Date de déclaration}
+            \item Sélectionnez la date dans le calendrier
+            \item La date ne peut pas être future
+        \end{itemize}
+        \item \textbf{Vérification automatique} :
+        \begin{itemize}
+            \item Le système vérifie l'existence d'une conversion
+            \item Le système vérifie la présence de tous les taux nécessaires
+            \item Des messages d'alerte s'affichent si des éléments manquent
+        \end{itemize}
+    \end{enumerate}
+    \item Cliquez sur \texttt{Générer}
+    \item La note de détail est générée et s'affiche
+\end{enumerate}
+
+\textcolor{blue}{$\blacktriangleright$} \textbf{Note :} Si une devise n'est pas majoritaire, un avertissement s'affiche pour vous en informer.
+
+\subsection{Régénérer une Note de Détail}
+
+\textbf{Procédure :}
+
+\begin{enumerate}[leftmargin=*]
+    \item Ouvrez le dossier concerné
+    \item Accédez à l'onglet \texttt{Note de détail}
+    \item Cliquez sur le bouton \texttt{Régénérer}
+    \item La note existante est automatiquement supprimée
+    \item Le dialogue de génération s'ouvre
+    \item Suivez la procédure de génération normale
+\end{enumerate}
+
+\textcolor{green}{$\blacktriangleright$} \textbf{Conseil :} La régénération supprime automatiquement l'ancienne note, vous n'avez pas besoin de la supprimer manuellement.
+
+\subsection{Consulter la Note de Détail}
+
+La note de détail affiche les informations suivantes :
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Informations sur la Pesée} :
+    \begin{itemize}
+        \item Quantité totale de colis
+        \item Poids brut total
+        \item Poids net total
+        \item Volume total
+    \end{itemize}
+    \item \textbf{Synthèse de Déclaration} :
+    \begin{itemize}
+        \item Date de déclaration
+        \item Nombre de lignes par régime
+        \item Valeurs totales par devise
+        \item Valeur totale convertie en devise locale
+    \end{itemize}
+    \item \textbf{Tableau des Taux de Change} :
+    \begin{itemize}
+        \item Liste des devises utilisées
+        \item Taux de change appliqués (3 décimales)
+    \end{itemize}
+    \item \textbf{Détails par Ligne} :
+    \begin{itemize}
+        \item Groupement client
+        \item Pays d'origine
+        \item Code HS
+        \item Régime douanier
+        \item Nombre de paquetages
+        \item Devise
+        \item Quantité de colis (2 décimales)
+        \item Valeur totale
+        \item Poids brut et net
+        \item Volume
+    \end{itemize}
+\end{itemize}
+
+\textcolor{blue}{$\blacktriangleright$} \textbf{Note :} Les lignes sont automatiquement regroupées et triées par régime douanier selon l'ordre de priorité défini.
+
+\subsection{Exporter la Note de Détail}
+
+\textbf{Formats d'export disponibles :}
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{PDF} : Format professionnel pour impression et archivage
+    \item \textbf{Excel} : Format tableur pour traitement et analyse
+    \item \textbf{CSV} : Format texte pour import dans d'autres systèmes
+\end{itemize}
+
+\textbf{Procédure d'export PDF :}
+
+\begin{enumerate}[leftmargin=*]
+    \item Dans l'onglet \texttt{Note de détail}, cliquez sur \texttt{Exporter}
+    \item Sélectionnez \texttt{PDF}
+    \item Choisissez la langue :
+    \begin{itemize}
+        \item 🇫🇷 Français
+        \item 🇬🇧 English
+    \end{itemize}
+    \item Le PDF est généré et téléchargé automatiquement
+\end{enumerate}
+
+\textbf{Procédure d'export Excel :}
+
+\begin{enumerate}[leftmargin=*]
+    \item Dans l'onglet \texttt{Note de détail}, cliquez sur \texttt{Exporter}
+    \item Sélectionnez \texttt{Excel (.xlsx)}
+    \item Le fichier Excel est généré et téléchargé
+\end{enumerate}
+
+\textbf{Procédure d'export CSV :}
+
+\begin{enumerate}[leftmargin=*]
+    \item Dans l'onglet \texttt{Note de détail}, cliquez sur \texttt{Exporter}
+    \item Sélectionnez \texttt{CSV}
+    \item Le fichier CSV est généré et téléchargé
+\end{enumerate}
+
+\textcolor{green}{$\blacktriangleright$} \textbf{Conseil :} 
+\begin{itemize}[leftmargin=*]
+    \item Utilisez le format PDF pour les documents officiels
+    \item Utilisez Excel pour l'analyse et les calculs complémentaires
+    \item Utilisez CSV pour l'intégration avec d'autres systèmes
+\end{itemize}
+
+\subsection{Supprimer une Note de Détail}
+
+\begin{enumerate}[leftmargin=*]
+    \item Dans l'onglet \texttt{Note de détail}, cliquez sur \texttt{Supprimer}
+    \item Confirmez la suppression dans la boîte de dialogue
+    \item La note de détail est supprimée
+\end{enumerate}
+
+\textcolor{red}{$\blacktriangleright$} \textbf{Avertissement :} La suppression est irréversible. Assurez-vous d'avoir exporté la note si nécessaire avant de la supprimer.
+
+% ============================================
+% CHAPITRE 4: CAS PRATIQUES
+% ============================================
+\chapter{Cas Pratiques}
+
+\section{Cas Pratique 1 : Création Complète d'un Dossier d'Import}
+
+\subsection{Contexte}
+
+Vous devez créer un dossier d'import pour le client "ABC Trading" avec des marchandises en provenance des États-Unis.
+
+\subsection{Étapes à Suivre}
+
+\textbf{1. Créer le client (si nécessaire)}
+
+\begin{itemize}[leftmargin=*]
+    \item Accédez à \texttt{Clients} $\rightarrow$ \texttt{+ Nouveau Client}
+    \item Nom : "ABC Trading"
+    \item Entité : Sélectionnez votre entité
+    \item Enregistrez
+\end{itemize}
+
+\textbf{2. Créer le dossier}
+
+\begin{itemize}[leftmargin=*]
+    \item Accédez à \texttt{Dossiers} $\rightarrow$ \texttt{+ Nouveau Dossier}
+    \item N° Dossier : "DOS-2026-001"
+    \item N° OT : "OT-2026-001"
+    \item Client : "ABC Trading"
+    \item Type : "Import"
+    \item Sens : "Entrée"
+    \item Mode de transport : "Maritime"
+    \item Enregistrez
+\end{itemize}
+
+\textbf{3. Saisir le colisage}
+
+\begin{itemize}[leftmargin=*]
+    \item Ouvrez le dossier créé
+    \item Onglet \texttt{Colisage} $\rightarrow$ \texttt{+ Ajouter un colisage}
+    \item Regroupement : "RDR"
+    \item Pays d'origine : "U.S.A."
+    \item Code HS : "62160000"
+    \item Nbre paquetages : 0.29
+    \item Poids brut : 57.75 kg
+    \item Poids net : 0.00 kg
+    \item Volume : 0.50 m³
+    \item Devise : "USD"
+    \item Valeur : 3953.28
+    \item Régime : "100% DC"
+    \item Enregistrez
+\end{itemize}
+
+\textbf{4. Créer la conversion}
+
+\begin{itemize}[leftmargin=*]
+    \item Accédez à \texttt{Conversions} $\rightarrow$ \texttt{+ Nouvelle Conversion}
+    \item Date de conversion : 24 mars 2026
+    \item Créez la conversion
+\end{itemize}
+
+\textbf{5. Ajouter les taux de change}
+
+\begin{itemize}[leftmargin=*]
+    \item Dans la conversion créée, ajoutez les taux :
+    \item USD : 655.957
+    \item EUR : 720.450 (si nécessaire)
+    \item Enregistrez chaque taux
+\end{itemize}
+
+\textbf{6. Générer la note de détail}
+
+\begin{itemize}[leftmargin=*]
+    \item Retournez au dossier
+    \item Onglet \texttt{Note de détail} $\rightarrow$ \texttt{Générer}
+    \item Devise : XOF (sélectionnée automatiquement si unique)
+    \item Date de déclaration : 24 mars 2026
+    \item Vérifiez que tous les taux sont OK
+    \item Cliquez sur \texttt{Générer}
+\end{itemize}
+
+\textbf{7. Exporter la note}
+
+\begin{itemize}[leftmargin=*]
+    \item Cliquez sur \texttt{Exporter} $\rightarrow$ \texttt{PDF} $\rightarrow$ \texttt{Français}
+    \item Le document est téléchargé
+\end{itemize}
+
+\subsection{Résultat Attendu}
+
+Vous obtenez une note de détail complète avec :
+\begin{itemize}[leftmargin=*]
+    \item Les informations de pesée
+    \item La synthèse par régime
+    \item Les taux de change appliqués
+    \item Le détail de chaque ligne de colisage
+    \item Les valeurs converties en XOF
+\end{itemize}
+
+\section{Cas Pratique 2 : Import de Colisage depuis Excel}
+
+\subsection{Contexte}
+
+Vous avez reçu un fichier Excel contenant 50 lignes de colisage à importer dans un dossier existant.
+
+\subsection{Préparation du Fichier Excel}
+
+\textbf{1. Vérifier la structure}
+
+Assurez-vous que votre fichier contient les colonnes dans cet ordre :
+\begin{enumerate}[leftmargin=*]
+    \item Regroupement
+    \item Pays d'origine
+    \item Code HS
+    \item Nbre Paquetage
+    \item Poids Brut
+    \item Poids Net
+    \item Volume
+    \item Devise
+    \item Valeur
+    \item Régime
+\end{enumerate}
+
+\textbf{2. Vérifier les données}
+
+\begin{itemize}[leftmargin=*]
+    \item Les codes HS doivent être à 8 chiffres
+    \item Les devises doivent exister dans le système (USD, EUR, XOF, etc.)
+    \item Les nombres doivent utiliser le point comme séparateur décimal
+    \item Les régimes doivent correspondre aux codes existants
+\end{itemize}
+
+\subsection{Procédure d'Import}
+
+\begin{enumerate}[leftmargin=*]
+    \item Ouvrez le dossier concerné
+    \item Onglet \texttt{Colisage} $\rightarrow$ \texttt{Importer depuis Excel}
+    \item Sélectionnez votre fichier .xlsx
+    \item Cliquez sur \texttt{Importer}
+    \item Vérifiez le résumé :
+    \begin{itemize}
+        \item Nombre de lignes à importer
+        \item Erreurs éventuelles
+    \end{itemize}
+    \item Si tout est correct, cliquez sur \texttt{Confirmer}
+    \item Les 50 lignes sont importées
+\end{enumerate}
+
+\subsection{Vérification Post-Import}
+
+\begin{itemize}[leftmargin=*]
+    \item Vérifiez le nombre total de lignes
+    \item Contrôlez quelques lignes aléatoirement
+    \item Vérifiez les totaux (poids, volume, valeur)
+\end{itemize}
+
+\textcolor{green}{$\blacktriangleright$} \textbf{Conseil :} Testez d'abord l'import avec un fichier contenant 2-3 lignes pour valider la structure.
+
+% ============================================
+% CHAPITRE 5: RÉSOLUTION DES PROBLÈMES
+% ============================================
+\chapter{Résolution des Problèmes}
+
+\section{Problèmes de Connexion}
+
+\subsection{Impossible de se connecter}
+
+\textbf{Symptôme :} Message "Identifiants incorrects" ou page qui ne répond pas.
+
+\textbf{Solutions :}
+
+\begin{enumerate}[leftmargin=*]
+    \item Vérifiez que la touche \texttt{Caps Lock} n'est pas activée
+    \item Vérifiez l'orthographe de votre nom d'utilisateur
+    \item Assurez-vous d'utiliser le bon mot de passe
+    \item Videz le cache de votre navigateur (Ctrl+Shift+Del)
+    \item Essayez avec un autre navigateur
+    \item Contactez l'administrateur si le problème persiste
+\end{enumerate}
+
+\subsection{Session expirée}
+
+\textbf{Symptôme :} Déconnexion automatique après un certain temps.
+
+\textbf{Solutions :}
+
+\begin{itemize}[leftmargin=*]
+    \item C'est un comportement normal pour la sécurité
+    \item Reconnectez-vous simplement
+    \item Cochez "Se souvenir de moi" pour prolonger la session
+\end{itemize}
+
+\section{Problèmes de Génération de Note de Détail}
+
+\subsection{Message "Aucune conversion trouvée"}
+
+\textbf{Symptôme :} Impossible de générer la note, message d'erreur sur la conversion.
+
+\textbf{Solutions :}
+
+\begin{enumerate}[leftmargin=*]
+    \item Vérifiez qu'une conversion existe pour la date sélectionnée
+    \item Accédez à \texttt{Conversions}
+    \item Créez une conversion pour la date de déclaration
+    \item Ajoutez tous les taux nécessaires
+    \item Retournez au dossier et réessayez
+\end{enumerate}
+
+\subsection{Message "Taux manquants"}
+
+\textbf{Symptôme :} La conversion existe mais des taux sont manquants.
+
+\textbf{Solutions :}
+
+\begin{enumerate}[leftmargin=*]
+    \item Notez les devises manquantes indiquées dans le message
+    \item Accédez à la conversion concernée
+    \item Ajoutez les taux manquants pour chaque devise
+    \item Retournez au dossier et réessayez
+\end{enumerate}
+
+\section{Problèmes d'Import Excel}
+
+\subsection{Erreur "Format de fichier invalide"}
+
+\textbf{Symptôme :} Le fichier n'est pas accepté lors de l'import.
+
+\textbf{Solutions :}
+
+\begin{itemize}[leftmargin=*]
+    \item Vérifiez que le fichier est au format .xlsx (Excel 2007+)
+    \item Si vous avez un fichier .xls, ouvrez-le et enregistrez-le en .xlsx
+    \item Assurez-vous que le fichier n'est pas corrompu
+\end{itemize}
+
+\subsection{Erreur "Code HS invalide"}
+
+\textbf{Symptôme :} Certaines lignes ne sont pas importées, erreur sur les codes HS.
+
+\textbf{Solutions :}
+
+\begin{enumerate}[leftmargin=*]
+    \item Vérifiez que les codes HS sont à 8 chiffres
+    \item Assurez-vous que les codes existent dans la base de données
+    \item Contactez l'administrateur pour ajouter les codes manquants
+    \item Corrigez le fichier Excel et réimportez
+\end{enumerate}
+
+\subsection{Erreur "Devise inconnue"}
+
+\textbf{Symptôme :} Import échoue avec message sur devise non reconnue.
+
+\textbf{Solutions :}
+
+\begin{itemize}[leftmargin=*]
+    \item Vérifiez l'orthographe des codes devises (USD, EUR, XOF, etc.)
+    \item Utilisez les codes ISO à 3 lettres
+    \item Assurez-vous que les devises sont actives dans le système
+\end{itemize}
+
+\section{Problèmes d'Export}
+
+\subsection{Le PDF ne se télécharge pas}
+
+\textbf{Symptôme :} Clic sur export PDF mais rien ne se passe.
+
+\textbf{Solutions :}
+
+\begin{enumerate}[leftmargin=*]
+    \item Vérifiez que les popups ne sont pas bloqués par le navigateur
+    \item Autorisez les téléchargements pour ce site
+    \item Vérifiez l'espace disque disponible
+    \item Essayez avec un autre navigateur
+    \item Réessayez l'export
+\end{enumerate}
+
+\subsection{Le fichier Excel est vide}
+
+\textbf{Symptôme :} Le fichier Excel téléchargé ne contient pas de données.
+
+\textbf{Solutions :}
+
+\begin{itemize}[leftmargin=*]
+    \item Vérifiez que la note de détail contient des données
+    \item Régénérez la note de détail
+    \item Réessayez l'export
+    \item Si le problème persiste, contactez le support
+\end{itemize}
+
+% ============================================
+% CHAPITRE 6: FAQ
+% ============================================
+\chapter{Foire Aux Questions (FAQ)}
+
+\section{Questions Générales}
+
+\textbf{Q1 : Puis-je utiliser l'application sur mobile ?}
+
+R : Oui, l'application est responsive et s'adapte aux écrans mobiles. Cependant, pour une expérience optimale et pour les tâches de saisie intensive, l'utilisation sur ordinateur de bureau est recommandée.
+
+\textbf{Q2 : Mes données sont-elles sauvegardées automatiquement ?}
+
+R : Oui, toutes les données sont sauvegardées immédiatement après validation. Il n'y a pas de sauvegarde automatique pendant la saisie, pensez à cliquer sur "Enregistrer".
+
+\textbf{Q3 : Puis-je annuler une action ?}
+
+R : Les suppressions sont irréversibles. Pour les modifications, vous pouvez annuler en cliquant sur "Annuler" avant d'enregistrer. Une fois enregistré, vous devez modifier à nouveau pour corriger.
+
+\section{Questions sur les Dossiers}
+
+\textbf{Q4 : Puis-je modifier un dossier après génération de la note ?}
+
+R : Certains champs peuvent être modifiés, mais les éléments liés au colisage et aux régimes ne peuvent plus être changés après génération de la note de détail. Vous devez supprimer la note pour modifier ces éléments.
+
+\textbf{Q5 : Comment retrouver un dossier rapidement ?}
+
+R : Utilisez la barre de recherche en haut de la liste des dossiers. Vous pouvez rechercher par numéro de dossier, numéro OT, nom de client ou type de dossier.
+
+\textbf{Q6 : Puis-je supprimer un dossier ?}
+
+R : [À compléter : selon les droits utilisateur et les règles métier]
+
+\section{Questions sur les Conversions}
+
+\textbf{Q7 : Pourquoi ne puis-je pas modifier le taux de la devise locale ?}
+
+R : La devise locale (ID 0) a toujours un taux de 1.0 par définition. C'est la devise de référence pour toutes les conversions.
+
+\textbf{Q8 : Puis-je avoir plusieurs conversions pour la même date ?}
+
+R : Non, il ne peut y avoir qu'une seule conversion par date. Si vous devez modifier les taux, modifiez la conversion existante.
+
+\textbf{Q9 : Combien de décimales dois-je saisir pour les taux ?}
+
+R : Saisissez au minimum 3 décimales pour la précision. Le système accepte jusqu'à 6 décimales.
+
+\section{Questions sur la Note de Détail}
+
+\textbf{Q10 : Pourquoi la devise est-elle sélectionnée automatiquement ?}
+
+R : Si votre dossier ne contient qu'une seule devise dans les colisages, elle est automatiquement sélectionnée pour vous faire gagner du temps. Si plusieurs devises sont présentes, vous devez choisir.
+
+\textbf{Q11 : Que signifie "devise majoritaire" ?}
+
+R : C'est la devise qui représente le plus grand pourcentage de la valeur totale du dossier. Un avertissement s'affiche si vous choisissez une autre devise.
+
+\textbf{Q12 : Puis-je régénérer une note plusieurs fois ?}
+
+R : Oui, vous pouvez régénérer autant de fois que nécessaire. La note existante est automatiquement supprimée avant la régénération.
+
+\textbf{Q13 : Dans quel ordre sont triées les lignes de la note ?}
+
+R : Les lignes sont automatiquement regroupées et triées par régime douanier selon cet ordre de priorité : 100\% DC, 100\% TR, EXO, Ratios DC, Ratios TR, TTC.
+
+\textbf{Q14 : Pourquoi la colonne Qté Colis affiche 2 décimales ?}
+
+R : C'est le format standard pour cette colonne, cohérent entre l'interface et les exports PDF/Excel/CSV.
+
+\section{Questions sur les Exports}
+
+\textbf{Q15 : Quelle est la différence entre les formats d'export ?}
+
+R : 
+\begin{itemize}[leftmargin=*]
+    \item \textbf{PDF} : Document professionnel pour impression et archivage officiel
+    \item \textbf{Excel} : Fichier tableur pour analyse et calculs complémentaires
+    \item \textbf{CSV} : Format texte pour import dans d'autres systèmes
+\end{itemize}
+
+\textbf{Q16 : Puis-je exporter en anglais ?}
+
+R : Oui, le format PDF est disponible en français et en anglais. Sélectionnez la langue lors de l'export.
+
+\textbf{Q17 : Les exports contiennent-ils toutes les données ?}
+
+R : Oui, tous les formats d'export contiennent les mêmes données : informations de pesée, synthèse par régime, taux de change et détails des lignes.
+
+% ============================================
+% CHAPITRE 7: RECOMMANDATIONS DE SÉCURITÉ
+% ============================================
+\chapter{Recommandations de Sécurité}
+
+\section{Gestion des Mots de Passe}
+
+\subsection{Bonnes Pratiques}
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Utilisez un mot de passe fort} :
+    \begin{itemize}
+        \item Minimum 8 caractères
+        \item Mélange de majuscules, minuscules, chiffres et symboles
+        \item Évitez les mots du dictionnaire
+        \item N'utilisez pas d'informations personnelles
+    \end{itemize}
+    \item \textbf{Ne partagez jamais votre mot de passe}
+    \item \textbf{Changez votre mot de passe régulièrement} (tous les 3 mois recommandé)
+    \item \textbf{N'utilisez pas le même mot de passe} pour plusieurs applications
+    \item \textbf{Ne notez pas votre mot de passe} sur papier ou fichier non sécurisé
+\end{itemize}
+
+\subsection{En Cas de Compromission}
+
+Si vous pensez que votre mot de passe a été compromis :
+
+\begin{enumerate}[leftmargin=*]
+    \item Changez immédiatement votre mot de passe
+    \item Informez l'administrateur système
+    \item Vérifiez les activités récentes sur votre compte
+\end{enumerate}
+
+\section{Sécurité des Données}
+
+\subsection{Protection des Informations Sensibles}
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Ne laissez pas votre session ouverte} sans surveillance
+    \item \textbf{Déconnectez-vous} toujours après utilisation
+    \item \textbf{Verrouillez votre poste} (Windows+L) si vous vous absentez
+    \item \textbf{Ne partagez pas d'informations confidentielles} par email non sécurisé
+    \item \textbf{Vérifiez les destinataires} avant d'envoyer des documents
+\end{itemize}
+
+\subsection{Sauvegardes et Exports}
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Stockez les exports} dans des emplacements sécurisés
+    \item \textbf{Supprimez les fichiers temporaires} après utilisation
+    \item \textbf{Chiffrez les documents sensibles} avant envoi
+    \item \textbf{Utilisez des canaux sécurisés} pour le partage de fichiers
+\end{itemize}
+
+\section{Utilisation Responsable}
+
+\subsection{Droits et Responsabilités}
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Respectez les droits d'accès} qui vous sont attribués
+    \item \textbf{N'accédez pas} aux données qui ne vous concernent pas
+    \item \textbf{Signalez toute anomalie} à l'administrateur
+    \item \textbf{Suivez les procédures} établies par votre organisation
+    \item \textbf{Formez-vous} régulièrement aux bonnes pratiques de sécurité
+\end{itemize}
+
+\subsection{Traçabilité}
+
+\textcolor{blue}{$\blacktriangleright$} \textbf{Note :} Toutes vos actions dans l'application sont tracées et horodatées. Cela permet d'assurer la traçabilité et l'audit des opérations.
+
+\section{Conformité et Réglementation}
+
+\subsection{Protection des Données Personnelles}
+
+\begin{itemize}[leftmargin=*]
+    \item L'application traite des données à caractère personnel
+    \item Respectez les principes du RGPD [À compléter selon la juridiction]
+    \item Ne collectez que les données nécessaires
+    \item Assurez la confidentialité des informations clients
+\end{itemize}
+
+\subsection{Archivage et Conservation}
+
+\begin{itemize}[leftmargin=*]
+    \item Respectez les durées de conservation légales
+    \item Archivez les documents selon les procédures établies
+    \item Ne supprimez pas de données sans autorisation
+    \item [À compléter : durées de conservation spécifiques]
+\end{itemize}
+
+\section{En Cas d'Incident de Sécurité}
+
+\subsection{Que Faire ?}
+
+Si vous détectez un incident de sécurité :
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Ne paniquez pas}
+    \item \textbf{Notez} les détails de l'incident (date, heure, nature)
+    \item \textbf{Informez immédiatement} l'administrateur système
+    \item \textbf{Ne tentez pas} de résoudre le problème vous-même
+    \item \textbf{Suivez les instructions} de l'équipe de sécurité
+    \item \textbf{Documentez} l'incident pour le rapport
+\end{enumerate}
+
+\subsection{Contact d'Urgence}
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Support technique} : [À compléter]
+    \item \textbf{Administrateur système} : [À compléter]
+    \item \textbf{Responsable sécurité} : [À compléter]
+\end{itemize}
+
+% ============================================
+% CHAPITRE 8: GLOSSAIRE
+% ============================================
+\chapter{Glossaire}
+
+\section{Termes Métier}
+
+\begin{description}[leftmargin=3cm, style=nextline]
+    \item[Colisage] Ensemble des informations relatives aux colis d'une marchandise : poids, volume, quantité, valeur, etc.
+    
+    \item[Code HS] Code du Système Harmonisé (Harmonized System) : nomenclature internationale de classification des marchandises sur 8 chiffres.
+    
+    \item[Commissionnaire en douane] Professionnel agréé qui effectue les formalités douanières pour le compte de ses clients.
+    
+    \item[Conversion] Opération de change de devises à une date donnée avec des taux officiels.
+    
+    \item[DC (Droits de Douane)] Taxes perçues par les douanes sur les marchandises importées.
+    
+    \item[Dédouanement] Ensemble des formalités douanières nécessaires pour l'importation ou l'exportation de marchandises.
+    
+    \item[Devise] Unité monétaire d'un pays (USD, EUR, XOF, etc.).
+    
+    \item[Dossier] Ensemble documentaire regroupant toutes les informations relatives à une opération de transit.
+    
+    \item[EXO (Exonération)] Régime douanier permettant l'exemption totale de droits et taxes.
+    
+    \item[Note de détail] Document de synthèse récapitulant l'ensemble des marchandises d'un dossier avec leurs valeurs converties.
+    
+    \item[OT (Ordre de Transit)] Numéro d'identification d'une opération de transit.
+    
+    \item[Pré-dédouanement] Préparation des documents et calculs avant la déclaration en douane officielle.
+    
+    \item[Régime douanier] Statut juridique applicable à une marchandise (DC, TR, EXO, TTC).
+    
+    \item[Taux de change] Valeur d'une devise par rapport à une autre à une date donnée.
+    
+    \item[TR (Transit)] Régime douanier permettant le passage de marchandises sans paiement immédiat des droits.
+    
+    \item[TTC (Toutes Taxes Comprises)] Régime incluant tous les droits et taxes dans le calcul.
+\end{description}
+
+\section{Termes Techniques}
+
+\begin{description}[leftmargin=3cm, style=nextline]
+    \item[Application web] Logiciel accessible via un navigateur internet sans installation locale.
+    
+    \item[Badge] Élément visuel coloré indiquant un statut ou une catégorie.
+    
+    \item[Base de données] Système de stockage structuré des données de l'application.
+    
+    \item[CSV] Comma-Separated Values : format de fichier texte pour l'échange de données tabulaires.
+    
+    \item[Dialogue modal] Fenêtre qui s'affiche au-dessus du contenu principal et nécessite une action de l'utilisateur.
+    
+    \item[Export] Action de générer un fichier à partir des données de l'application.
+    
+    \item[Filtre] Outil permettant de restreindre l'affichage des données selon des critères.
+    
+    \item[Formulaire] Interface de saisie de données avec des champs à remplir.
+    
+    \item[HTTPS] Protocole de communication sécurisé pour le web.
+    
+    \item[Import] Action d'intégrer des données externes dans l'application.
+    
+    \item[Interface] Ensemble des éléments visuels permettant l'interaction avec l'application.
+    
+    \item[Next.js] Framework de développement web utilisé pour SFX PreDouane.
+    
+    \item[Notification] Message temporaire informant l'utilisateur du résultat d'une action.
+    
+    \item[Pagination] Division des résultats en plusieurs pages pour faciliter la navigation.
+    
+    \item[PDF] Portable Document Format : format de fichier pour documents électroniques.
+    
+    \item[Prisma] ORM (Object-Relational Mapping) utilisé pour la gestion de la base de données.
+    
+    \item[React] Bibliothèque JavaScript pour la construction d'interfaces utilisateur.
+    
+    \item[Responsive] Interface qui s'adapte automatiquement à la taille de l'écran.
+    
+    \item[Session] Période d'utilisation de l'application entre la connexion et la déconnexion.
+    
+    \item[SQL Server] Système de gestion de base de données Microsoft utilisé par l'application.
+    
+    \item[Tableau] Composant d'interface affichant des données sous forme de lignes et colonnes.
+    
+    \item[Toast] Notification temporaire qui apparaît brièvement à l'écran.
+    
+    \item[URL] Uniform Resource Locator : adresse web de l'application.
+\end{description}
+
+\section{Acronymes}
+
+\begin{description}[leftmargin=3cm, style=nextline]
+    \item[CSV] Comma-Separated Values (Valeurs Séparées par des Virgules)
+    
+    \item[DC] Droits de Douane (Customs Duties)
+    
+    \item[EXO] Exonération (Exemption)
+    
+    \item[FAQ] Foire Aux Questions (Frequently Asked Questions)
+    
+    \item[HS] Harmonized System (Système Harmonisé)
+    
+    \item[HTTPS] HyperText Transfer Protocol Secure
+    
+    \item[ID] Identifiant (Identifier)
+    
+    \item[ORM] Object-Relational Mapping
+    
+    \item[OT] Ordre de Transit (Transit Order)
+    
+    \item[PDF] Portable Document Format
+    
+    \item[RGPD] Règlement Général sur la Protection des Données
+    
+    \item[SFX] [À compléter : signification de l'acronyme]
+    
+    \item[SQL] Structured Query Language
+    
+    \item[TR] Transit
+    
+    \item[TTC] Toutes Taxes Comprises
+    
+    \item[UI] User Interface (Interface Utilisateur)
+    
+    \item[URL] Uniform Resource Locator
+    
+    \item[USD] United States Dollar (Dollar Américain)
+    
+    \item[UX] User Experience (Expérience Utilisateur)
+    
+    \item[XOF] Franc CFA (Communauté Financière Africaine)
+\end{description}
+
+% ============================================
+% ANNEXES
+% ============================================
+\appendix
+
+\chapter{Annexe A : Raccourcis Clavier}
+
+\section{Raccourcis Généraux}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|p{8cm}|}
+\hline
+\textbf{Raccourci} & \textbf{Action} \\
+\hline
+Ctrl + S & Enregistrer (dans les formulaires) \\
+\hline
+Échap & Fermer un dialogue modal \\
+\hline
+Ctrl + F & Rechercher dans la page \\
+\hline
+F5 & Actualiser la page \\
+\hline
+Ctrl + P & Imprimer \\
+\hline
+Tab & Naviguer entre les champs d'un formulaire \\
+\hline
+Entrée & Valider un formulaire \\
+\hline
+\end{tabular}
+\caption{Raccourcis clavier disponibles}
+\end{table}
+
+\chapter{Annexe B : Codes de Statut}
+
+\section{Statuts des Dossiers}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|l|p{6cm}|}
+\hline
+\textbf{Code} & \textbf{Libellé} & \textbf{Description} \\
+\hline
+OUVERT & Ouvert & Dossier créé, en cours de saisie \\
+\hline
+EN\_COURS & Operations in progress & Opérations en cours de traitement \\
+\hline
+COMPLETE & Operations completed & Opérations terminées \\
+\hline
+ANNULE & Operations Cancelled & Dossier annulé \\
+\hline
+\end{tabular}
+\caption{Codes de statut des dossiers}
+\end{table}
+
+\section{Types de Régimes}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|l|p{6cm}|}
+\hline
+\textbf{Code} & \textbf{Taux} & \textbf{Description} \\
+\hline
+100\% DC & 1 & Droits de douane à 100\% \\
+\hline
+100\% TR & -1 & Transit à 100\% \\
+\hline
+EXO & 0 & Exonération totale \\
+\hline
+TTC & -2 & Toutes taxes comprises \\
+\hline
+Ratio DC & 0 < x < 1 & Pourcentage de droits de douane \\
+\hline
+Ratio TR & 0 < x < 1 & Pourcentage de transit \\
+\hline
+\end{tabular}
+\caption{Types de régimes douaniers}
+\end{table}
+
+\chapter{Annexe C : Contacts et Support}
+
+\section{Support Technique}
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Email} : [À compléter]
+    \item \textbf{Téléphone} : [À compléter]
+    \item \textbf{Horaires} : [À compléter]
+    \item \textbf{Site web} : [À compléter]
+\end{itemize}
+
+\section{Formation}
+
+Pour des formations sur l'utilisation de SFX PreDouane :
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Responsable formation} : [À compléter]
+    \item \textbf{Email} : [À compléter]
+    \item \textbf{Catalogue de formations} : [À compléter]
+\end{itemize}
+
+\section{Éditeur}
+
+\textbf{Softronic Innoving}
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Adresse} : [À compléter]
+    \item \textbf{Email} : [À compléter]
+    \item \textbf{Téléphone} : [À compléter]
+    \item \textbf{Site web} : [À compléter]
+\end{itemize}
+
+\chapter{Annexe D : Historique des Versions}
+
+\section{Version 0.1.0 - Mars 2026}
+
+\textbf{Fonctionnalités initiales :}
+
+\begin{itemize}[leftmargin=*]
+    \item Gestion des dossiers de transit
+    \item Gestion des clients
+    \item Gestion du colisage avec import Excel
+    \item Gestion des conversions et taux de change
+    \item Ajout de taux depuis la liste des conversions
+    \item Gestion des régimes de déclaration
+    \item Modification/suppression directe depuis la liste
+    \item Génération de notes de détail
+    \item Sélection automatique de devise unique
+    \item Régénération avec suppression automatique
+    \item Export multi-format (PDF bilingue, Excel, CSV)
+    \item Interface professionnelle avec badges colorés
+    \item Affichage 2 décimales pour Qté Colis
+\end{itemize}
+
+\section{Évolutions Prévues}
+
+[À compléter selon la roadmap du projet]
+
+% ============================================
+% PAGE FINALE
+% ============================================
+
+\chapter*{Notes}
+
+\vspace{2cm}
+
+\section*{Informations sur ce Manuel}
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Titre} : Manuel d'Utilisation SFX PreDouane
+    \item \textbf{Version du manuel} : 1.0
+    \item \textbf{Version de l'application} : 0.1.0
+    \item \textbf{Date de publication} : \today
+    \item \textbf{Éditeur} : Softronic Innoving
+    \item \textbf{Langue} : Français
+\end{itemize}
+
+\section*{Avertissement}
+
+Ce manuel est fourni à titre informatif. Softronic Innoving se réserve le droit de modifier l'application et ce manuel sans préavis. Les captures d'écran et exemples peuvent différer légèrement de votre version de l'application.
+
+\section*{Copyright}
+
+© 2026 Softronic Innoving. Tous droits réservés.
+
+Ce document est la propriété de Softronic Innoving. Toute reproduction, même partielle, est interdite sans autorisation écrite préalable.
+
+\section*{Marques Déposées}
+
+\begin{itemize}[leftmargin=*]
+    \item SFX PreDouane est une marque de Softronic Innoving
+    \item Microsoft, Windows, Excel sont des marques déposées de Microsoft Corporation
+    \item Les autres noms de produits et de sociétés mentionnés peuvent être des marques déposées de leurs propriétaires respectifs
+\end{itemize}
+
+\vfill
+
+\begin{center}
+\textit{Fin du Manuel d'Utilisation}
+
+\vspace{1cm}
+
+\textbf{Softronic Innoving}
+
+\textit{Innovation et Excellence en Solutions Logicielles}
+\end{center}
+
+\end{document}
