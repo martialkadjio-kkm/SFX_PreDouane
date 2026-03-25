@@ -793,7 +793,7 @@ export const NoteDetailView = ({
         note.Regime || "",
         Number(note.Nbre_Paquetage).toFixed(2),
         note.Code_Devise || "",
-        Number(note.Qte_Colis || 0).toFixed(0),
+        Number(note.Qte_Colis || 0).toFixed(2),
         Number(note.Valeur).toFixed(2),
         Number(note.Poids_Brut || 0).toFixed(1),
         Number(note.Poids_Net || 0).toFixed(1),
