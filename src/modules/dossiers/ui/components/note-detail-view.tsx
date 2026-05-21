@@ -17,6 +17,7 @@ import { useConfirm } from "@/hooks/use-confirm";
 import {
   supprimerNotesDetail,
   getNotesDetail,
+  getNotesDetailGrouped,
   getTauxChangeDossier,
   getDossierDeviseNoteDetail,
 } from "../../server/note-detail-actions";
@@ -922,6 +923,572 @@ export const NoteDetailView = ({
     }
   };
 
+  const exportToPDFGrouped = async (language: 'fr' | 'en' = 'fr') => {
+    try {
+      // Récupérer les données groupées
+      const resultGrouped = await getNotesDetailGrouped(dossierId);
+      if (!resultGrouped.success || !resultGrouped.data) {
+        toast.error("Erreur lors de la récupération des données groupées");
+        return;
+      }
+
+      const notesGrouped = resultGrouped.data;
+
+      const jsPDF = (await import("jspdf")).default;
+      const autoTable = (await import("jspdf-autotable")).default;
+
+      // Traductions (mêmes que exportToPDF)
+      const translations = {
+        fr: {
+          weighingInfo: "INFORMATIONS SUR LA PESÉE",
+          qty: "QTE",
+          grossWeight: "POIDS BRUT (kg)",
+          netWeight: "POIDS NET (kg)",
+          volume: "VOLUME (m³)",
+          declarationSummary: "SYNTHÈSE DE DÉCLARATION",
+          declarationDate: "Date de déclaration :",
+          rowCount: "Rows count",
+          totalXOF: "Total XOF",
+          xof: "XOF",
+          total: "TOTAL",
+          details: "DETAILS GROUPÉS",
+          grouping: "Groupement",
+          originCountry: "Pays D'origine",
+          hsCode: "HS Code",
+          regime: "Régime",
+          nbPackages: "Nbre Paq.",
+          currency: "Dev.",
+          value: "Valeur Totale",
+          volumeCol: "Volume",
+          grossWeightCol: "Poids Brut",
+          netWeightCol: "Poids Net",
+          qteColis: "Qté Colis",
+          copyright: "©Copyright Softronic Innoving",
+          page: "Page",
+        },
+        en: {
+          weighingInfo: "WEIGHING INFORMATION",
+          qty: "QTY",
+          grossWeight: "GROSS WEIGHT (kg)",
+          netWeight: "NET WEIGHT (kg)",
+          volume: "VOLUME (m³)",
+          declarationSummary: "DECLARATION SUMMARY",
+          declarationDate: "Declaration date:",
+          rowCount: "Rows count",
+          totalXOF: "Total XOF",
+          xof: "XOF",
+          total: "TOTAL",
+          details: "GROUPED DETAILS",
+          grouping: "Grouping",
+          originCountry: "Origin Country",
+          hsCode: "HS Code",
+          regime: "Regime",
+          nbPackages: "Nb Packages",
+          currency: "Curr.",
+          value: "Total Value",
+          volumeCol: "Volume",
+          grossWeightCol: "Gross Weight",
+          netWeightCol: "Net Weight",
+          qteColis: "Qty Packages",
+          copyright: "©Copyright Softronic Innoving",
+          page: "Page",
+        },
+      };
+
+      const t = translations[language];
+
+      const formatNumber = (value: any): string => {
+        const num = Number(value);
+        if (isNaN(num)) return '0.00';
+        return num.toLocaleString('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+      };
+
+      const doc = new jsPDF({
+        orientation: "landscape",
+        unit: "mm",
+        format: "a4",
+      });
+
+      // EN-TÊTE (même que exportToPDF)
+      doc.setDrawColor(66, 139, 202);
+      doc.setLineWidth(0.5);
+      doc.line(14, 8, 283, 8);
+      doc.line(14, 32, 283, 32);
+
+      try {
+        const logoResponse = await fetch("/logo.jpeg");
+        if (logoResponse.ok) {
+          const logoBlob = await logoResponse.blob();
+          const logoBase64 = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.readAsDataURL(logoBlob);
+          });
+          doc.addImage(logoBase64, "PNG", 16, 10, 20, 20);
+          doc.setFontSize(10);
+          doc.setFont("helvetica", "normal");
+          doc.setTextColor(100, 100, 100);
+        }
+      } catch (error) {
+        doc.setFontSize(18);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(66, 139, 202);
+        doc.text("SFX PRE-DOUANE", 16, 20);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(100, 100, 100);
+      }
+
+      // TITRE
+      doc.setFontSize(20);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(0, 0, 0);
+      
+      // Titre principal sur 2 lignes avec hiérarchie visuelle
+      doc.setFontSize(18);
+      const titleLine1 = "NOTE DE DÉTAIL GROUPÉE PAR";
+      const titleWidth1 = doc.getTextWidth(titleLine1);
+      doc.text(titleLine1, (297 - titleWidth1) / 2, 16);
+      
+      // Sous-titre avec les critères de groupement
+      doc.setFontSize(13);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(66, 139, 202); // Bleu pour le sous-titre
+      const titleLine2 = "HS Code, Site, Pays d'origine et Régime";
+      const titleWidth2 = doc.getTextWidth(titleLine2);
+      doc.text(titleLine2, (297 - titleWidth2) / 2, 23);
+      
+      // Réinitialiser la couleur
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(20);
+
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(66, 139, 202);
+      doc.text(`DOSSIER :${dossierName}`, 220, 15);
+
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(0, 0, 0);
+      doc.text(
+        `Date d'export: ${new Date().toLocaleDateString("fr-FR", {
+          day: "2-digit",
+          month: "long",
+          year: "numeric",
+        })}`,
+        220,
+        20,
+      );
+      doc.text(
+        `Heure: ${new Date().toLocaleTimeString("fr-FR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        })}`,
+        220,
+        25,
+      );
+
+      // STATISTIQUES
+      const totalPaquetage = notesGrouped.reduce((sum, n) => sum + Number(n.Nbre_Paquetage || 0), 0);
+      const totalPoidsBrut = notesGrouped.reduce((sum, n) => sum + Number(n.Poids_Brut || 0), 0);
+      const totalPoidsNet = notesGrouped.reduce((sum, n) => sum + Number(n.Poids_Net || 0), 0);
+      const totalVolume = notesGrouped.reduce((sum, n) => sum + Number(n.Volume || 0), 0);
+
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const marginLeft = 14;
+      const marginRight = 14;
+      const availableWidth = pageWidth - marginLeft - marginRight;
+      
+      let currentY = 40;
+
+      // INFORMATIONS SUR LA PESÉE
+      doc.setFillColor(66, 139, 202);
+      doc.rect(marginLeft, currentY, availableWidth, 8, 'F');
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(0, 0, 0);
+      doc.text(t.weighingInfo, marginLeft + 3, currentY + 5.5);
+      currentY += 10;
+
+      const cardsPerLine = 4;
+      const cardSpacing = 3;
+      const totalSpacing = cardSpacing * (cardsPerLine - 1);
+      const cardWidth = (availableWidth - totalSpacing) / cardsPerLine;
+      const cardHeight = 12;
+      const cardY = currentY;
+      
+      // Cartes de métriques
+      const metrics = [
+        { label: t.qty, value: totalPaquetage.toFixed(1) },
+        { label: t.grossWeight, value: totalPoidsBrut.toFixed(2) },
+        { label: t.netWeight, value: totalPoidsNet.toFixed(2) },
+        { label: t.volume, value: totalVolume.toFixed(1) }
+      ];
+
+      metrics.forEach((metric, index) => {
+        const cardX = marginLeft + (cardWidth + cardSpacing) * index;
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(cardX, cardY, cardWidth, cardHeight, 1, 1, 'F');
+        doc.setDrawColor(226, 232, 240);
+        doc.roundedRect(cardX, cardY, cardWidth, cardHeight, 1, 1, 'S');
+        
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(100, 116, 139);
+        doc.text(metric.label, cardX + cardWidth / 2, cardY + 3.5, { align: 'center' });
+        
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(30, 41, 59);
+        doc.text(metric.value, cardX + cardWidth / 2, cardY + 9, { align: 'center' });
+      });
+
+      currentY += cardHeight + 10;
+
+      // === SYNTHÈSE DE DÉCLARATION ===
+      // Titre avec style bleu comme les autres sections
+      doc.setFillColor(66, 139, 202);
+      doc.rect(marginLeft, currentY, availableWidth, 8, 'F');
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(0, 0, 0);
+      doc.text(t.declarationSummary, marginLeft + 3, currentY + 5.5);
+      currentY += 10;
+
+      // Afficher "Date de déclaration :" suivi de la date
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(30, 41, 59);
+      doc.text(t.declarationDate, marginLeft, currentY + 5);
+      
+      // Récupérer la date de déclaration du dossier
+      const dateDeclarationFormatted = dateDeclaration 
+        ? dateDeclaration.toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', { day: '2-digit', month: '2-digit', year: 'numeric' })
+        : new Date().toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      
+      // Calculer la position de la date juste après le label
+      const labelWidth = doc.getTextWidth(t.declarationDate + " ");
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(22, 163, 74); // Vert
+      doc.text(dateDeclarationFormatted, marginLeft + labelWidth, currentY + 5);
+
+      currentY += 10;
+
+      // === TABLEAU: TOTAUX PAR RÉGIME ET DEVISE (tableau croisé avec Source) ===
+      // Calculer les totaux par régime et par devise
+      const regimeStats: { [key: string]: { [devise: string]: number } } = {};
+      const deviseStats: { [devise: string]: number } = {};
+      
+      notesGrouped.forEach((note) => {
+        const regime = note.Regime || "Non défini";
+        const devise = note.Code_Devise || "N/A";
+        const valeur = Number(note.Valeur || 0);
+        
+        if (!regimeStats[regime]) {
+          regimeStats[regime] = {};
+        }
+        if (!regimeStats[regime][devise]) {
+          regimeStats[regime][devise] = 0;
+        }
+        regimeStats[regime][devise] += valeur;
+        
+        if (!deviseStats[devise]) {
+          deviseStats[devise] = 0;
+        }
+        deviseStats[devise] += valeur;
+      });
+
+      // Obtenir toutes les devises uniques triées
+      const allDevises = Object.keys(deviseStats).sort();
+      
+      // Calculer le nombre d'occurrences par régime
+      const regimeCount: { [regime: string]: number } = {};
+      notesGrouped.forEach((note) => {
+        const regime = note.Regime || "Non défini";
+        regimeCount[regime] = (regimeCount[regime] || 0) + 1;
+      });
+      
+      // Créer les lignes de données
+      const regimeDeviseDataCross: any[] = [];
+      let grandTotal = 0;
+      let grandTotalConverti = 0;
+      let grandTotalCount = 0;
+      
+      Object.keys(regimeStats).sort().forEach((regime) => {
+        const row: any[] = [regime];
+        
+        // Ajouter le nombre d'occurrences
+        const count = regimeCount[regime] || 0;
+        row.push(count);
+        grandTotalCount += count;
+        
+        let rowTotal = 0;
+        let rowTotalConverti = 0;
+        
+        // Pour chaque devise, ajouter la valeur ou vide
+        allDevises.forEach((devise) => {
+          const valeur = regimeStats[regime][devise] || 0;
+          row.push(valeur > 0 ? formatNumber(valeur) : "-");
+          rowTotal += valeur;
+          
+          // Calculer le total converti avec le taux de change
+          const tauxChange = exchangeRates[devise] || 0;
+          if (tauxChange > 0) {
+            rowTotalConverti += valeur * tauxChange;
+          }
+        });
+        
+        // Ajouter le total converti calculé
+        row.push(formatNumber(rowTotalConverti));
+        grandTotal += rowTotal;
+        grandTotalConverti += rowTotalConverti;
+        regimeDeviseDataCross.push(row);
+      });
+      
+      // Calculer les totaux convertis par devise pour le footer
+      const deviseStatsConverti: { [devise: string]: number } = {};
+      allDevises.forEach((devise) => {
+        const tauxChange = exchangeRates[devise] || 0;
+        deviseStatsConverti[devise] = deviseStats[devise] * tauxChange;
+      });
+      
+      // Calculer les largeurs de colonnes dynamiquement
+      const nbDevises = allDevises.length;
+      const regimeColWidth = availableWidth * 0.15;
+      const countColWidth = availableWidth * 0.08;
+      const totalColWidth = availableWidth * 0.15;
+      const sourceColWidth = availableWidth - regimeColWidth - countColWidth - totalColWidth;
+      const deviseColWidth = sourceColWidth / nbDevises;
+      
+      const columnStyles: any = {
+        0: { cellWidth: regimeColWidth, halign: 'left', fontStyle: 'bold', fillColor: [248, 250, 252] },
+        1: { cellWidth: countColWidth, halign: 'center', fontStyle: 'bold', fillColor: [248, 250, 252] }
+      };
+      
+      // Colonnes des devises (alignées à droite)
+      for (let i = 2; i <= nbDevises + 1; i++) {
+        columnStyles[i] = { cellWidth: deviseColWidth, halign: 'right' };
+      }
+      
+      // Colonne Total XOF
+      columnStyles[nbDevises + 2] = { cellWidth: totalColWidth, halign: 'right', fontStyle: 'bold' };
+
+      // Créer l'en-tête avec style professionnel
+      autoTable(doc, {
+        startY: currentY,
+        head: [
+          [
+            { content: '', styles: { fillColor: [255, 255, 255], lineWidth: 0 } },
+            { content: t.rowCount, styles: { halign: 'center' as const, fillColor: [66, 139, 202], textColor: [255, 255, 255], fontSize: 10, cellPadding: 2 } },
+            ...allDevises,
+            { content: t.totalXOF, styles: { halign: 'center' as const, fillColor: [66, 139, 202], textColor: [255, 255, 255], fontSize: 10, cellPadding: 2 } }
+          ]
+        ],
+        body: regimeDeviseDataCross,
+        theme: "striped",
+        styles: {
+          fontSize: 10,
+          cellPadding: 2,
+          lineColor: [226, 232, 240],
+          lineWidth: 0.5,
+          minCellHeight: 6,
+        },
+        headStyles: {
+          fillColor: [66, 139, 202],
+          textColor: [255, 255, 255],
+          fontStyle: "bold",
+          halign: "center",
+          fontSize: 10,
+          cellPadding: 2,
+          minCellHeight: 6,
+        },
+        alternateRowStyles: {
+          fillColor: [248, 250, 252],
+        },
+        columnStyles: columnStyles,
+        margin: { left: marginLeft, right: marginRight },
+        tableWidth: availableWidth,
+        didParseCell: (data: any) => {
+          if (data.section === 'head' && data.column.index > 1 && data.column.index <= nbDevises + 1) {
+            data.cell.styles.fillColor = [66, 139, 202];
+            data.cell.styles.textColor = [255, 255, 255];
+            data.cell.styles.fontStyle = 'bold';
+            data.cell.styles.fontSize = 10;
+            data.cell.styles.cellPadding = 2;
+          }
+          if (data.section === 'body' && data.column.index === 0) {
+            data.cell.styles.fontStyle = 'bold';
+          }
+          if (data.section === 'body' && data.column.index === 1) {
+            data.cell.styles.fontStyle = 'bold';
+          }
+          if (data.section === 'body' && data.column.index === nbDevises + 2) {
+            data.cell.styles.fontStyle = 'bold';
+          }
+        },
+        foot: [[
+          { content: t.total, styles: { fontStyle: "bold" as const, halign: "right" as const, fontSize: 10, fillColor: [240, 253, 244] as [number, number, number], textColor: [22, 163, 74] as [number, number, number], cellPadding: 2 } },
+          { content: grandTotalCount.toString(), styles: { fontStyle: "bold" as const, halign: "center" as const, fontSize: 10, fillColor: [240, 253, 244] as [number, number, number], textColor: [22, 163, 74] as [number, number, number], cellPadding: 2 } },
+          ...allDevises.map((devise) => ({
+            content: formatNumber(deviseStats[devise]),
+            styles: { fontStyle: "bold" as const, halign: "right" as const, fontSize: 10, fillColor: [240, 253, 244] as [number, number, number], textColor: [22, 163, 74] as [number, number, number], cellPadding: 2 }
+          })),
+          { content: formatNumber(grandTotalConverti), styles: { fontStyle: "bold" as const, halign: "right" as const, fillColor: [240, 253, 244] as [number, number, number], textColor: [22, 163, 74] as [number, number, number], fontSize: 10, cellPadding: 2 } },
+        ]],
+        footStyles: {
+          fillColor: [240, 253, 244],
+          textColor: [22, 163, 74],
+          minCellHeight: 6,
+        },
+      });
+
+      currentY = (doc as any).lastAutoTable.finalY + 8;
+
+      // === TABLEAU TAUX DE CHANGE - Style italique taille 9 ===
+      const tauxChangeData = allDevises.map((devise) => [
+        devise,
+        (exchangeRates[devise] || 0).toFixed(3)
+      ]);
+
+      const tauxTableWidth = availableWidth * 0.25;
+
+      autoTable(doc, {
+        startY: currentY,
+        head: [[{ content: "", styles: { fillColor: [255, 255, 255], lineWidth: 0 } }, t.xof]],
+        body: tauxChangeData,
+        theme: "striped",
+        styles: {
+          fontSize: 9,
+          fontStyle: 'italic',
+          cellPadding: 2,
+          lineColor: [226, 232, 240],
+          lineWidth: 0.5,
+          minCellHeight: 6,
+        },
+        headStyles: {
+          fillColor: [66, 139, 202],
+          textColor: [255, 255, 255],
+          fontStyle: 'italic',
+          halign: "center",
+          fontSize: 9,
+          cellPadding: 2,
+          minCellHeight: 6,
+        },
+        alternateRowStyles: {
+          fillColor: [248, 250, 252],
+        },
+        columnStyles: {
+          0: { cellWidth: tauxTableWidth * 0.4, halign: 'center', fontStyle: 'italic', fillColor: [248, 250, 252], textColor: [30, 41, 59] },
+          1: { cellWidth: tauxTableWidth * 0.6, halign: 'right', fontStyle: 'italic' }
+        },
+        margin: { left: marginLeft, right: marginRight },
+        tableWidth: tauxTableWidth,
+      });
+
+      currentY = (doc as any).lastAutoTable.finalY + 8;
+
+      // Forcer le tableau principal à commencer sur une nouvelle page
+      doc.addPage();
+      currentY = 20;
+
+      // TABLEAU DES DONNÉES GROUPÉES
+      doc.setFillColor(66, 139, 202);
+      doc.rect(marginLeft, currentY, availableWidth, 8, "F");
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "bold");
+      doc.text(t.details, marginLeft + 2, currentY + 5.5);
+      currentY += 10;
+
+      const tableData = notesGrouped.map((note) => [
+        (note.Regroupement_Client || "").substring(0, 15),
+        note.Regime || "",
+        (note.Pays_Origine || "").substring(0, 15),
+        note.HS_Code || "",
+        note.Code_Devise || "",
+        Number(note.Nbre_Paquetage).toFixed(2),
+        Number(note.Qte_Colis || 0).toFixed(2),
+        Number(note.Valeur).toFixed(2),
+        Number(note.Poids_Brut || 0).toFixed(1),
+        Number(note.Poids_Net || 0).toFixed(1),
+        Number(note.Volume).toFixed(1),
+      ]);
+
+      autoTable(doc, {
+        startY: currentY,
+        margin: { left: marginLeft, right: marginRight },
+        tableWidth: availableWidth,
+        head: [
+          [
+            t.grouping,
+            t.regime,
+            t.originCountry,
+            t.hsCode,
+            t.currency,
+            t.nbPackages,
+            t.qteColis,
+            t.value,
+            t.grossWeightCol,
+            t.netWeightCol,
+            t.volumeCol,
+          ],
+        ],
+        body: tableData,
+        styles: {
+          fontSize: 10,
+          cellPadding: 2,
+          lineColor: [200, 200, 200],
+          lineWidth: 0.1,
+          overflow: "linebreak",
+          halign: "left",
+        },
+        headStyles: {
+          fillColor: [66, 139, 202],
+          textColor: [255, 255, 255],
+          fontSize: 11,
+          fontStyle: "bold",
+          halign: "center",
+        },
+        alternateRowStyles: { fillColor: [248, 249, 250] },
+        columnStyles: {
+          1: { halign: "center" },
+          2: { halign: "center" },
+          3: { halign: "center" },
+          4: { halign: "center" },
+          5: { halign: "right" },
+          6: { halign: "right" },
+          7: { halign: "right" },
+          8: { halign: "right" },
+          9: { halign: "right" },
+          10: { halign: "right" },
+        },
+      });
+
+      // PIED DE PAGE
+      const totalPages = doc.internal.pages.length - 1;
+      const pageHeight = doc.internal.pageSize.height;
+
+      doc.setPage(totalPages);
+      doc.setDrawColor(200, 200, 200);
+      doc.line(14, pageHeight - 20, 283, pageHeight - 20);
+
+      doc.setFontSize(9);
+      doc.setTextColor(100, 100, 100);
+      doc.text(t.copyright, 14, pageHeight - 10);
+      doc.text(`${t.page} ${totalPages}/${totalPages}`, 270, pageHeight - 10);
+
+      doc.save(
+        `Note-Details-Grouped-Dossier-${dossierName}-${language}-${new Date().toISOString().split("T")[0]}.pdf`,
+      );
+      toast.success(`Export PDF Simplifié réussi (${language === 'fr' ? 'Français' : 'English'})`);
+    } catch (error) {
+      toast.error("Erreur lors de l'export PDF simplifié");
+      console.error(error);
+    }
+  };
+
   const columns: ColumnDef<any>[] = [
     // 1. Groupement
     {
@@ -1109,6 +1676,16 @@ export const NoteDetailView = ({
                       <DropdownMenuSubContent>
                         <DropdownMenuItem onClick={() => exportToPDF('fr')}>🇫🇷 Français</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => exportToPDF('en')}>🇬🇧 English</DropdownMenuItem>
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger>
+                        <FileText className="w-4 h-4 mr-2" />
+                        PDF Simplifié
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent>
+                        <DropdownMenuItem onClick={() => exportToPDFGrouped('fr')}>🇫🇷 Français</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => exportToPDFGrouped('en')}>🇬🇧 English</DropdownMenuItem>
                       </DropdownMenuSubContent>
                     </DropdownMenuSub>
                     <DropdownMenuItem onClick={exportToCSV}>

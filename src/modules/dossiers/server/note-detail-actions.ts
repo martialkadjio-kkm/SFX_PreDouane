@@ -175,6 +175,30 @@ export async function getNotesDetail(dossierId: number) {
     }
 }
 
+export async function getNotesDetailGrouped(dossierId: number) {
+    try {
+        const notes = await prisma.$queryRaw<any[]>`
+            SELECT * FROM VNotesDetailGroup
+            WHERE ID_Dossier = ${dossierId}
+            ORDER BY Regroupement_Client, Regime, Pays_Origine, HS_Code
+        `;
+        const serializedNotes = JSON.parse(JSON.stringify(notes));
+        const mappedNotes = serializedNotes.map((n: any) => ({
+            ...n,
+            Nbre_Paquetage: n.Nbre_Paquetage,
+            Qte_Colis: n.Qte_Colis,
+            Valeur: n.Valeur,
+            Code_Devise: n.Code_Devise_Note_Detail,
+            Poids_Brut: n.Base_Poids_Brut ?? n.Poids_Brut,
+            Poids_Net: n.Base_Poids_Net ?? n.Poids_Net,
+            Volume: n.Base_Volume ?? n.Volume,
+        }));
+        return { success: true, data: mappedNotes };
+    } catch (error) {
+        return { success: false, error: error instanceof Error ? error.message : "Erreur lors de la récupération" };
+    }
+}
+
 export async function getTauxChangeDossier(dossierId: number) {
     try {
         const dossierConv = await prisma.$queryRaw<any[]>`
