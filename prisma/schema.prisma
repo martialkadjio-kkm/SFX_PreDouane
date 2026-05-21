@@ -899,9 +899,29 @@ view VNotesDetail {
 
     @@map("VNotesDetail")
 }
+
+/// Aggregated note details grouped by Site, Regime, Pays, HS Code, Devise
+/// Used for grouped PDF reports
+view VNotesDetailGroup {
+    idDossier            Int      @map("ID_Dossier")
+    regroupementClient   String   @map("Regroupement_Client") @db.NVarChar(200)
+    regime               String   @map("Regime") @db.NVarChar(10)
+    paysOrigine          String   @map("Pays_Origine") @db.NVarChar(200)
+    hsCode               String?  @map("HS_Code") @db.NVarChar(50)
+    codeDeviseNoteDetail String?  @map("Code_Devise_Note_Detail") @db.NVarChar(5)
+    nbrePaquetage        Decimal  @map("Nbre_Paquetage") @db.Decimal(24, 6)
+    qteColis             Decimal  @map("Qte_Colis") @db.Decimal(24, 6)
+    valeur               Decimal  @map("Valeur") @db.Decimal(24, 6)
+    basePoidsBrut        Decimal  @map("Base_Poids_Brut") @db.Decimal(24, 6)
+    basePoidsNet         Decimal  @map("Base_Poids_Net") @db.Decimal(24, 6)
+    baseVolume           Decimal  @map("Base_Volume") @db.Decimal(24, 6)
+
+    @@map("VNotesDetailGroup")
+}
+
 /// Complete packing details with all related information
 view VColisageDossiers {
-    idColisageDossier        Int      @id @map("ID_Colisage_Dossier")
+    idColisageDossier        Int      @map("ID_Colisage_Dossier")
     idDossier                Int      @map("ID_Dossier")
     hsCode                   String?  @map("HS_Code") @db.NVarChar(50)
     descriptionColis         String   @map("Description_Colis") @db.NVarChar(1000)
