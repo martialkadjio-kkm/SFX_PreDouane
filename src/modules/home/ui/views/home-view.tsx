@@ -25,12 +25,15 @@ import { getDashboardStats, getRecentActivity } from "../../server/actions";
 
 export const HomeView = () => {
     const router = useRouter();
-    const [currentTime, setCurrentTime] = useState(new Date());
+    const [currentTime, setCurrentTime] = useState<Date | null>(null);
     const [stats, setStats] = useState<any>(null);
     const [recentActivity, setRecentActivity] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
+        // Initialiser l'heure côté client uniquement
+        setCurrentTime(new Date());
+        
         const timer = setInterval(() => {
             setCurrentTime(new Date());
         }, 1000);
@@ -104,17 +107,17 @@ export const HomeView = () => {
                             Bienvenue sur SFX Pre-Douane
                         </h1>
                         <p className="text-lg text-gray-600">
-                            Tableau de bord - {currentTime.toLocaleDateString('fr-FR', { 
+                            Tableau de bord{currentTime && ` - ${currentTime.toLocaleDateString('fr-FR', { 
                                 weekday: 'long', 
                                 year: 'numeric', 
                                 month: 'long', 
                                 day: 'numeric' 
-                            })}
+                            })}`}
                         </p>
                     </div>
                     <div className="text-right">
                         <div className="text-2xl font-mono text-blue-600">
-                            {currentTime.toLocaleTimeString('fr-FR')}
+                            {currentTime ? currentTime.toLocaleTimeString('fr-FR') : '--:--:--'}
                         </div>
                         <Badge variant="outline" className="mt-2">
                             <Activity className="w-3 h-3 mr-1" />

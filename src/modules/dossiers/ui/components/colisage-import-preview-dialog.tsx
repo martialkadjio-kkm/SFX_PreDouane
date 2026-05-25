@@ -12,7 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AlertCircle, PackagePlus, PackageCheck } from "lucide-react";
 import { importSelectedColisages } from "../../server/import-colisage-actions";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -161,6 +162,11 @@ export const ColisageImportPreviewDialog = ({
     };
 
     const selectedCount = selectedRows.size;
+    
+    // Séparer les lignes nouvelles et existantes
+    const newRows = editedRows.filter((row) => !existingKeysSet.has(row.rowKey));
+    const existingRows = editedRows.filter((row) => existingKeysSet.has(row.rowKey));
+    
     const newCount = editedRows.filter(
         (row, idx) => selectedRows.has(idx) && !existingKeysSet.has(row.rowKey)
     ).length;
@@ -170,11 +176,11 @@ export const ColisageImportPreviewDialog = ({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-4xl! max-h-[90vh]">
+            <DialogContent className="max-w-6xl max-h-[90vh]">
                 <DialogHeader>
                     <DialogTitle>Aperçu de l'import - {parsedRows.length} ligne(s)</DialogTitle>
                     <DialogDescription>
-                        Sélectionnez les lignes à importer. Les lignes existantes sont marquées en orange.
+                        Sélectionnez les lignes à importer. Utilisez les onglets pour voir les nouveaux colisages et ceux qui existent déjà.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -209,44 +215,89 @@ export const ColisageImportPreviewDialog = ({
                     </div>
                 </div>
 
-                <ScrollArea className="h-[500px] pr-4">
-                    <div className="space-y-2">
-                        {editedRows.length === 0 ? (
-                            <div className="flex items-center justify-center h-32 text-muted-foreground">
-                                <p>Aucune donnée à afficher</p>
+                <Tabs defaultValue="new" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="new" className="flex items-center gap-2">
+                            <PackagePlus className="h-4 w-4" />
+                            Nouveaux colisages ({newRows.length})
+                        </TabsTrigger>
+                        <TabsTrigger value="existing" className="flex items-center gap-2">
+                            <PackageCheck className="h-4 w-4" />
+                            Colisages existants ({existingRows.length})
+                        </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="new" className="mt-4">
+                        <ScrollArea className="h-[450px] pr-4">
+                            <div className="space-y-2">
+                                {newRows.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
+                                        <PackagePlus className="h-12 w-12 mb-2 opacity-50" />
+                                        <p>Aucun nouveau colisage</p>
+                                    </div>
+                                ) : (
+                                    newRows.map((row, idx) => {
+                                        const originalIndex = editedRows.indexOf(row);
+                                        const isSelected = selectedRows.has(originalIndex);
+
+                                        return (
+                                            <EditableColisageCard
+                                                key={originalIndex}
+                                                row={row}
+                                                index={originalIndex}
+                                                isSelected={isSelected}
+                                                isExisting={false}
+                                                onToggle={() => toggleRow(originalIndex)}
+                                                onEdit={() => handleEditRow(originalIndex)}
+                                            />
+                                        );
+                                    })
+                                )}
                             </div>
-                        ) : (
-                            editedRows.map((row, idx) => {
-                                const isExisting = existingKeysSet.has(row.rowKey);
-                                const isSelected = selectedRows.has(idx);
+                        </ScrollArea>
+                    </TabsContent>
 
-                                return (
-                                    <EditableColisageCard
-                                        key={idx}
-                                        row={row}
-                                        index={idx}
-                                        isSelected={isSelected}
-                                        isExisting={isExisting}
-                                        onToggle={() => toggleRow(idx)}
-                                        onEdit={() => handleEditRow(idx)}
-                                    />
-                                );
-                            })
-                        )}
-                    </div>
-                    
-                    <div className="mt-4 pt-4 border-t">
-                        <div className="flex justify-end gap-2">
-                            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isImporting}>
-                                Annuler
-                            </Button>
-                            <Button onClick={handleImport} disabled={isImporting || selectedCount === 0}>
-                                {isImporting ? "Import en cours..." : `Importer ${selectedCount} ligne(s)`}
-                            </Button>
-                        </div>
-                    </div>
-                </ScrollArea>
+                    <TabsContent value="existing" className="mt-4">
+                        <ScrollArea className="h-[450px] pr-4">
+                            <div className="space-y-2">
+                                {existingRows.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
+                                        <PackageCheck className="h-12 w-12 mb-2 opacity-50" />
+                                        <p>Aucun colisage existant</p>
+                                    </div>
+                                ) : (
+                                    existingRows.map((row, idx) => {
+                                        const originalIndex = editedRows.indexOf(row);
+                                        const isSelected = selectedRows.has(originalIndex);
 
+                                        return (
+                                            <EditableColisageCard
+                                                key={originalIndex}
+                                                row={row}
+                                                index={originalIndex}
+                                                isSelected={isSelected}
+                                                isExisting={true}
+                                                onToggle={() => toggleRow(originalIndex)}
+                                                onEdit={() => handleEditRow(originalIndex)}
+                                            />
+                                        );
+                                    })
+                                )}
+                            </div>
+                        </ScrollArea>
+                    </TabsContent>
+                </Tabs>
+
+                <div className="mt-4 pt-4 border-t">
+                    <div className="flex justify-end gap-2">
+                        <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isImporting}>
+                            Annuler
+                        </Button>
+                        <Button onClick={handleImport} disabled={isImporting || selectedCount === 0}>
+                            {isImporting ? "Import en cours..." : `Importer ${selectedCount} ligne(s)`}
+                        </Button>
+                    </div>
+                </div>
             </DialogContent>
 
             {/* Modal d'édition spécialisé pour l'import */}
