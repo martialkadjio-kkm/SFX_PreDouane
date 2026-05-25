@@ -3,8 +3,15 @@
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/modules/auth/server/actions";
+import { GetSqlDateString } from "@/lib/sql-date-helper";
 
-// Récupère les devises utilisées dans le colisage avec leur poids (valeur totale)
+function toDateStr(date: Date): string {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+}
+
 export async function getDevisesColisageDossier(dossierId: number) {
     try {
         const devises = await prisma.$queryRaw<any[]>`
@@ -26,8 +33,6 @@ export async function getDevisesColisageDossier(dossierId: number) {
     }
 }
 
-// Vérifie si une conversion existe à cette date pour l'entité du dossier,
-// et si tous les taux sont disponibles pour la devise cible via fx_EvalTauxChangeDossier
 export async function checkConversionEtTaux(
     dossierId: number,
     dateDeclaration: Date,
@@ -46,12 +51,12 @@ export async function checkConversionEtTaux(
         });
         if (!branche) return { success: false, exists: false, error: "Branche non trouvée" };
 
-        const dateStr = dateDeclaration.toISOString().split("T")[0];
+        const dateStr = toDateStr(dateDeclaration);
         const conversions = await prisma.$queryRaw<any[]>`
             SELECT [ID Convertion]
             FROM TConvertions
             WHERE CAST([Date Convertion] AS DATE) = CAST(${dateStr} AS DATE)
-                AND [Entite] = ${branche.entite}
+                AND ([Entite] = ${branche.entite} OR [Entite] = 0)
         `;
 
         if (conversions.length === 0) {
@@ -60,10 +65,8 @@ export async function checkConversionEtTaux(
 
         const conversionId = conversions[0]["ID Convertion"];
 
-        // Vérifier les taux disponibles via fx_EvalTauxChangeDossier (même logique que la page conversions)
-        const dateISO = dateDeclaration.toISOString().replace("T", " ").slice(0, 23);
         const tauxRows = await prisma.$queryRawUnsafe<any[]>(
-            `DECLARE @d datetime2 = '${dateISO}'; SELECT [ID_Devise],[Code_Devise],[Taux_Change] FROM [dbo].[fx_EvalTauxChangeDossier](${dossierId},${deviseId},@d)`
+            `SELECT [ID_Devise],[Code_Devise],[Taux_Change] FROM [dbo].[fx_EvalTauxChangeDossier](${dossierId},${deviseId},'${dateStr}')`
         );
 
         const manquants = tauxRows.filter((r: any) => r.Taux_Change === null).map((r: any) => r.Code_Devise);
@@ -81,7 +84,6 @@ export async function checkConversionEtTaux(
     }
 }
 
-// Génère la note de détail — appelle pSP_CreerNoteDetail avec les 4 paramètres
 export async function genererNotesDetail(dossierId: number, dateDeclaration: Date, deviseId: number) {
     try {
         const session = await getSession();
@@ -100,24 +102,19 @@ export async function genererNotesDetail(dossierId: number, dateDeclaration: Dat
         });
         if (!branche) return { success: false, error: "Branche non trouvée" };
 
-        const dateStr = dateDeclaration.toISOString().split("T")[0];
+        const dateConvertion = new Date(dateDeclaration);
+        const dateStr = GetSqlDateString(dateConvertion);
         const conversions = await prisma.$queryRaw<any[]>`
             SELECT [ID Convertion], [Date Convertion]
             FROM TConvertions
             WHERE CAST([Date Convertion] AS DATE) = CAST(${dateStr} AS DATE)
-                AND [Entite] = ${branche.entite}
+                AND ([Entite] = ${branche.entite} OR [Entite] = 0)
         `;
         if (conversions.length === 0) return { success: false, error: "Aucune conversion trouvée pour cette date" };
 
-        const dateConversionExacte = conversions[0]["Date Convertion"];
-        const dateConversionDate = dateConversionExacte instanceof Date
-            ? dateConversionExacte
-            : new Date(dateConversionExacte);
-        const dateISO = dateConversionDate.toISOString().replace("T", " ").slice(0, 23);
-
         try {
             await prisma.$executeRawUnsafe(
-                `DECLARE @d datetime2 = '${dateISO}'; EXEC [dbo].[pSP_CreerNoteDetail] @Id_Dossier = ${dossierId}, @DateDeclaration = @d, @Id_DeviseNoteDetail = ${deviseId}`
+                `EXEC [dbo].[pSP_CreerNoteDetail] @Id_Dossier = ${dossierId}, @DateDeclaration = '${dateStr}', @Id_DeviseNoteDetail = ${deviseId}`
             );
         } catch (procError: any) {
             let errorMsg = procError.message || "Erreur inconnue";
@@ -216,10 +213,10 @@ export async function getTauxChangeDossier(dossierId: number) {
         const dateConvertion = dossierConv[0].dateConvertion;
         const deviseNoteDetail = dossierConv[0].deviseNoteDetail;
         const dateConvertionDate = dateConvertion instanceof Date ? dateConvertion : new Date(dateConvertion);
-        const dateISO = dateConvertionDate.toISOString().replace("T", " ").slice(0, 23);
+        const dateStr = GetSqlDateString(dateConvertionDate);
 
         const tauxChange = await prisma.$queryRawUnsafe<any[]>(
-            `DECLARE @d datetime2 = '${dateISO}'; SELECT [ID_Devise], [Code_Devise], [Taux_Change] FROM [dbo].[fx_EvalTauxChangeDossier](${dossierId},${deviseNoteDetail},@d)`
+            `SELECT [ID_Devise], [Code_Devise], [Taux_Change] FROM [dbo].[fx_EvalTauxChangeDossier](${dossierId},${deviseNoteDetail},'${dateStr}')`
         );
         return {
             success: true,

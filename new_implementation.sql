@@ -185,29 +185,30 @@ BEGIN
                                                
                                -- Calcule ajustement Valeur
                                EXEC [dbo].[pSP_CalculeAjustementValeurColisage] @Id_Dossier
-                                               
-                                               -- Ajout de lignes des notes de detail
-                               ;WITH TMP_NOTES_DETAIL_100                           ([Colisage Dossier]
-                                                                               ,[Regime]
-                                                                               ,[Qte Colis]
-                                                                               ,[Valeur]
-                                                                               ,[Nbre Paquetage]
-                                                                               ,[Base Poids Brut]
-                                                                               ,[Base Poids Net]
-                                                                               ,[Base Volume]) AS
 
+                               -- Calcule la valeur totale du colisage convertie en devise note de detail
+                               -- (utilisee pour la repartition proportionnelle des poids/volumes)
+                               Declare @ValeurTotaleColisageND numeric (24,2)=0
+                               SELECT @ValeurTotaleColisageND = SUM((A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur]) * T.[Taux_Change])
+                               FROM TColisageDossiers A
+                               INNER JOIN @TAUX_DEVISES T ON A.[Devise] = T.[ID_Devise]
+                               WHERE A.[Dossier]=@Id_Dossier AND A.[HS Code]<>0
+                                               
+                               -- Ajout de lignes des notes de detail
+                               ;WITH TMP_NOTES_DETAIL_100 ([Colisage Dossier],[Regime],[Qte Colis],[Valeur],[Nbre Paquetage],[Base Poids Brut],[Base Poids Net],[Base Volume]) AS
                                (
                                                --Traitement [Taux Regime]=-2 ==> TTC
                                                SELECT A.[ID Colisage Dossier]
                                                                ,N'TTC'
                                                                ,A.[Qte Colis]
-                                                               ,(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])     
-                                                               ,@NbrePaquetagePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
-                                                               ,@PoidsBrutPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
-                                                               ,@PoidsNetPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
-                                                               ,@VolumePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
+                                                               ,(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur]) * T.[Taux_Change]
+                                                               ,@NbrePaquetagePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur]) * T.[Taux_Change]/@ValeurTotaleColisageND
+                                                               ,@PoidsBrutPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur]) * T.[Taux_Change]/@ValeurTotaleColisageND
+                                                               ,@PoidsNetPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur]) * T.[Taux_Change]/@ValeurTotaleColisageND
+                                                               ,@VolumePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur]) * T.[Taux_Change]/@ValeurTotaleColisageND
                                                FROM [dbo].[TColisageDossiers] A
                                                                INNER JOIN dbo.TRegimesDeclarations B ON A.[Regime Declaration]=B.[ID Regime Declaration]
+                                                               INNER JOIN @TAUX_DEVISES T ON A.[Devise]=T.[ID_Devise]
                                                WHERE ([Dossier]=@Id_Dossier) AND (A.[HS Code]<>0) AND (B.[Taux Regime]=-2)
 
                                                --Traitement [Taux Regime]=-1 ==> 100% TR
@@ -215,13 +216,14 @@ BEGIN
                                                SELECT A.[ID Colisage Dossier]
                                                                ,N'100% TR'
                                                                ,A.[Qte Colis]
-                                                               ,(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])     
-                                                               ,@NbrePaquetagePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
-                                                               ,@PoidsBrutPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
-                                                               ,@PoidsNetPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
-                                                               ,@VolumePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
+                                                               ,(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur]) * T.[Taux_Change]
+                                                               ,@NbrePaquetagePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur]) * T.[Taux_Change]/@ValeurTotaleColisageND
+                                                               ,@PoidsBrutPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur]) * T.[Taux_Change]/@ValeurTotaleColisageND
+                                                               ,@PoidsNetPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur]) * T.[Taux_Change]/@ValeurTotaleColisageND
+                                                               ,@VolumePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur]) * T.[Taux_Change]/@ValeurTotaleColisageND
                                                FROM [dbo].[TColisageDossiers] A
                                                                INNER JOIN dbo.TRegimesDeclarations B ON A.[Regime Declaration]=B.[ID Regime Declaration]
+                                                               INNER JOIN @TAUX_DEVISES T ON A.[Devise]=T.[ID_Devise]
                                                WHERE ([Dossier]=@Id_Dossier) AND (A.[HS Code]<>0) AND (B.[Taux Regime]=-1)
 
                                                --Traitement [Taux Regime]=0 ==> EXO
@@ -229,13 +231,14 @@ BEGIN
                                                SELECT A.[ID Colisage Dossier]
                                                                ,N'EXO'
                                                                ,A.[Qte Colis]
-                                                               ,(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])     
-                                                               ,@NbrePaquetagePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
-                                                               ,@PoidsBrutPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
-                                                               ,@PoidsNetPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
-                                                               ,@VolumePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
+                                                               ,(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur]) * T.[Taux_Change]
+                                                               ,@NbrePaquetagePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur]) * T.[Taux_Change]/@ValeurTotaleColisageND
+                                                               ,@PoidsBrutPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur]) * T.[Taux_Change]/@ValeurTotaleColisageND
+                                                               ,@PoidsNetPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur]) * T.[Taux_Change]/@ValeurTotaleColisageND
+                                                               ,@VolumePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur]) * T.[Taux_Change]/@ValeurTotaleColisageND
                                                FROM [dbo].[TColisageDossiers] A
                                                                INNER JOIN dbo.TRegimesDeclarations B ON A.[Regime Declaration]=B.[ID Regime Declaration]
+                                                               INNER JOIN @TAUX_DEVISES T ON A.[Devise]=T.[ID_Devise]
                                                WHERE ([Dossier]=@Id_Dossier) AND (A.[HS Code]<>0) AND (B.[Taux Regime]=0)
 
                                                --Traitement [Taux Regime]=1 ==> 100% DC
@@ -243,24 +246,26 @@ BEGIN
                                                SELECT A.[ID Colisage Dossier]
                                                                ,N'100% DC'
                                                                ,A.[Qte Colis]
-                                                               ,(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])     
-                                                               ,@NbrePaquetagePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
-                                                               ,@PoidsBrutPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
-                                                               ,@PoidsNetPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
-                                                               ,@VolumePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])/@ValeurTotaleColisage
+                                                               ,(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur]) * T.[Taux_Change]
+                                                               ,@NbrePaquetagePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur]) * T.[Taux_Change]/@ValeurTotaleColisageND
+                                                               ,@PoidsBrutPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur]) * T.[Taux_Change]/@ValeurTotaleColisageND
+                                                               ,@PoidsNetPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur]) * T.[Taux_Change]/@ValeurTotaleColisageND
+                                                               ,@VolumePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur]) * T.[Taux_Change]/@ValeurTotaleColisageND
                                                FROM [dbo].[TColisageDossiers] A
                                                                INNER JOIN dbo.TRegimesDeclarations B ON A.[Regime Declaration]=B.[ID Regime Declaration]
+                                                               INNER JOIN @TAUX_DEVISES T ON A.[Devise]=T.[ID_Devise]
                                                WHERE ([Dossier]=@Id_Dossier) AND (A.[HS Code]<>0) AND (B.[Taux Regime]=1)
                                ),
 
                                                --Traitement DC=x% x in ]0%,100%[ ==> DC RATIO
-                              CTE_VALEUR_GLOBALE  AS
+                              CTE_VALEUR_GLOBALE AS
                                (
                                                SELECT A.[ID Colisage Dossier] AS [Colisage Dossier]
-                                                               ,A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur] AS [Valeur Globale]
+                                                               ,(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur]) * T.[Taux_Change] AS [Valeur Globale]
                                                                ,B.[Taux Regime]
                                                FROM [dbo].[TColisageDossiers] A
                                                                INNER JOIN dbo.TRegimesDeclarations B ON A.[Regime Declaration]=B.[ID Regime Declaration]
+                                                               INNER JOIN @TAUX_DEVISES T ON A.[Devise]=T.[ID_Devise]
                                                WHERE ([Dossier]=@Id_Dossier) AND (A.[HS Code]<>0) AND (B.[Taux Regime]>0 AND B.[Taux Regime]<1)
                                ),
                                CTE_VALEUR_DC AS 
@@ -271,35 +276,28 @@ BEGIN
                                                ,ROUND([Valeur Globale]*[Taux Regime],@RoundDigit) AS [Valeur DC]
                                                FROM CTE_VALEUR_GLOBALE
                                ),
-                               TMP_NOTES_DETAIL_RATIO                    ([Colisage Dossier]
-                                                                               ,[Regime]
-                                                                               ,[Qte Colis]
-                                                                               ,[Valeur]
-                                                                               ,[Nbre Paquetage]
-                                                                               ,[Base Poids Brut]
-                                                                               ,[Base Poids Net]
-                                                                               ,[Base Volume]) AS
+                               TMP_NOTES_DETAIL_RATIO ([Colisage Dossier],[Regime],[Qte Colis],[Valeur],[Nbre Paquetage],[Base Poids Brut],[Base Poids Net],[Base Volume]) AS
                                (
                                                                -- Cas DC
                                                                SELECT A.[ID Colisage Dossier]
                                                                                ,FORMAT(B.[Taux Regime],'P') + N' DC'
                                                                                ,A.[Qte Colis]*B.[Taux Regime]
-                                                                               ,B.[Valeur DC]                  -- La valeur doit integrer l'ajustement
-                                                                               ,@NbrePaquetagePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])*B.[Taux Regime]/@ValeurTotaleColisage
-                                                                               ,@PoidsBrutPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])*B.[Taux Regime]/@ValeurTotaleColisage
-                                                                               ,@PoidsNetPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])*B.[Taux Regime]/@ValeurTotaleColisage
-                                                                               ,@VolumePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])*B.[Taux Regime]/@ValeurTotaleColisage
+                                                                               ,B.[Valeur DC]
+                                                                               ,@NbrePaquetagePesee*B.[Valeur Globale]*B.[Taux Regime]/@ValeurTotaleColisageND
+                                                                               ,@PoidsBrutPesee*B.[Valeur Globale]*B.[Taux Regime]/@ValeurTotaleColisageND
+                                                                               ,@PoidsNetPesee*B.[Valeur Globale]*B.[Taux Regime]/@ValeurTotaleColisageND
+                                                                               ,@VolumePesee*B.[Valeur Globale]*B.[Taux Regime]/@ValeurTotaleColisageND
                                                                FROM [dbo].[TColisageDossiers] A INNER JOIN CTE_VALEUR_DC B ON A.[ID Colisage Dossier]=B.[Colisage Dossier]
                                                                -- Cas TR
                                                                UNION ALL 
                                                                SELECT A.[ID Colisage Dossier]
-                                                                               ,FORMAT(1-B.[Taux Regime],'P')  + N'TR'
+                                                                               ,FORMAT(1-B.[Taux Regime],'P') + N'TR'
                                                                                ,A.[Qte Colis]*(1-B.[Taux Regime])
-                                                                               ,B.[Valeur Globale]-B.[Valeur DC]                         -- La valeur doit integrer l'ajustement
-                                                                               ,@NbrePaquetagePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])*(1-B.[Taux Regime])/@ValeurTotaleColisage
-                                                                               ,@PoidsBrutPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])*(1-B.[Taux Regime])/@ValeurTotaleColisage
-                                                                               ,@PoidsNetPesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])*(1-B.[Taux Regime])/@ValeurTotaleColisage
-                                                                               ,@VolumePesee*(A.[Qte Colis]*A.[Prix Unitaire Colis] + A.[Ajustement Valeur])*(1-B.[Taux Regime])/@ValeurTotaleColisage
+                                                                               ,B.[Valeur Globale]-B.[Valeur DC]
+                                                                               ,@NbrePaquetagePesee*B.[Valeur Globale]*(1-B.[Taux Regime])/@ValeurTotaleColisageND
+                                                                               ,@PoidsBrutPesee*B.[Valeur Globale]*(1-B.[Taux Regime])/@ValeurTotaleColisageND
+                                                                               ,@PoidsNetPesee*B.[Valeur Globale]*(1-B.[Taux Regime])/@ValeurTotaleColisageND
+                                                                               ,@VolumePesee*B.[Valeur Globale]*(1-B.[Taux Regime])/@ValeurTotaleColisageND
                                                                FROM [dbo].[TColisageDossiers] A INNER JOIN CTE_VALEUR_DC B ON A.[ID Colisage Dossier]=B.[Colisage Dossier]
                                                )
 
