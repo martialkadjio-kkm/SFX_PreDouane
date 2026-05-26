@@ -176,7 +176,7 @@ export const ColisageImportPreviewDialog = ({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-6xl max-h-[90vh]">
+            <DialogContent className="max-w-3xl! max-h-[90vh]">
                 <DialogHeader>
                     <DialogTitle>Aperçu de l'import - {parsedRows.length} ligne(s)</DialogTitle>
                     <DialogDescription>
