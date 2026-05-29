@@ -151,7 +151,7 @@ export async function supprimerNotesDetail(dossierId: number) {
 export async function getNotesDetail(dossierId: number) {
     try {
         const notes = await prisma.$queryRaw<any[]>`
-            SELECT * FROM VNotesDetail
+            SELECT * FROM WNotesDetail
             WHERE ID_Dossier = ${dossierId}
             ORDER BY Regroupement_Client, Regime
         `;
@@ -161,6 +161,8 @@ export async function getNotesDetail(dossierId: number) {
             Nbre_Paquetage: n.Nbre_Paquetage,
             Qte_Colis: n.Qte_Colis,
             Valeur: n.Valeur,
+            Valeur0: n.Valeur0,
+            Code_Devise_Colis: n.Code_Devise_Colis,
             Code_Devise: n.Code_Devise_Note_Detail,
             Poids_Brut: n.Base_Poids_Brut ?? n.Poids_Brut,
             Poids_Net: n.Base_Poids_Net ?? n.Poids_Net,
@@ -175,7 +177,7 @@ export async function getNotesDetail(dossierId: number) {
 export async function getNotesDetailGrouped(dossierId: number) {
     try {
         const notes = await prisma.$queryRaw<any[]>`
-            SELECT * FROM VNotesDetailGroup
+            SELECT * FROM WNotesDetailGroup
             WHERE ID_Dossier = ${dossierId}
             ORDER BY Regroupement_Client, Regime, Pays_Origine, HS_Code
         `;
@@ -185,6 +187,8 @@ export async function getNotesDetailGrouped(dossierId: number) {
             Nbre_Paquetage: n.Nbre_Paquetage,
             Qte_Colis: n.Qte_Colis,
             Valeur: n.Valeur,
+            Valeur0: n.Valeur0,
+            Code_Devise_Colis: n.Code_Devise_Colis,
             Code_Devise: n.Code_Devise_Note_Detail,
             Poids_Brut: n.Base_Poids_Brut ?? n.Poids_Brut,
             Poids_Net: n.Base_Poids_Net ?? n.Poids_Net,
@@ -192,7 +196,7 @@ export async function getNotesDetailGrouped(dossierId: number) {
         }));
         return { success: true, data: mappedNotes };
     } catch (error) {
-        return { success: false, error: error instanceof Error ? error.message : "Erreur lors de la récupération" };
+        return { success: false, error: error instanceof Error ? error.message : "Erreur lors de la récupération des données groupées" };
     }
 }
 

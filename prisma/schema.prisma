@@ -908,7 +908,7 @@ view VNotesDetailGroup {
     regime               String   @map("Regime") @db.NVarChar(10)
     paysOrigine          String   @map("Pays_Origine") @db.NVarChar(200)
     hsCode               String?  @map("HS_Code") @db.NVarChar(50)
-    codeDeviseNoteDetail String?  @map("Code_Devise_Note_Detail") @db.NVarChar(5)
+    codeDevise           String?  @map("Code_Devise") @db.NVarChar(5)
     nbrePaquetage        Decimal  @map("Nbre_Paquetage") @db.Decimal(24, 6)
     qteColis             Decimal  @map("Qte_Colis") @db.Decimal(24, 6)
     valeur               Decimal  @map("Valeur") @db.Decimal(24, 6)
@@ -917,6 +917,52 @@ view VNotesDetailGroup {
     baseVolume           Decimal  @map("Base_Volume") @db.Decimal(24, 6)
 
     @@map("VNotesDetailGroup")
+}
+
+/// Complete note details with both currencies (colis and note detail)
+/// Used for detailed reports with currency conversion
+view WNotesDetail {
+    idDossier                Int      @map("ID_Dossier")
+    idColisageDossier        Int      @map("ID_Colisage_Dossier")
+    hsCode                   String?  @map("HS_Code") @db.NVarChar(50)
+    paysOrigine              String   @map("Pays_Origine") @db.NVarChar(200)
+    libelleRegimeDouanier    String?  @map("Libelle_Regime_Douanier") @db.NVarChar(200)
+    libelleRegimeDeclaration String?  @map("Libelle_Regime_Declaration") @db.NVarChar(200)
+    regroupementClient       String   @map("Regroupement_Client") @db.NVarChar(200)
+    regime                   String   @map("Regime") @db.NVarChar(10)
+    codeDeviseColis          String?  @map("Code_Devise_Colis") @db.NVarChar(5)
+    valeur0                  Decimal  @map("Valeur0") @db.Decimal(24, 6)
+    codeDeviseNoteDetail     String?  @map("Code_Devise_Note_Detail") @db.NVarChar(5)
+    valeur                   Decimal  @map("Valeur") @db.Decimal(24, 6)
+    nbrePaquetage            Decimal  @map("Nbre_Paquetage") @db.Decimal(24, 6)
+    qteColis                 Decimal  @map("Qte_Colis") @db.Decimal(24, 6)
+    basePoidsBrut            Decimal  @map("Base_Poids_Brut") @db.Decimal(24, 6)
+    basePoidsNet             Decimal  @map("Base_Poids_Net") @db.Decimal(24, 6)
+    baseVolume               Decimal  @map("Base_Volume") @db.Decimal(24, 6)
+
+    @@map("WNotesDetail")
+}
+
+/// Grouped note details with both currencies (colis and note detail)
+/// Used for grouped reports with currency conversion
+/// Groups by: Regroupement_Client, Regime, Pays_Origine, HS_Code, Code_Devise_Colis
+view WNotesDetailGroup {
+    idDossier            Int      @map("ID_Dossier")
+    regroupementClient   String   @map("Regroupement_Client") @db.NVarChar(200)
+    regime               String   @map("Regime") @db.NVarChar(10)
+    paysOrigine          String   @map("Pays_Origine") @db.NVarChar(200)
+    hsCode               String?  @map("HS_Code") @db.NVarChar(50)
+    codeDeviseColis      String?  @map("Code_Devise_Colis") @db.NVarChar(5)
+    codeDeviseNoteDetail String?  @map("Code_Devise_Note_Detail") @db.NVarChar(5)
+    valeur0              Decimal  @map("Valeur0") @db.Decimal(24, 6)
+    valeur               Decimal  @map("Valeur") @db.Decimal(24, 6)
+    nbrePaquetage        Decimal  @map("Nbre_Paquetage") @db.Decimal(24, 6)
+    qteColis             Decimal  @map("Qte_Colis") @db.Decimal(24, 6)
+    basePoidsBrut        Decimal  @map("Base_Poids_Brut") @db.Decimal(24, 6)
+    basePoidsNet         Decimal  @map("Base_Poids_Net") @db.Decimal(24, 6)
+    baseVolume           Decimal  @map("Base_Volume") @db.Decimal(24, 6)
+
+    @@map("WNotesDetailGroup")
 }
 
 /// Complete packing details with all related information

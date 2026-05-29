@@ -778,19 +778,31 @@ export class ColisagePDFReportV2 {
       const mainTableFinalY = (this.doc as any).lastAutoTable.finalY;
 
       // === NOUVEAU TABLEAU : DEVISES ET ROWS COUNT (À DROITE) ===
-      // Calculer les totaux par devise
-      const deviseCountMap = new Map<string, number>();
+      // Calculer les totaux par devise (count ET somme)
+      const deviseStatsMap = new Map<string, { count: number; sum: number }>();
       colisages.forEach(c => {
         const devise = c.Code_Devise || 'N/A';
-        deviseCountMap.set(devise, (deviseCountMap.get(devise) || 0) + 1);
+        const valeur = Number(c.Qte_Colis || 0) * Number(c.Prix_Unitaire_Colis || 0);
+        
+        if (!deviseStatsMap.has(devise)) {
+          deviseStatsMap.set(devise, { count: 0, sum: 0 });
+        }
+        
+        const stats = deviseStatsMap.get(devise)!;
+        stats.count += 1;
+        stats.sum += valeur;
       });
 
       // Préparer les données du tableau des devises
       const deviseTableData: any[] = [];
-      Array.from(deviseCountMap.entries())
+      Array.from(deviseStatsMap.entries())
         .sort(([a], [b]) => a.localeCompare(b))
-        .forEach(([devise, count]) => {
-          deviseTableData.push([devise, count.toString()]);
+        .forEach(([devise, stats]) => {
+          deviseTableData.push([
+            devise, 
+            stats.count.toString(),
+            this.formatNumber(stats.sum)
+          ]);
         });
 
       // Position du nouveau tableau (à droite du premier)
@@ -799,13 +811,15 @@ export class ColisagePDFReportV2 {
       // Traductions pour les en-têtes du nouveau tableau
       const deviseHeader = this.language === 'fr' ? 'Devises' : 'Currencies';
       const rowsCountHeader = this.language === 'fr' ? 'Rows Count' : 'Rows Count';
+      const sumHeader = this.language === 'fr' ? 'Somme' : 'Sum';
 
       autoTable(this.doc, {
         startY: this.currentY,
         head: [
           [
             { content: deviseHeader, styles: { halign: 'center' as const, fillColor: [66, 139, 202] as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 11, cellPadding: 2 } },
-            { content: rowsCountHeader, styles: { halign: 'center' as const, fillColor: [66, 139, 202] as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 11, cellPadding: 2 } }
+            { content: rowsCountHeader, styles: { halign: 'center' as const, fillColor: [66, 139, 202] as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 11, cellPadding: 2 } },
+            { content: sumHeader, styles: { halign: 'center' as const, fillColor: [66, 139, 202] as [number, number, number], textColor: [255, 255, 255] as [number, number, number], fontSize: 11, cellPadding: 2 } }
           ]
         ],
         body: deviseTableData,
@@ -836,8 +850,9 @@ export class ColisagePDFReportV2 {
           fillColor: [248, 250, 252]
         },
         columnStyles: {
-          0: { cellWidth: sideTableWidth * 0.6, halign: 'center', fontStyle: 'bold', fillColor: [248, 250, 252] },
-          1: { cellWidth: sideTableWidth * 0.4, halign: 'center', fontStyle: 'bold' }
+          0: { cellWidth: sideTableWidth * 0.3, halign: 'center', fontStyle: 'bold', fillColor: [248, 250, 252] },
+          1: { cellWidth: sideTableWidth * 0.3, halign: 'center', fontStyle: 'bold' },
+          2: { cellWidth: sideTableWidth * 0.4, halign: 'right', fontStyle: 'bold' }
         },
         margin: { left: sideTableX, right: this.margin },
         tableWidth: sideTableWidth,
