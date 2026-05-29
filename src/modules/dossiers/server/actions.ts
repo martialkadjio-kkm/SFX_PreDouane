@@ -298,9 +298,6 @@ export async function getAllTypesDossiers() {
 export async function getAllSensTrafic() {
     try {
         const sens = await prisma.tSensTrafic.findMany({
-            where: {
-                id: { gt: 0 } // Exclure les valeurs système
-            },
             select: {
                 id: true,
                 libelle: true,
@@ -320,9 +317,6 @@ export async function getAllSensTrafic() {
 export async function getAllModesTransport() {
     try {
         const modes = await prisma.tModesTransport.findMany({
-            where: {
-                id: { gt: 0 } // Exclure les valeurs système
-            },
             select: {
                 id: true,
                 libelle: true,

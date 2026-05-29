@@ -84,6 +84,7 @@ export async function seedReferenceData(prisma: PrismaClient, sessionId: number)
     if (!sensImport) {
         sensImport = await prisma.tSensTrafic.create({
             data: {
+                id: 'I',
                 libelle: 'Import',
                 session: sessionId,
                 dateCreation: new Date(),
@@ -97,6 +98,7 @@ export async function seedReferenceData(prisma: PrismaClient, sessionId: number)
     if (!sensExport) {
         sensExport = await prisma.tSensTrafic.create({
             data: {
+                id: 'E',
                 libelle: 'Export',
                 session: sessionId,
                 dateCreation: new Date(),
@@ -112,6 +114,7 @@ export async function seedReferenceData(prisma: PrismaClient, sessionId: number)
     if (!modeAerien) {
         modeAerien = await prisma.tModesTransport.create({
             data: {
+                id: 'A',
                 libelle: 'Aérien',
                 session: sessionId,
                 dateCreation: new Date(),
@@ -125,6 +128,7 @@ export async function seedReferenceData(prisma: PrismaClient, sessionId: number)
     if (!modeMaritime) {
         modeMaritime = await prisma.tModesTransport.create({
             data: {
+                id: 'M',
                 libelle: 'Maritime',
                 session: sessionId,
                 dateCreation: new Date(),
@@ -143,6 +147,7 @@ export async function seedReferenceData(prisma: PrismaClient, sessionId: number)
                 libelle: 'Import Aérien',
                 sensTrafic: sensImport.id,
                 modeTransport: modeAerien.id,
+                entite: 0,
                 session: sessionId,
                 dateCreation: new Date(),
             },
@@ -158,6 +163,7 @@ export async function seedReferenceData(prisma: PrismaClient, sessionId: number)
                 libelle: 'Export Maritime',
                 sensTrafic: sensExport.id,
                 modeTransport: modeMaritime.id,
+                entite: 0,
                 session: sessionId,
                 dateCreation: new Date(),
             },

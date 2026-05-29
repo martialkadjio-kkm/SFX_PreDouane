@@ -24,6 +24,7 @@ export async function createModeTransport(data: TModesTransportCreate) {
 
         const modeTransport = await prisma.tModesTransport.create({
             data: {
+                id: validatedData.libelle.charAt(0).toUpperCase(), // Prendre la première lettre du libellé
                 libelle: validatedData.libelle,
                 session: parseInt(session.user.id),
                 dateCreation: new Date(),
@@ -43,7 +44,7 @@ export async function createModeTransport(data: TModesTransportCreate) {
 export async function getModeTransportById(id: string) {
     try {
         const modeTransport = await prisma.tModesTransport.findUnique({
-            where: { id: parseInt(id) },
+            where: { id: id },
         });
 
         if (!modeTransport) {
@@ -107,7 +108,7 @@ export async function updateModeTransport(id: string, data: TModesTransportUpdat
         const validatedData = TModesTransportUpdateSchema.parse(data);
 
         const modeTransport = await prisma.tModesTransport.update({
-            where: { id: parseInt(id) },
+            where: { id: id },
             data: {
                 ...(validatedData.libelle && { libelle: validatedData.libelle }),
             },
@@ -127,7 +128,7 @@ export async function updateModeTransport(id: string, data: TModesTransportUpdat
 export async function deleteModeTransport(id: string) {
     try {
         const modeTransport = await prisma.tModesTransport.delete({
-            where: { id: parseInt(id) },
+            where: { id: id },
         });
 
         revalidatePath("/modes-transport");

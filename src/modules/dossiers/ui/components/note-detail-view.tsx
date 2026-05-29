@@ -186,7 +186,7 @@ export const NoteDetailView = ({
 
       // Appliquer le regroupement par régime pour l'export
       const groupedNotes = groupNotesByRegime(notes);
-      const exportData = groupedNotes.map((note) => ({
+      const exportData = groupedNotes.map((note: any) => ({
         Groupement: note.Regroupement_Client || "",
         "Pays d'origine": note.Pays_Origine || "",
         "HS Code": note.HS_Code || "",
@@ -244,7 +244,7 @@ export const NoteDetailView = ({
 
       // Appliquer le regroupement par régime pour l'export
       const groupedNotes = groupNotesByRegime(notes);
-      const rows = groupedNotes.map((note) => [
+      const rows = groupedNotes.map((note: any) => [
         `"${(note.Regroupement_Client || "").replace(/"/g, '""')}"`,
         `"${(note.Pays_Origine || "").replace(/"/g, '""')}"`,
         note.HS_Code || "",
@@ -469,7 +469,7 @@ export const NoteDetailView = ({
       const regimeStats: { [key: string]: { [devise: string]: number } } = {};
       const deviseStats: { [devise: string]: number } = {};
       
-      notes.forEach((note) => {
+      notes.forEach((note: any) => {
         const regime = note.Regime || "Non défini";
         const devise = note.Code_Devise || "N/A";
         const valeur = Number(note.Valeur || 0);
@@ -619,7 +619,7 @@ export const NoteDetailView = ({
       
       // Calculer le nombre d'occurrences par régime
       const regimeCount: { [regime: string]: number } = {};
-      notes.forEach((note) => {
+      notes.forEach((note: any) => {
         const regime = note.Regime || "Non défini";
         regimeCount[regime] = (regimeCount[regime] || 0) + 1;
       });
@@ -815,7 +815,7 @@ export const NoteDetailView = ({
 
       // Appliquer le regroupement par régime pour l'export PDF
       const groupedNotes = groupNotesByRegime(notes);
-      const tableData = groupedNotes.map((note) => [
+      const tableData = groupedNotes.map((note: any) => [
         (note.Regroupement_Client || "").substring(0, 15),
         (note.Pays_Origine || "").substring(0, 15),
         note.HS_Code || "",
@@ -1091,10 +1091,10 @@ export const NoteDetailView = ({
       );
 
       // STATISTIQUES
-      const totalPaquetage = notesGrouped.reduce((sum, n) => sum + Number(n.Nbre_Paquetage || 0), 0);
-      const totalPoidsBrut = notesGrouped.reduce((sum, n) => sum + Number(n.Poids_Brut || 0), 0);
-      const totalPoidsNet = notesGrouped.reduce((sum, n) => sum + Number(n.Poids_Net || 0), 0);
-      const totalVolume = notesGrouped.reduce((sum, n) => sum + Number(n.Volume || 0), 0);
+      const totalPaquetage = notesGrouped.reduce((sum: number, n: any) => sum + Number(n.Nbre_Paquetage || 0), 0);
+      const totalPoidsBrut = notesGrouped.reduce((sum: number, n: any) => sum + Number(n.Poids_Brut || 0), 0);
+      const totalPoidsNet = notesGrouped.reduce((sum: number, n: any) => sum + Number(n.Poids_Net || 0), 0);
+      const totalVolume = notesGrouped.reduce((sum: number, n: any) => sum + Number(n.Volume || 0), 0);
 
       const pageWidth = doc.internal.pageSize.getWidth();
       const marginLeft = 14;
@@ -1181,7 +1181,7 @@ export const NoteDetailView = ({
       const regimeStats: { [key: string]: { [devise: string]: number } } = {};
       const deviseStats: { [devise: string]: number } = {};
       
-      notesGrouped.forEach((note) => {
+      notesGrouped.forEach((note: any) => {
         const regime = note.Regime || "Non défini";
         const devise = note.Code_Devise || "N/A";
         const valeur = Number(note.Valeur || 0);
@@ -1205,7 +1205,7 @@ export const NoteDetailView = ({
       
       // Calculer le nombre d'occurrences par régime
       const regimeCount: { [regime: string]: number } = {};
-      notesGrouped.forEach((note) => {
+      notesGrouped.forEach((note: any) => {
         const regime = note.Regime || "Non défini";
         regimeCount[regime] = (regimeCount[regime] || 0) + 1;
       });
@@ -1402,7 +1402,7 @@ export const NoteDetailView = ({
       doc.text(t.details, marginLeft + 2, currentY + 5.5);
       currentY += 10;
 
-      const tableData = notesGrouped.map((note) => [
+      const tableData = notesGrouped.map((note: any) => [
         (note.Regroupement_Client || "").substring(0, 15),
         note.Regime || "",
         (note.Pays_Origine || "").substring(0, 15),

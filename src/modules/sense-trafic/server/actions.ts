@@ -20,6 +20,7 @@ export async function createSenseTrafic(data: any) {
 
         const sense = await prisma.tSensTrafic.create({
             data: {
+                id: data.libelle.charAt(0).toUpperCase(), // Prendre la première lettre du libellé
                 libelle: data.libelle,
                 session: parseInt(session.user.id),
                 dateCreation: new Date(),
@@ -38,16 +39,15 @@ export async function createSenseTrafic(data: any) {
  */
 export async function getSenseTraficById(id: string) {
     try {
-        const senses = await prisma.$queryRaw<any[]>`
-      SELECT * FROM VSensTrafic
-      WHERE ID_Sens_Trafic = ${parseInt(id)}
-    `;
+        const sense = await prisma.tSensTrafic.findUnique({
+            where: { id: id }
+        });
 
-        if (!senses || senses.length === 0) {
+        if (!sense) {
             return { success: false, error: 'Sens de trafic non trouvé' };
         }
 
-        return { success: true, data: senses[0] };
+        return { success: true, data: sense };
     } catch (error) {
         return { success: false, error };
     }
@@ -96,7 +96,7 @@ export async function getAllSenseTrafic(
 export async function updateSenseTrafic(id: string, data: any) {
     try {
         const sense = await prisma.tSensTrafic.update({
-            where: { id: parseInt(id) },
+            where: { id: id },
             data: {
                 ...(data.libelle && { libelle: data.libelle }),
             },
@@ -116,7 +116,7 @@ export async function updateSenseTrafic(id: string, data: any) {
 export async function deleteSenseTrafic(id: string) {
     try {
         const sense = await prisma.tSensTrafic.delete({
-            where: { id: parseInt(id) },
+            where: { id: id },
         });
 
         revalidatePath("/sense-trafic");

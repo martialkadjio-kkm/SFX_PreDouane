@@ -48,9 +48,7 @@ export async function getColisagesDossier(dossierId: number) {
             Poids_Net: c.poidsNet,
             Volume: c.volume,
             Pays_Origine: c.paysOrigine,
-            ID_Regime_Declaration: c.idRegimeDeclaration,
-            ID_Regime_Douanier: c.idRegimeDouanier,
-            Libelle_Regime_Declaration: c.libelleRegimeDeclaration, // Afficher le libellé de déclaration
+            Libelle_Regime_Declaration: c.libelleRegimeDeclaration,
             Regroupement_Client: c.regroupementClient,
             UploadKey: uploadKeyMap.get(c.idColisageDossier) || null, // Récupéré depuis TColisageDossiers
             Date_Creation: c.dateCreation,
@@ -104,9 +102,7 @@ export async function getColisageById(id: number) {
             Poids_Net: colisage.poidsNet,
             Volume: colisage.volume,
             Pays_Origine: colisage.paysOrigine,
-            ID_Regime_Declaration: colisage.idRegimeDeclaration,
-            ID_Regime_Douanier: colisage.idRegimeDouanier,
-            Libelle_Regime_Declaration: colisage.libelleRegimeDeclaration, // Afficher le libellé de déclaration
+            Libelle_Regime_Declaration: colisage.libelleRegimeDeclaration,
             Regroupement_Client: colisage.regroupementClient,
             UploadKey: uploadKeyData?.uploadKey || null, // Récupéré depuis TColisageDossiers
             Date_Creation: colisage.dateCreation,
@@ -645,9 +641,7 @@ export async function getColisageForEdit(id: number) {
             Poids_Net: colisage.poidsNet,
             Volume: colisage.volume,
             Pays_Origine: colisage.paysOrigine,
-            ID_Regime_Declaration: colisage.idRegimeDeclaration,
-            ID_Regime_Douanier: colisage.idRegimeDouanier,
-            Libelle_Regime_Declaration: colisage.libelleRegimeDeclaration, // Afficher le libellé de déclaration
+            Libelle_Regime_Declaration: colisage.libelleRegimeDeclaration,
             Regroupement_Client: colisage.regroupementClient,
             UploadKey: uploadKeyData?.uploadKey || null, // Récupéré depuis TColisageDossiers
             Date_Creation: colisage.dateCreation,
@@ -704,7 +698,7 @@ export async function getColisageForEdit(id: number) {
             hscodeId: serializedColisage.ID_HS_Code?.toString() || null,
             deviseId: serializedColisage.ID_Devise?.toString() || undefined,
             paysOrigineId: serializedColisage.ID_Pays_Origine?.toString() || undefined,
-            regimeDeclarationId: serializedColisage.ID_Regime_Declaration?.toString() || null,
+            regimeDeclarationId: null,
         };
 
         return { success: true, data: formattedColisage };
