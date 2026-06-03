@@ -13,7 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AlertCircle, FileText, FileCheck } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { importHSCodesFromExcel } from "../../server/actions";
 import { toast } from "sonner";
@@ -115,6 +116,11 @@ export const HSCodeImportPreviewDialog = ({
   };
 
   const selectedCount = selectedRows.size;
+  
+  // Séparer les lignes nouvelles et existantes
+  const newRows = previewData.preview.filter((row) => row.status === 'new');
+  const existingRows = previewData.preview.filter((row) => row.status === 'existing');
+  
   const newCount = previewData.preview.filter(
     (row, idx) => selectedRows.has(idx) && row.status === 'new'
   ).length;
@@ -135,7 +141,7 @@ export const HSCodeImportPreviewDialog = ({
         <div className="flex items-center gap-4 py-2 border-b flex-wrap">
           <div className="flex items-center gap-2">
             <Checkbox
-              checked={selectedRows.size === previewData.preview.length}
+              checked={selectedRows.size === previewData.preview.length && previewData.preview.length > 0}
               onCheckedChange={toggleAll}
             />
             <span className="text-sm font-medium">
@@ -180,56 +186,124 @@ export const HSCodeImportPreviewDialog = ({
           </Alert>
         )}
 
-        <ScrollArea className="h-[500px] pr-4">
-          <div className="space-y-2">
-            {previewData.preview.map((row, idx) => {
-              const isExisting = row.status === 'existing';
-              const isSelected = selectedRows.has(idx);
+        <Tabs defaultValue="new" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="new" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Nouveaux HS Codes ({newRows.length})
+            </TabsTrigger>
+            <TabsTrigger value="existing" className="flex items-center gap-2">
+              <FileCheck className="h-4 w-4" />
+              HS Codes existants ({existingRows.length})
+            </TabsTrigger>
+          </TabsList>
 
-              return (
-                <div
-                  key={idx}
-                  className={`flex items-start gap-3 p-3 border rounded-lg transition-colors ${
-                    isSelected ? "bg-accent/50" : "bg-background"
-                  } ${isExisting ? "border-orange-300" : "border-border"}`}
-                >
-                  <Checkbox
-                    checked={isSelected}
-                    onCheckedChange={() => toggleRow(idx)}
-                    className="mt-1"
-                  />
-
-                  <div className="flex-1 space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs text-muted-foreground">
-                        Ligne {row.rowIndex + 1}
-                      </span>
-                      {isExisting && (
-                        <Badge variant="outline" className="text-xs border-orange-500 text-orange-600">
-                          Existe
-                        </Badge>
-                      )}
-                      <Badge variant="secondary" className="text-xs">
-                        HS: {row.HS_Code}
-                      </Badge>
-                    </div>
-
-                    <p className="text-sm font-medium">{row.Description}</p>
+          <TabsContent value="new" className="mt-4">
+            <ScrollArea className="h-[450px] pr-4">
+              <div className="space-y-2">
+                {newRows.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
+                    <FileText className="h-12 w-12 mb-2 opacity-50" />
+                    <p>Aucun nouveau HS Code</p>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                ) : (
+                  newRows.map((row) => {
+                    const originalIndex = previewData.preview.indexOf(row);
+                    const isSelected = selectedRows.has(originalIndex);
 
-        <DialogFooter className="mt-5">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isImporting}>
-            Annuler
-          </Button>
-          <Button onClick={handleImport} disabled={isImporting || selectedCount === 0}>
-            {isImporting ? "Import en cours..." : `Importer ${selectedCount} ligne(s)`}
-          </Button>
-        </DialogFooter>
-        </ScrollArea>
+                    return (
+                      <div
+                        key={originalIndex}
+                        className={`flex items-start gap-3 p-3 border rounded-lg transition-colors ${
+                          isSelected ? "bg-accent/50" : "bg-background"
+                        }`}
+                      >
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => toggleRow(originalIndex)}
+                          className="mt-1"
+                        />
+
+                        <div className="flex-1 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-xs text-muted-foreground">
+                              Ligne {row.rowIndex + 1}
+                            </span>
+                            <Badge variant="secondary" className="text-xs">
+                              HS: {row.HS_Code}
+                            </Badge>
+                          </div>
+
+                          <p className="text-sm font-medium">{row.Description}</p>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </ScrollArea>
+          </TabsContent>
+
+          <TabsContent value="existing" className="mt-4">
+            <ScrollArea className="h-[450px] pr-4">
+              <div className="space-y-2">
+                {existingRows.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
+                    <FileCheck className="h-12 w-12 mb-2 opacity-50" />
+                    <p>Aucun HS Code existant</p>
+                  </div>
+                ) : (
+                  existingRows.map((row) => {
+                    const originalIndex = previewData.preview.indexOf(row);
+                    const isSelected = selectedRows.has(originalIndex);
+
+                    return (
+                      <div
+                        key={originalIndex}
+                        className={`flex items-start gap-3 p-3 border rounded-lg transition-colors border-orange-300 ${
+                          isSelected ? "bg-accent/50" : "bg-background"
+                        }`}
+                      >
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => toggleRow(originalIndex)}
+                          className="mt-1"
+                        />
+
+                        <div className="flex-1 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-xs text-muted-foreground">
+                              Ligne {row.rowIndex + 1}
+                            </span>
+                            <Badge variant="outline" className="text-xs border-orange-500 text-orange-600">
+                              Existe
+                            </Badge>
+                            <Badge variant="secondary" className="text-xs">
+                              HS: {row.HS_Code}
+                            </Badge>
+                          </div>
+
+                          <p className="text-sm font-medium">{row.Description}</p>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </ScrollArea>
+          </TabsContent>
+        </Tabs>
+
+        <div className="mt-4 pt-4 border-t">
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isImporting}>
+              Annuler
+            </Button>
+            <Button onClick={handleImport} disabled={isImporting || selectedCount === 0}>
+              {isImporting ? "Import en cours..." : `Importer ${selectedCount} ligne(s)`}
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -362,7 +362,7 @@ export const HomeView = () => {
                             </div>
                             <div className="flex justify-between items-center">
                                 <span className="text-sm text-gray-600">Dernière MAJ</span>
-                                <span className="text-sm">03 Mars 2026</span>
+                                <span className="text-sm">01 Juin 2026</span>
                             </div>
                         </CardContent>
                     </Card>
